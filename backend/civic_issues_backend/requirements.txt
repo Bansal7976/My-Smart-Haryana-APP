@@ -1,0 +1,44 @@
+# Smart Haryana Backend Dependencies
+# Core Framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+
+# Database
+sqlalchemy>=2.0.25
+psycopg[binary]>=3.1.16
+GeoAlchemy2>=0.14.3
+alembic>=1.13.1
+
+# Configuration & Settings
+pydantic-settings>=2.1.0
+pydantic[email]>=2.5.0
+python-dotenv>=1.0.0
+
+# Security & Authentication
+passlib[bcrypt]>=1.7.4
+python-jose[cryptography]>=3.3.0
+python-multipart>=0.0.6
+
+# File Handling
+aiofiles>=23.2.1
+Pillow>=10.2.0
+
+# LangChain Ecosystem (AI Framework)
+langchain>=0.1.0
+langchain-google-genai>=0.0.6
+langchain-community>=0.0.16
+langgraph>=0.0.20
+tavily-python>=0.3.0
+
+# Vector Store & Embeddings
+chromadb>=0.4.22
+sentence-transformers>=2.3.0
+
+# NLP & ML
+textblob>=0.17.1
+
+# HTTP Client
+httpx>=0.26.0
+
+# Task Scheduling
+apscheduler>=3.10.4
