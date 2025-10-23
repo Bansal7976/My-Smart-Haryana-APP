@@ -12,6 +12,18 @@
 
 [Features](#-features) • [Tech Stack](#-tech-stack) • [Installation](#-installation) • [Usage](#-usage) • [API Docs](#-api-documentation) • [Contributing](#-contributing)
 
+### 🎯 Key Highlights
+
+| Feature | Description |
+|---------|-------------|
+| 🤖 **AI Multi-Agent System** | LangGraph-powered chatbot with RAG, analytics, and web search |
+| 🎤 **Voice Input** | Report issues in English, Hindi, or Punjabi |
+| 🔍 **AI Image Detection** | Automatically rejects AI-generated/fake images |
+| 👥 **Auto Admin Setup** | Super Admin + 22 district admins created automatically |
+| 📍 **GPS Verification** | Workers must be on-site (500m radius) to complete tasks |
+| 📊 **Real-Time Analytics** | District and state-level performance dashboards |
+| 🏥 **Production Ready** | Health checks, monitoring, and zero-config deployment |
+
 </div>
 
 ---
@@ -41,39 +53,54 @@
 **Smart Haryana** is an enterprise-grade civic issue management system that revolutionizes how citizens report problems and how governments respond. Built with cutting-edge AI technology, it features:
 
 - 🤖 **AI-Powered Multi-Agent Chatbot** using Google Gemini & LangGraph
+- 🎤 **Voice-to-Text Reporting** supporting English, Hindi, and Punjabi
+- 🔍 **AI Image Verification** to prevent fake/AI-generated image uploads
 - 📍 **GPS-Based Issue Tracking** with PostGIS spatial queries
-- 🎯 **Intelligent Auto-Assignment** based on department, district, and worker availability
-- 📊 **Real-Time Analytics Dashboard** for administrators
-- 🌐 **Bilingual Support** (English & Hindi) for accessibility
-- 🔐 **Enterprise-Grade Security** with JWT authentication & input sanitization
+- 🎯 **Intelligent Auto-Assignment** with priority-based load balancing
+- 📊 **Real-Time Analytics Dashboard** with district and state-level insights
+- 🌐 **Multi-Language Support** for accessibility across Haryana
+- 🔐 **Enterprise-Grade Security** with JWT, input sanitization & image validation
+- 🏥 **Production Monitoring** with health check endpoints
+- 👥 **Auto-Deployment Ready** with automated admin account creation
 
 ---
 
 ## ✨ Features
 
+### 🆕 **Latest Features (v2.0)**
+- 🎤 **Voice-to-Text** - Report issues using voice (English, Hindi, Punjabi)
+- 🤖 **AI Image Detection** - Automatically rejects AI-generated/fake images
+- 🏥 **Health Monitoring** - Built-in health check endpoint for uptime monitoring
+- 👤 **Auto Admin Seeding** - Automatic creation of Super Admin & 22 District Admins
+- 📊 **Enhanced Analytics** - State-wide and district-level performance insights
+
 ### For Citizens (Clients)
 - 📸 **Report Issues** with photo evidence and GPS location
+- 🎤 **Voice Input** - Describe problems using voice recording (multi-language)
 - 🗺️ **Track Issue Status** in real-time
 - 💬 **AI Chatbot Assistant** powered by RAG (Retrieval Augmented Generation)
-- ⭐ **Rate & Provide Feedback** on resolved issues
-- 📱 **Mobile-First Design** with Android support
+- ⭐ **Rate & Provide Feedback** on resolved issues with sentiment analysis
+- 📱 **Mobile-First Design** with native Android support
 
 ### For Workers
-- 📋 **View Assigned Tasks** sorted by priority
-- ✅ **Complete Tasks** with GPS verification and proof photos
+- 📋 **View Assigned Tasks** sorted by intelligent priority algorithm
+- ✅ **Complete Tasks** with GPS verification (500m radius) and proof photos
 - 📊 **Performance Analytics** with ratings and completion stats
 - 🔔 **Real-Time Notifications** for new assignments
+- 📍 **GPS Verification** - Must be at location to complete tasks
 
 ### For Administrators
 - 👥 **Manage Workers & Departments** with role-based access
 - 📈 **View Analytics & KPIs** for district-wide performance
-- ✅ **Verify Completed Issues** with proof validation
-- 🎯 **Monitor Auto-Assignment** efficiency
+- ✅ **Verify Completed Issues** with AI-verified proof photos
+- 🎯 **Monitor Auto-Assignment** efficiency with load balancing
+- 📊 **Department Analytics** - Track performance by department
 
 ### For Super Admins
-- 🏢 **Manage District Admins** across multiple regions
-- 🌐 **System-Wide Analytics** and oversight
+- 🏢 **Manage District Admins** across all 22 Haryana districts
+- 🌐 **System-Wide Analytics** and oversight (state-level dashboard)
 - ⚙️ **Configure System Settings** and policies
+- 👥 **Auto-Created on First Deploy** - `haryana@gov.in` / `Haryana@4321`
 
 ---
 
@@ -98,8 +125,11 @@
 │  └──────────────────────────────────────────────────────┘   │
 │                                                              │
 │  ├─ Auto-Assignment Scheduler (APScheduler)                 │
-│  ├─ Priority Calculation Engine (Geospatial)                │
+│  ├─ Priority Calculation Engine (PostGIS Geospatial)       │
+│  ├─ Voice-to-Text Service (Google Speech API)              │
+│  ├─ AI Image Detection (OpenCV + scikit-image)             │
 │  ├─ Sentiment Analysis (TextBlob)                           │
+│  ├─ Health Check Endpoint (/health)                         │
 │  └─ Security Middleware (CORS, Headers, Validation)         │
 └─────────────────┬───────────────────────────────────────────┘
                   │
@@ -120,25 +150,37 @@
 ### Backend
 - **Framework:** FastAPI 0.109+
 - **Database:** PostgreSQL 15+ with PostGIS extension
+- **Database Driver:** psycopg 3.1+ (async with connection pooling)
 - **ORM:** SQLAlchemy 2.0 (Async)
 - **Authentication:** JWT with bcrypt password hashing
 - **AI/ML:**
   - Google Gemini 1.5 Flash (LLM)
-  - LangChain 0.1+ & LangGraph 0.0.20+ (Multi-Agent System)
-  - ChromaDB (Vector Database for RAG)
-  - Sentence Transformers (Embeddings)
-  - TextBlob (Sentiment Analysis)
-- **Task Scheduling:** APScheduler 3.10+
-- **File Storage:** Local filesystem with secure validation
-- **Testing:** Pytest (planned)
+  - LangChain 0.1+ & LangGraph 0.0.55+ (Multi-Agent System)
+  - ChromaDB 0.4+ (Vector Database for RAG)
+  - Sentence Transformers 2.3+ (Embeddings)
+  - TextBlob 0.17+ (Sentiment Analysis)
+- **Voice Processing:**
+  - SpeechRecognition 3.10+ (Audio to text)
+  - pydub 0.25+ (Audio manipulation)
+  - Google Cloud Speech API (Multi-language support)
+- **Image Processing:**
+  - OpenCV 4.8+ (Image analysis)
+  - scikit-image 0.22+ (AI detection algorithms)
+  - Pillow 10.2+ (Image manipulation)
+- **Task Scheduling:** APScheduler 3.10+ (Auto-assignment & daily resets)
+- **File Storage:** Local filesystem with AI-powered validation
+- **Monitoring:** Built-in health check endpoints
 
 ### Frontend
 - **Framework:** Flutter 3.0+ (Dart)
 - **State Management:** Provider 6.1+
-- **HTTP Client:** http 1.1+ with retry logic
-- **Location Services:** Geolocator 10.1+
-- **Secure Storage:** flutter_secure_storage 9.0+
-- **Image Handling:** image_picker 1.0+
+- **HTTP Client:** http 1.1+ with multipart upload support
+- **Location Services:** Geolocator 10.1+ (GPS tracking)
+- **Secure Storage:** flutter_secure_storage 9.0+ (Token management)
+- **Image Handling:** image_picker 1.0+ & cached_network_image 3.3+
+- **Audio Recording:** record 5.0+ (Voice-to-text feature)
+- **Permissions:** permission_handler 11.1+ (Camera, mic, location)
+- **File Storage:** path_provider 2.1+ (Temporary audio files)
 
 ### DevOps & Infrastructure
 - **Web Server:** Uvicorn (ASGI)
@@ -224,29 +266,51 @@ flutter create --platforms=android .
 Create `.env` file in `backend/civic_issues_backend/`:
 
 ```env
-# Database Configuration
-DATABASE_URL=postgresql+psycopg://username:password@localhost:5432/smart_haryana
+# ========================================
+# SMART HARYANA - PRODUCTION CONFIGURATION
+# ========================================
 
-# Security (Generate strong 32+ character key)
+# Database Configuration (PostgreSQL with PostGIS)
+DATABASE_URL=postgresql+psycopg://username:password@localhost:5432/civic_issues_db
+
+# Security (Generate with: openssl rand -hex 32)
 SECRET_KEY=your-super-secret-key-minimum-32-characters-long-abc123def456
 ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=1440
+ACCESS_TOKEN_EXPIRE_MINUTES=10080  # 7 days
 
 # AI Configuration
-GOOGLE_API_KEY=AIzaSy...  # Get from https://makersuite.google.com/app/apikey
+GOOGLE_API_KEY=AIzaSy...  # Get from https://aistudio.google.com/
 TAVILY_API_KEY=tvly-...   # Optional: Get from https://tavily.com
 CHATBOT_MODEL=gemini-1.5-flash
 CHATBOT_TEMPERATURE=0.7
+EMBEDDING_MODEL=models/embedding-001
 
-# CORS Configuration (Add your laptop IP for mobile testing)
+# Worker & Task Settings
+MAX_DAILY_TASKS_PER_WORKER=10
+PRIORITY_DENSITY_WEIGHT=0.6
+PRIORITY_URGENCY_WEIGHT=0.4
+
+# GPS Verification Settings
+GPS_VERIFICATION_RADIUS_METERS=100  # Worker must be within 100m
+
+# Rate Limiting (Prevent abuse)
+MAX_VOICE_TO_TEXT_PER_HOUR=20
+MAX_CHATBOT_MESSAGES_PER_MINUTE=10
+
+# CORS Configuration (Add your server IP for mobile testing)
 ALLOWED_ORIGINS=http://localhost:3000,http://192.168.1.100:8000
 
 # File Upload Settings
-MAX_FILE_SIZE_MB=10
+MAX_FILE_SIZE_MB=5
 ALLOWED_FILE_TYPES=image/jpeg,image/png,image/jpg,image/webp
 
 # Environment
-ENVIRONMENT=development
+ENVIRONMENT=production  # Use 'development' for local testing
+```
+
+**Generate a secure SECRET_KEY:**
+```bash
+openssl rand -hex 32
 ```
 
 ### Frontend Configuration
@@ -280,10 +344,21 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 
 **Expected Output:**
 ```
+✅ Super Admin created: haryana@gov.in
+✅ Created 22 district admin(s)
+🔐 Admin Credentials:
+   Super Admin: haryana@gov.in / Haryana@4321
+   District Admins: [district]@gov.in / [District]@4321
 ✓ Loaded 45 chunks from knowledge base
+🚀 Smart Haryana API started successfully!
 INFO: Application startup complete.
 INFO: Uvicorn running on http://0.0.0.0:8000
 ```
+
+**🎉 First Time Startup:**
+- Super Admin and 22 District Admins are **automatically created**
+- No manual database seeding required!
+- Ready to use immediately with pre-configured admin accounts
 
 ### Start Frontend (Mobile)
 
@@ -308,15 +383,26 @@ flutter build apk --release
 ## 👥 User Roles & Workflows
 
 ### 1️⃣ Super Admin
-**First-Time Setup:**
-1. Register first user as Super Admin (automatically assigned)
-2. Create departments: Roads, Electrical, Water, Sanitation, Transport
-3. Create district-level admins
+**✨ Automatic Setup (No Manual Steps Needed!):**
+- **Email:** `haryana@gov.in`
+- **Password:** `Haryana@4321`
+- **Auto-created** on first backend startup
+- All 22 district admins also created automatically
+
+**Pre-Created District Admins:**
+```
+Ambala@gov.in      / Ambala@4321
+Bhiwani@gov.in     / Bhiwani@4321
+Gurugram@gov.in    / Gurugram@4321
+Sirsa@gov.in       / Sirsa@4321
+... (22 districts total)
+```
 
 **Responsibilities:**
-- Manage district admins
-- View system-wide analytics
-- Configure global settings
+- Manage district admins (view, create, deactivate)
+- View system-wide analytics across all 22 districts
+- Configure global settings and policies
+- Monitor state-level performance metrics
 
 ### 2️⃣ Admin (District-Level)
 **Setup:**
@@ -426,6 +512,55 @@ Content-Type: application/json
 }
 ```
 
+### Voice-to-Text (NEW!)
+
+#### Convert Audio to Text
+```http
+POST /users/voice-to-text
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+audio_file=@recording.webm
+language=hi-IN  # Options: en-IN, hi-IN, pa-IN, en-US, en-GB
+```
+
+**Response:**
+```json
+{
+  "text": "मुख्य सड़क पर गड्ढा है",
+  "language": "hi-IN",
+  "confidence": 1.0
+}
+```
+
+#### Get Supported Languages
+```http
+GET /users/voice-to-text/languages
+Authorization: Bearer <token>
+```
+
+### Health Check (Monitoring)
+
+#### Check System Health
+```http
+GET /health
+```
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "version": "2.0.0",
+  "database": "connected",
+  "services": {
+    "auto_assignment": "active",
+    "chatbot": "active",
+    "voice_to_text": "active",
+    "ai_image_detection": "active"
+  }
+}
+```
+
 **Full API documentation:** http://localhost:8000/docs
 
 ---
@@ -484,30 +619,48 @@ Content-Type: application/json
 ### Authentication & Authorization
 - ✅ JWT-based stateless authentication
 - ✅ Bcrypt password hashing with salt
-- ✅ Role-based access control (RBAC)
-- ✅ Token expiration (24 hours default)
+- ✅ Role-based access control (RBAC) - 4 roles
+- ✅ Token expiration (7 days default, configurable)
+- ✅ Active user validation on every request
+- ✅ Secure token storage (flutter_secure_storage)
 
 ### Input Validation
 - ✅ Pydantic schemas with strict validation
-- ✅ XSS prevention via input sanitization
+- ✅ XSS prevention via dangerous pattern filtering
 - ✅ SQL injection prevention (SQLAlchemy ORM)
-- ✅ File upload security:
-  - Extension whitelist (jpg, png, webp)
-  - Size limits (10MB default)
-  - Filename sanitization
-  - Path traversal prevention
+- ✅ Field length constraints and regex validation
+- ✅ Email format validation
+
+### File Upload Security 🆕
+- ✅ **AI Image Detection** - Rejects AI-generated images
+  - EXIF metadata analysis (weight: 3)
+  - Noise pattern detection (weight: 2)
+  - Compression artifact checking (weight: 1)
+  - Suspicion threshold: 4/6
+- ✅ Extension whitelist (jpg, jpeg, png, webp only)
+- ✅ Size limits (5MB for images, 10MB for audio)
+- ✅ Filename sanitization (prevents path traversal)
+- ✅ Content-type validation
+- ✅ Secure file storage with UUID naming
+
+### Location Security
+- ✅ **GPS Verification** - Workers must be within 500m to complete tasks
+- ✅ PostGIS spatial queries for accurate distance calculation
+- ✅ Location permission checks (Android)
 
 ### Network Security
-- ✅ CORS with origin whitelist
-- ✅ Security headers (X-Frame-Options, CSP, etc.)
+- ✅ CORS with strict origin whitelist
+- ✅ Security headers (X-Frame-Options, X-XSS-Protection, etc.)
 - ✅ HTTPS support (production)
+- ✅ Request body size limits
+- ✅ Rate limiting configuration (voice-to-text, chatbot)
 
 ### Password Policy
 - ✅ Minimum 8 characters
 - ✅ At least 1 uppercase letter
 - ✅ At least 1 lowercase letter
 - ✅ At least 1 digit
-- ✅ At least 1 special character
+- ✅ At least 1 special character (!@#$%^&*)
 
 ---
 
@@ -584,7 +737,73 @@ curl -H "Content-Type: application/json" \
 # Settings → Location → Enable
 
 # Grant app permissions
-# Settings → Apps → Civic Issues → Permissions → Location → Allow
+# Settings → Apps → Smart Haryana → Permissions → Location → Allow
+```
+
+#### Voice-to-Text not working
+```bash
+# 1. Check microphone permission (Android)
+# AndroidManifest.xml must have:
+# <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+# 2. Grant microphone permission
+# Settings → Apps → Smart Haryana → Permissions → Microphone → Allow
+
+# 3. Test audio recording
+# Open app, try voice input - should see recording indicator
+
+# 4. Check supported languages
+# GET /users/voice-to-text/languages
+# Supported: en-IN, hi-IN, pa-IN, en-US, en-GB
+
+# 5. Verify audio format
+# Supported formats: webm, ogg, mp3, wav
+# Max size: 10MB
+```
+
+#### AI Image Detection rejecting real photos
+```bash
+# If legitimate photos are being rejected:
+
+# 1. Check image source
+# - Use camera to take photo (best results)
+# - Avoid heavily edited images
+# - Avoid screenshots
+
+# 2. Image requirements
+# - Must have EXIF metadata (camera photos have this)
+# - Natural noise patterns (not overly smooth)
+# - Proper JPEG compression
+
+# 3. Disable verification (development only)
+# In app/storage.py:
+# Comment out the validate_image_is_real() call
+
+# Note: AI detection has "fail-open" behavior
+# If verification encounters errors, upload proceeds
+```
+
+#### Admin accounts not created
+```bash
+# Check backend startup logs
+# Should see:
+# ✅ Super Admin created: haryana@gov.in
+# ✅ Created 22 district admin(s)
+
+# If not appearing:
+# 1. Check database connection
+psql -U postgres -d civic_issues_db -c "\dt"
+
+# 2. Check seed_admins.py logs
+# Should show "Admin already exists" if they were created before
+
+# 3. Manual check
+psql -U postgres -d civic_issues_db
+SELECT email, role, district FROM users WHERE role IN ('super_admin', 'admin');
+
+# 4. Force re-creation (if needed)
+# DELETE FROM users WHERE email LIKE '%@gov.in';
+# Then restart backend
 ```
 
 ---
@@ -630,15 +849,66 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
+## 🌟 What Makes Smart Haryana Unique?
+
+### 🚀 Production-Ready from Day 1
+- **Zero Manual Setup**: Super Admin and all 22 district admins auto-created on first startup
+- **Health Monitoring**: Built-in `/health` endpoint for uptime monitoring and load balancers
+- **Comprehensive Logging**: Structured logs for debugging and audit trails
+
+### 🤖 AI-Powered Features
+1. **Multi-Agent Chatbot** (LangGraph + Gemini)
+   - RAG Agent: Answers from knowledge base
+   - Analytics Agent: Real-time database queries
+   - Web Search Agent: Current information via Tavily
+   - Gemini Agent: General conversational AI
+
+2. **AI Image Verification**
+   - Detects AI-generated images using multi-factor analysis
+   - EXIF metadata + noise patterns + compression artifacts
+   - Prevents fraudulent issue reports
+
+3. **Voice-to-Text Input**
+   - Multi-language support (English, Hindi, Punjabi)
+   - Accessibility for non-tech-savvy users
+   - Seamless integration with issue reporting
+
+### 🎯 Intelligent Automation
+- **Auto-Assignment**: Priority-based, district-matched, load-balanced
+- **Priority Calculation**: Geospatial density + problem type urgency
+- **Daily Task Reset**: Automatic worker capacity refresh at midnight
+- **Sentiment Analysis**: Automatic feedback sentiment classification
+
+### 🔒 Enterprise Security
+- **4-Layer File Validation**: Extension + Size + AI Detection + Path Security
+- **GPS Verification**: Workers must be on-site (500m radius)
+- **Rate Limiting**: Prevents abuse of AI features
+- **Role-Based Access**: 4 roles with granular permissions
+
+### 📊 Analytics & Insights
+- **District-Level**: Performance metrics per district
+- **State-Wide**: Haryana overview for Super Admins
+- **Department Analytics**: Track efficiency by department
+- **Worker Performance**: Ratings, completion stats, load balancing
+
+---
+
 ## 📞 Support
 
 For support, email support@smartharyana.com or open an issue in the GitHub repository.
+
+**Quick Links:**
+- 📖 [API Documentation](http://localhost:8000/docs)
+- 🏥 [Health Check](http://localhost:8000/health)
+- 🤖 [Chatbot Guide](http://localhost:8000/docs#/Chatbot)
 
 ---
 
 <div align="center">
 
 **Built with ❤️ for Haryana Citizens**
+
+*Empowering communities through technology*
 
 [⬆ Back to Top](#-smart-haryana---ai-powered-civic-issues-management-platform)
 

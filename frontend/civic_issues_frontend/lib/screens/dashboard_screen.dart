@@ -137,60 +137,131 @@ class DashboardScreen extends StatelessWidget {
   void _showProfileDialog(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+    final user = authProvider.user;
+    
+    // Get user-friendly role name
+    String getRoleName(String role) {
+      switch (role.toLowerCase()) {
+        case 'client':
+          return languageProvider.getText('Citizen', 'नागरिक');
+        case 'worker':
+          return languageProvider.getText('Worker', 'कर्मचारी');
+        case 'admin':
+          return languageProvider.getText('District Admin', 'जिला व्यवस्थापक');
+        case 'super_admin':
+          return languageProvider.getText('State Admin', 'राज्य व्यवस्थापक');
+        default:
+          return role;
+      }
+    }
     
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(languageProvider.getText('Profile', 'प्रोफाइल')),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.person, color: AppColors.primary, size: 24),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              languageProvider.getText('My Profile', 'मेरी प्रोफाइल'),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildProfileRow(languageProvider.getText('Name', 'नाम'), authProvider.user?.name ?? 'N/A'),
-            _buildProfileRow(languageProvider.getText('Email', 'ईमेल'), authProvider.user?.email ?? 'N/A'),
-            _buildProfileRow(languageProvider.getText('Role', 'भूमिका'), authProvider.user!.role.toUpperCase()),
-            _buildProfileRow(languageProvider.getText('User ID', 'उपयोगकर्ता आईडी'), authProvider.user?.id.toString() ?? 'N/A'),
+            const Divider(),
+            const SizedBox(height: 8),
+            _buildProfileRow(
+              Icons.person_outline,
+              languageProvider.getText('Full Name', 'पूरा नाम'),
+              user?.name ?? 'N/A',
+            ),
+            const SizedBox(height: 12),
+            _buildProfileRow(
+              Icons.email_outlined,
+              languageProvider.getText('Email', 'ईमेल'),
+              user?.email ?? 'N/A',
+            ),
+            const SizedBox(height: 12),
+            _buildProfileRow(
+              Icons.location_city_outlined,
+              languageProvider.getText('District', 'जिला'),
+              user?.district ?? 'N/A',
+            ),
+            const SizedBox(height: 12),
+            _buildProfileRow(
+              Icons.badge_outlined,
+              languageProvider.getText('Account Type', 'खाता प्रकार'),
+              getRoleName(user?.role ?? 'N/A'),
+            ),
+            if (user?.pincode != null && user!.pincode!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _buildProfileRow(
+                Icons.pin_drop_outlined,
+                languageProvider.getText('Pincode', 'पिनकोड'),
+                user.pincode!,
+              ),
+            ],
+            const SizedBox(height: 8),
+            const Divider(),
           ],
         ),
         actions: [
-          TextButton(
+          TextButton.icon(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text(languageProvider.getText('Close', 'बंद करें')),
+            icon: const Icon(Icons.close),
+            label: Text(languageProvider.getText('Close', 'बंद करें')),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.primary,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildProfileRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              '$label:',
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
+  Widget _buildProfileRow(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 20, color: AppColors.primary.withValues(alpha: 0.7)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: AppColors.textSecondary.withValues(alpha: 0.7),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 

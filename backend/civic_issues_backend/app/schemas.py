@@ -244,6 +244,15 @@ class ChatSessionInfo(BaseModel):
     last_message_at: str
     message_count: int
 
+# Voice-to-Text Schemas
+class VoiceToTextResponse(BaseModel):
+    text: str
+    language: str
+    confidence: float = 1.0
+    
+class SupportedLanguagesResponse(BaseModel):
+    languages: Dict[str, str]
+
 class WorkerWithProfile(BaseModel):
     id: int
     user: User

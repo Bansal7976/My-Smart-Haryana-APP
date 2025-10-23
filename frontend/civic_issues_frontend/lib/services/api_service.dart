@@ -770,4 +770,78 @@ class ApiService {
       throw Exception('Failed to fetch chat history: $e');
     }
   }
+
+  // Voice-to-Text APIs
+  static Future<Map<String, dynamic>> convertVoiceToText(
+    String token,
+    File audioFile, {
+    String language = 'en-IN',
+  }) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/users/voice-to-text'),
+      );
+
+      // Add headers
+      request.headers.addAll(_getAuthHeaders(token));
+
+      // Add language
+      request.fields['language'] = language;
+
+      // Add audio file
+      if (kIsWeb) {
+        final bytes = await audioFile.readAsBytes();
+        final filename = 'audio_${DateTime.now().millisecondsSinceEpoch}.webm';
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'audio_file',
+            bytes,
+            filename: filename,
+          ),
+        );
+      } else {
+        request.files.add(
+          await http.MultipartFile.fromPath('audio_file', audioFile.path),
+        );
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to convert voice to text');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Voice-to-text error: $e');
+      }
+      throw Exception('Failed to convert voice to text: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getSupportedLanguages(
+      String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/voice-to-text/languages'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception(
+            'Failed to fetch supported languages: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Get supported languages error: $e');
+      }
+      throw Exception('Failed to fetch supported languages: $e');
+    }
+  }
 }

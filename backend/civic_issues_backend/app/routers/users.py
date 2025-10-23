@@ -5,11 +5,12 @@ from fastapi import (
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func, select, case
 from sqlalchemy.orm import selectinload
-from typing import List, Dict
+from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 
 from .. import database, schemas, models, utils, storage
 from ..services import priority, sentiment
+from ..services.voice_to_text import convert_audio_to_text, get_supported_languages
 
 router = APIRouter(prefix="/users", tags=["Client & Issues"])
 
@@ -277,3 +278,66 @@ async def get_haryana_overview_stats(
         "total_problems_resolved": total_resolved_count,
         "problems_resolved_last_30_days": recent_resolved_count,
     }
+
+# ===== VOICE-TO-TEXT ENDPOINTS =====
+
+@router.post("/voice-to-text", response_model=schemas.VoiceToTextResponse)
+async def convert_voice_to_text(
+    audio_file: UploadFile = File(...),
+    language: str = Form(default="en-IN"),
+    current_user: models.User = Depends(utils.get_current_user)
+):
+    """
+    Convert voice recording to text.
+    
+    Supports:
+    - English (en-IN, en-US, en-GB)
+    - Hindi (hi-IN)
+    - Punjabi (pa-IN)
+    
+    The audio will be automatically transcribed to text that can be used
+    for issue descriptions, feedback, or any text field.
+    """
+    # Validate audio file
+    if not audio_file.content_type or not audio_file.content_type.startswith('audio/'):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be an audio file (webm, ogg, mp3, wav, etc.)"
+        )
+    
+    # Read audio bytes
+    audio_bytes = await audio_file.read()
+    
+    if len(audio_bytes) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Audio file is empty"
+        )
+    
+    # Check file size (max 10MB for audio)
+    max_audio_size = 10 * 1024 * 1024  # 10MB
+    if len(audio_bytes) > max_audio_size:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Audio file too large. Maximum size is 10MB"
+        )
+    
+    # Convert audio to text
+    text = await convert_audio_to_text(audio_bytes, language)
+    
+    return schemas.VoiceToTextResponse(
+        text=text,
+        language=language,
+        confidence=1.0
+    )
+
+@router.get("/voice-to-text/languages", response_model=schemas.SupportedLanguagesResponse)
+async def get_supported_voice_languages(
+    current_user: models.User = Depends(utils.get_current_user)
+):
+    """
+    Get list of supported languages for voice-to-text conversion.
+    """
+    return schemas.SupportedLanguagesResponse(
+        languages=get_supported_languages()
+    )

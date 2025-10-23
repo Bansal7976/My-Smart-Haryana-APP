@@ -18,9 +18,9 @@ class Settings(BaseSettings):
     PRIORITY_URGENCY_WEIGHT: float = 0.4
     
     # Multi-Agent Chatbot Configuration
-    GOOGLE_API_KEY: str = ""  # For Gemini LLM
+    GOOGLE_API_KEY: str = ""  # For Gemini LLM (required for AI features)
     TAVILY_API_KEY: str = ""  # For web search (optional)
-    CHATBOT_MODEL: str = "gemini-1.5-flash"  # Gemini Flash is more stable
+    CHATBOT_MODEL: str = "gemini-1.5-flash"  # Production-ready Gemini model
     CHATBOT_TEMPERATURE: float = 0.7
     MAX_CHAT_HISTORY: int = 10
     
@@ -36,6 +36,13 @@ class Settings(BaseSettings):
     # File Upload Settings
     MAX_FILE_SIZE_MB: int = 10
     ALLOWED_FILE_TYPES: str = "image/jpeg,image/png,image/jpg,image/webp"
+    
+    # GPS Verification Settings
+    GPS_VERIFICATION_RADIUS_METERS: int = 100
+    
+    # Rate Limiting (Voice-to-Text and AI features)
+    MAX_VOICE_TO_TEXT_PER_HOUR: int = 20  # Prevent abuse of speech API
+    MAX_CHATBOT_MESSAGES_PER_MINUTE: int = 10
     
     # Environment
     ENVIRONMENT: str = "development"

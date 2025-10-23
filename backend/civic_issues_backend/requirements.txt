@@ -1,44 +1,64 @@
-# Smart Haryana Backend Dependencies
-# Core Framework
-fastapi>=0.109.0
-uvicorn[standard]>=0.27.0
+# Smart Haryana Backend Dependencies - Production Ready
+# Updated: Compatible with Python 3.10+ and Gemini API
 
-# Database
-sqlalchemy>=2.0.25
-psycopg[binary]>=3.1.16
-GeoAlchemy2>=0.14.3
-alembic>=1.13.1
+# Core Framework
+fastapi>=0.109.0,<0.112.0
+uvicorn[standard]>=0.27.0,<0.31.0
+
+# Database (psycopg3 is the primary driver for async operations)
+sqlalchemy>=2.0.25,<2.1.0
+psycopg[binary,pool]>=3.1.0,<4.0.0  # Primary async PostgreSQL driver (psycopg3)
+GeoAlchemy2>=0.14.3,<0.15.0
+alembic>=1.13.1,<1.14.0
 
 # Configuration & Settings
-pydantic-settings>=2.1.0
-pydantic[email]>=2.5.0
-python-dotenv>=1.0.0
+pydantic-settings>=2.1.0,<2.5.0
+pydantic[email]>=2.5.0,<2.10.0
+python-dotenv>=1.0.0,<1.1.0
 
 # Security & Authentication
-passlib[bcrypt]>=1.7.4
-python-jose[cryptography]>=3.3.0
-python-multipart>=0.0.6
+passlib[bcrypt]>=1.7.4,<1.8.0
+python-jose[cryptography]>=3.3.0,<3.4.0
+python-multipart>=0.0.6,<0.1.0
 
 # File Handling
-aiofiles>=23.2.1
-Pillow>=10.2.0
+aiofiles>=23.2.1,<24.0.0
+Pillow>=10.2.0,<11.0.0
 
-# LangChain Ecosystem (AI Framework)
-langchain>=0.1.0
-langchain-google-genai>=0.0.6
-langchain-community>=0.0.16
-langgraph>=0.0.20
-tavily-python>=0.3.0
+# LangChain Ecosystem (AI Framework) - Updated for Gemini
+langchain>=0.1.0,<0.3.0
+langchain-google-genai>=0.0.11,<2.0.0
+langchain-community>=0.0.38,<0.3.0
+langchain-core>=0.1.0,<0.3.0
+langchain-text-splitters>=0.0.1,<0.3.0
+langgraph>=0.0.55,<0.3.0
+
+# Web Search (Optional - for Tavily integration)
+tavily-python>=0.3.0,<0.5.0
 
 # Vector Store & Embeddings
-chromadb>=0.4.22
-sentence-transformers>=2.3.0
+chromadb>=0.4.22,<0.6.0
+sentence-transformers>=2.3.0,<3.0.0
 
 # NLP & ML
-textblob>=0.17.1
+textblob>=0.17.1,<0.18.0
 
-# HTTP Client
-httpx>=0.26.0
+# HTTP Client (required for Gemini API)
+httpx>=0.26.0,<0.28.0
 
 # Task Scheduling
-apscheduler>=3.10.4
+apscheduler>=3.10.4,<3.11.0
+
+# Speech Recognition (Voice-to-Text)
+SpeechRecognition>=3.10.0,<3.11.0  # Audio to text conversion
+pydub>=0.25.1,<0.26.0  # Audio file manipulation
+google-cloud-speech>=2.21.0,<3.0.0  # Google Speech-to-Text API
+
+# AI Image Detection
+opencv-python>=4.8.0,<5.0.0  # Image processing
+numpy>=1.24.0,<2.0.0  # Array operations
+scikit-image>=0.22.0,<0.23.0  # Image analysis
+
+# Additional dependencies for production
+colorama>=0.4.6  # For colored console output
+python-dateutil>=2.8.2  # For date parsing

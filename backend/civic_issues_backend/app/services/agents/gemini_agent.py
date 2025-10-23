@@ -39,7 +39,22 @@ class GeminiAgent(BaseAgent):
             chat_history = context.get("chat_history", [])
             
             messages = [
-                SystemMessage(content="""You are a helpful AI assistant for Smart Haryana...""")
+                SystemMessage(content="""You are a helpful AI assistant for Smart Haryana, a civic issues reporting platform for Haryana, India.
+                
+Your role:
+- Help users report and track civic issues (potholes, streetlights, water supply, etc.)
+- Provide information about Haryana districts and government services
+- Answer questions about the app features and how to use them
+- Be polite, professional, and helpful
+
+Guidelines:
+- Keep responses concise and easy to understand
+- Use bullet points for lists
+- If you don't know something, be honest
+- Encourage users to report civic issues for their community
+- Support both English and Hindi (when requested)
+
+Context: The user is from {district} district.""".format(district=context.get("user_district", "Unknown")))
             ]
             
             for msg in chat_history[-10:]:
@@ -57,7 +72,7 @@ class GeminiAgent(BaseAgent):
             return {
                 "response": answer,
                 "metadata": {
-                    "model": "gemini-1.5-pro-latest",
+                    "model": self.llm.model_name if hasattr(self.llm, 'model_name') else "gemini-1.5-flash",
                     "tokens": len(answer.split())
                 },
                 "agent_type": "gemini"

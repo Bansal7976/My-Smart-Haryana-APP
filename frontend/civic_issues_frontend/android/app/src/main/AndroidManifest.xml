@@ -10,6 +10,9 @@
     <!-- Camera Permission (for taking photos) -->
     <uses-permission android:name="android.permission.CAMERA" />
     
+    <!-- Microphone Permission (for voice-to-text) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    
     <!-- Storage Permissions (for saving/reading images) -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />

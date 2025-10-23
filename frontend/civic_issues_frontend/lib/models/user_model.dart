@@ -27,8 +27,10 @@ class User {
       role: json['role'] ?? 'client',
       district: json['district'],
       pincode: json['pincode'],
-      isActive: json['is_active'] ?? true,
-      createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
+      isActive: json['is_active'] ?? json['isActive'] ?? true,
+      createdAt: json['created_at'] != null 
+          ? DateTime.parse(json['created_at']) 
+          : DateTime.now(),
     );
   }
 
@@ -49,18 +51,20 @@ class User {
   String get name => fullName;
 }
 
+// Note: Backend returns lowercase status values (pending, assigned, completed, verified)
+// These enums are kept for reference but we use lowercase strings in actual code
 enum ProblemStatus {
-  PENDING,
-  ASSIGNED,
-  COMPLETED,
-  VERIFIED,
+  pending,
+  assigned,
+  completed,
+  verified,
 }
 
 enum MediaType {
-  PHOTO_INITIAL,
-  PHOTO_PROOF,
-  AUDIO,
-  SIGNATURE,
+  photo_initial,
+  photo_proof,
+  audio,
+  signature,
 }
 
 class UserInProblemResponse {
@@ -249,7 +253,7 @@ class Issue {
       id: json['id'],
       title: json['title'],
       description: json['description'] ?? '',
-      status: json['status'] ?? 'PENDING',
+      status: (json['status'] ?? 'pending').toString().toLowerCase(), // Backend returns lowercase
       priority: (json['priority'] ?? 0.0).toDouble(),
       problemType: json['problem_type'] ?? '',
       district: json['district'] ?? '',
@@ -337,7 +341,7 @@ class Problem {
       district: json['district'],
       location: json['location'] ?? '',
       priority: (json['priority'] ?? 0.0).toDouble(),
-      status: json['status'] ?? 'PENDING',
+      status: (json['status'] ?? 'pending').toString().toLowerCase(), // Backend returns lowercase
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at'] ?? json['created_at']),
       userId: json['user_id'],
