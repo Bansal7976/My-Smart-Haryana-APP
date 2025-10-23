@@ -211,7 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         'Login as Citizen', 'नागरिक के रूप में लॉगिन')),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.clientColor,
-                      side: BorderSide(color: AppColors.clientColor),
+                      side: const BorderSide(color: AppColors.clientColor),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
@@ -229,7 +229,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         'Login as Worker', 'कार्यकर्ता के रूप में लॉगिन')),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.workerColor,
-                      side: BorderSide(color: AppColors.workerColor),
+                      side: const BorderSide(color: AppColors.workerColor),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
@@ -247,7 +247,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         'Login as Admin', 'एडमिन के रूप में लॉगिन')),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.adminColor,
-                      side: BorderSide(color: AppColors.adminColor),
+                      side: const BorderSide(color: AppColors.adminColor),
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),

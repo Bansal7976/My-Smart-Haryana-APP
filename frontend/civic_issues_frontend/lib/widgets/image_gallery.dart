@@ -111,7 +111,8 @@ class ImageGallery extends StatelessWidget {
           children: [
             Expanded(
               child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(8)),
                 child: _buildImageWidget(fileUrl),
               ),
             ),
@@ -136,9 +137,9 @@ class ImageGallery extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
-                  Text(
+                  const Text(
                     'Tap to view',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.primary,
                       fontSize: 10,
                     ),
@@ -206,4 +207,3 @@ class ImageGallery extends StatelessWidget {
     // TODO: Implement full-screen image viewer
   }
 }
-

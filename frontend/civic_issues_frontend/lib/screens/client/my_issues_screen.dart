@@ -24,7 +24,8 @@ class _MyIssuesScreenState extends State<MyIssuesScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.token != null) {
-        Provider.of<IssueProvider>(context, listen: false).loadUserIssues(authProvider.token!);
+        Provider.of<IssueProvider>(context, listen: false)
+            .loadUserIssues(authProvider.token!);
       }
     });
   }
@@ -34,7 +35,10 @@ class _MyIssuesScreenState extends State<MyIssuesScreen> {
 
     // Apply filter
     if (_selectedFilter != 'all') {
-      filtered = issues.where((issue) => issue.status.toUpperCase() == _selectedFilter.toUpperCase()).toList();
+      filtered = issues
+          .where((issue) =>
+              issue.status.toUpperCase() == _selectedFilter.toUpperCase())
+          .toList();
     }
 
     // Apply sort
@@ -110,7 +114,7 @@ class _MyIssuesScreenState extends State<MyIssuesScreen> {
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
-    
+
     if (difference.inDays > 0) {
       return '${difference.inDays} days ago';
     } else if (difference.inHours > 0) {
@@ -172,7 +176,7 @@ class _MyIssuesScreenState extends State<MyIssuesScreen> {
           // Filter and Sort Controls
           Container(
             padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.surface,
               border: Border(
                 bottom: BorderSide(color: AppColors.border),
@@ -195,16 +199,19 @@ class _MyIssuesScreenState extends State<MyIssuesScreen> {
                       ),
                       const SizedBox(height: 4),
                       DropdownButtonFormField<String>(
-                        value: _selectedFilter,
+                        initialValue: _selectedFilter,
                         decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: AppColors.border),
+                            borderSide:
+                                const BorderSide(color: AppColors.border),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: AppColors.border),
+                            borderSide:
+                                const BorderSide(color: AppColors.border),
                           ),
                         ),
                         items: [
@@ -214,19 +221,23 @@ class _MyIssuesScreenState extends State<MyIssuesScreen> {
                           ),
                           DropdownMenuItem(
                             value: 'pending',
-                            child: Text(languageProvider.getText('Pending', 'लंबित')),
+                            child: Text(
+                                languageProvider.getText('Pending', 'लंबित')),
                           ),
                           DropdownMenuItem(
                             value: 'assigned',
-                            child: Text(languageProvider.getText('Assigned', 'निर्दिष्ट')),
+                            child: Text(languageProvider.getText(
+                                'Assigned', 'निर्दिष्ट')),
                           ),
                           DropdownMenuItem(
                             value: 'completed',
-                            child: Text(languageProvider.getText('Completed', 'पूर्ण')),
+                            child: Text(
+                                languageProvider.getText('Completed', 'पूर्ण')),
                           ),
                           DropdownMenuItem(
                             value: 'verified',
-                            child: Text(languageProvider.getText('Verified', 'सत्यापित')),
+                            child: Text(languageProvider.getText(
+                                'Verified', 'सत्यापित')),
                           ),
                         ],
                         onChanged: (value) {
@@ -254,34 +265,41 @@ class _MyIssuesScreenState extends State<MyIssuesScreen> {
                       ),
                       const SizedBox(height: 4),
                       DropdownButtonFormField<String>(
-                        value: _selectedSort,
+                        initialValue: _selectedSort,
                         decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: AppColors.border),
+                            borderSide:
+                                const BorderSide(color: AppColors.border),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: AppColors.border),
+                            borderSide:
+                                const BorderSide(color: AppColors.border),
                           ),
                         ),
                         items: [
                           DropdownMenuItem(
                             value: 'newest',
-                            child: Text(languageProvider.getText('Newest', 'नवीनतम')),
+                            child: Text(
+                                languageProvider.getText('Newest', 'नवीनतम')),
                           ),
                           DropdownMenuItem(
                             value: 'oldest',
-                            child: Text(languageProvider.getText('Oldest', 'सबसे पुराना')),
+                            child: Text(languageProvider.getText(
+                                'Oldest', 'सबसे पुराना')),
                           ),
                           DropdownMenuItem(
                             value: 'priority',
-                            child: Text(languageProvider.getText('Priority', 'प्राथमिकता')),
+                            child: Text(languageProvider.getText(
+                                'Priority', 'प्राथमिकता')),
                           ),
                           DropdownMenuItem(
                             value: 'status',
-                            child: Text(languageProvider.getText('Status', 'स्थिति')),
+                            child: Text(
+                                languageProvider.getText('Status', 'स्थिति')),
                           ),
                         ],
                         onChanged: (value) {
@@ -312,17 +330,15 @@ class _MyIssuesScreenState extends State<MyIssuesScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.error_outline,
                           size: 64,
                           color: AppColors.error,
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          languageProvider.getText(
-                            'Failed to load issues',
-                            'समस्याएं लोड करने में असफल'
-                          ),
+                          languageProvider.getText('Failed to load issues',
+                              'समस्याएं लोड करने में असफल'),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
@@ -344,21 +360,23 @@ class _MyIssuesScreenState extends State<MyIssuesScreen> {
                               issueProvider.loadUserIssues(authProvider.token!);
                             }
                           },
-                          child: Text(languageProvider.getText('Retry', 'पुनः प्रयास')),
+                          child: Text(
+                              languageProvider.getText('Retry', 'पुनः प्रयास')),
                         ),
                       ],
                     ),
                   );
                 }
 
-                final filteredIssues = _getFilteredAndSortedIssues(issueProvider.userIssues);
+                final filteredIssues =
+                    _getFilteredAndSortedIssues(issueProvider.userIssues);
 
                 if (filteredIssues.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.assignment_outlined,
                           size: 64,
                           color: AppColors.textSecondary,
@@ -366,9 +384,7 @@ class _MyIssuesScreenState extends State<MyIssuesScreen> {
                         const SizedBox(height: 16),
                         Text(
                           languageProvider.getText(
-                            'No issues found',
-                            'कोई समस्या नहीं मिली'
-                          ),
+                              'No issues found', 'कोई समस्या नहीं मिली'),
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
@@ -378,9 +394,8 @@ class _MyIssuesScreenState extends State<MyIssuesScreen> {
                         const SizedBox(height: 8),
                         Text(
                           languageProvider.getText(
-                            'Try adjusting your filters or report a new issue',
-                            'अपने फिल्टर को समायोजित करने का प्रयास करें या नई समस्या रिपोर्ट करें'
-                          ),
+                              'Try adjusting your filters or report a new issue',
+                              'अपने फिल्टर को समायोजित करने का प्रयास करें या नई समस्या रिपोर्ट करें'),
                           style: const TextStyle(
                             color: AppColors.textSecondary,
                           ),
@@ -393,7 +408,8 @@ class _MyIssuesScreenState extends State<MyIssuesScreen> {
 
                 return RefreshIndicator(
                   onRefresh: () async {
-                    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                    final authProvider =
+                        Provider.of<AuthProvider>(context, listen: false);
                     if (authProvider.token != null) {
                       await issueProvider.loadUserIssues(authProvider.token!);
                     }
@@ -413,7 +429,8 @@ class _MyIssuesScreenState extends State<MyIssuesScreen> {
                           onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (context) => IssueDetailScreen(issue: issue),
+                                builder: (context) =>
+                                    IssueDetailScreen(issue: issue),
                               ),
                             );
                           },
@@ -440,9 +457,11 @@ class _MyIssuesScreenState extends State<MyIssuesScreen> {
                                     ),
                                     const SizedBox(width: 8),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: _getStatusColor(issue.status).withValues(alpha: 0.1),
+                                        color: _getStatusColor(issue.status)
+                                            .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Row(
@@ -451,13 +470,16 @@ class _MyIssuesScreenState extends State<MyIssuesScreen> {
                                           Icon(
                                             _getStatusIcon(issue.status),
                                             size: 14,
-                                            color: _getStatusColor(issue.status),
+                                            color:
+                                                _getStatusColor(issue.status),
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
-                                            _getStatusText(issue.status, languageProvider),
+                                            _getStatusText(
+                                                issue.status, languageProvider),
                                             style: TextStyle(
-                                              color: _getStatusColor(issue.status),
+                                              color:
+                                                  _getStatusColor(issue.status),
                                               fontSize: 12,
                                               fontWeight: FontWeight.w600,
                                             ),
@@ -488,9 +510,11 @@ class _MyIssuesScreenState extends State<MyIssuesScreen> {
                                   children: [
                                     // Category
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: AppColors.primary.withValues(alpha: 0.1),
+                                        color: AppColors.primary
+                                            .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
@@ -507,15 +531,18 @@ class _MyIssuesScreenState extends State<MyIssuesScreen> {
 
                                     // Priority
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: _getPriorityColor(issue.priority).withValues(alpha: 0.1),
+                                        color: _getPriorityColor(issue.priority)
+                                            .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
                                         _formatPriority(issue.priority),
                                         style: TextStyle(
-                                          color: _getPriorityColor(issue.priority),
+                                          color:
+                                              _getPriorityColor(issue.priority),
                                           fontSize: 12,
                                           fontWeight: FontWeight.w500,
                                         ),

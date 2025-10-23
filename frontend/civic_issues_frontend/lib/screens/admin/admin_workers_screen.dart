@@ -9,7 +9,7 @@ class AdminWorkersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
-    
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -31,7 +31,7 @@ class AdminWorkersScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.work,
               size: 64,
               color: AppColors.textSecondary,
@@ -39,9 +39,7 @@ class AdminWorkersScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               languageProvider.getText(
-                'Workers Management',
-                'कार्यकर्ता प्रबंधन'
-              ),
+                  'Workers Management', 'कार्यकर्ता प्रबंधन'),
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -50,10 +48,8 @@ class AdminWorkersScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              languageProvider.getText(
-                'This feature will be available soon',
-                'यह सुविधा जल्द ही उपलब्ध होगी'
-              ),
+              languageProvider.getText('This feature will be available soon',
+                  'यह सुविधा जल्द ही उपलब्ध होगी'),
               style: const TextStyle(
                 color: AppColors.textSecondary,
               ),

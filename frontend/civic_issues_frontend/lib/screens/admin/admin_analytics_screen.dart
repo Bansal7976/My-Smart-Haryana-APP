@@ -9,7 +9,7 @@ class AdminAnalyticsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
-    
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -31,7 +31,7 @@ class AdminAnalyticsScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.analytics,
               size: 64,
               color: AppColors.textSecondary,
@@ -39,9 +39,7 @@ class AdminAnalyticsScreen extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               languageProvider.getText(
-                'Analytics Dashboard',
-                'विश्लेषण डैशबोर्ड'
-              ),
+                  'Analytics Dashboard', 'विश्लेषण डैशबोर्ड'),
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -50,10 +48,8 @@ class AdminAnalyticsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              languageProvider.getText(
-                'This feature will be available soon',
-                'यह सुविधा जल्द ही उपलब्ध होगी'
-              ),
+              languageProvider.getText('This feature will be available soon',
+                  'यह सुविधा जल्द ही उपलब्ध होगी'),
               style: const TextStyle(
                 color: AppColors.textSecondary,
               ),

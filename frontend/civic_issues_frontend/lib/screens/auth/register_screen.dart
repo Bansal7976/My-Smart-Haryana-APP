@@ -22,7 +22,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   final _districtController = TextEditingController();
   final _pincodeController = TextEditingController();
-  
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
@@ -91,8 +91,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${Provider.of<LanguageProvider>(context, listen: false)
-                .getText('Registration failed', 'पंजीकरण असफल')}: ${authProvider.error ?? 'Unknown error'}'),
+            content: Text(
+                '${Provider.of<LanguageProvider>(context, listen: false).getText('Registration failed', 'पंजीकरण असफल')}: ${authProvider.error ?? 'Unknown error'}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -107,7 +107,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
-    
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -134,89 +134,84 @@ class _RegisterScreenState extends State<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 20),
-                
+
                 // Smart Haryana Logo
                 const HaryanaLogo(
                   size: 80,
                   showText: true,
                   text: 'Smart Haryana',
                 ),
-                
+
                 const SizedBox(height: 20),
-                
+
                 // Title
                 Text(
                   languageProvider.getText(
-                    'Join Smart Haryana',
-                    'स्मार्ट हरियाणा में शामिल हों'
-                  ),
+                      'Join Smart Haryana', 'स्मार्ट हरियाणा में शामिल हों'),
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: 8),
-                
+
                 Text(
-                  languageProvider.getText(
-                    'Help us make Haryana better',
-                    'हरियाणा को बेहतर बनाने में हमारी मदद करें'
-                  ),
+                  languageProvider.getText('Help us make Haryana better',
+                      'हरियाणा को बेहतर बनाने में हमारी मदद करें'),
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+                        color: AppColors.textSecondary,
+                      ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Full Name Field
                 CustomTextField(
                   controller: _fullNameController,
                   label: languageProvider.getText('Full Name', 'पूरा नाम'),
-                  hint: languageProvider.getText('Enter your full name', 'अपना पूरा नाम दर्ज करें'),
+                  hint: languageProvider.getText(
+                      'Enter your full name', 'अपना पूरा नाम दर्ज करें'),
                   prefixIcon: Icons.person_outlined,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return languageProvider.getText(
-                        'Please enter your full name',
-                        'कृपया अपना पूरा नाम दर्ज करें'
-                      );
+                          'Please enter your full name',
+                          'कृपया अपना पूरा नाम दर्ज करें');
                     }
                     return null;
                   },
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Email Field
                 CustomTextField(
                   controller: _emailController,
                   label: languageProvider.getText('Email', 'ईमेल'),
-                  hint: languageProvider.getText('Enter your email', 'अपना ईमेल दर्ज करें'),
+                  hint: languageProvider.getText(
+                      'Enter your email', 'अपना ईमेल दर्ज करें'),
                   keyboardType: TextInputType.emailAddress,
                   prefixIcon: Icons.email_outlined,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return languageProvider.getText(
-                        'Please enter your email',
-                        'कृपया अपना ईमेल दर्ज करें'
-                      );
+                      return languageProvider.getText('Please enter your email',
+                          'कृपया अपना ईमेल दर्ज करें');
                     }
-                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                        .hasMatch(value)) {
                       return languageProvider.getText(
-                        'Please enter a valid email',
-                        'कृपया एक वैध ईमेल दर्ज करें'
-                      );
+                          'Please enter a valid email',
+                          'कृपया एक वैध ईमेल दर्ज करें');
                     }
                     return null;
                   },
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // District Dropdown
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,13 +232,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         border: Border.all(color: AppColors.border),
                       ),
                       child: DropdownButtonFormField<String>(
-                        value: _selectedDistrict,
+                        initialValue: _selectedDistrict,
                         decoration: InputDecoration(
-                          hintText: languageProvider.getText('Select your district', 'अपना जिला चुनें'),
-                          hintStyle: const TextStyle(color: AppColors.textSecondary),
-                          prefixIcon: const Icon(Icons.location_city_outlined, color: AppColors.textSecondary),
+                          hintText: languageProvider.getText(
+                              'Select your district', 'अपना जिला चुनें'),
+                          hintStyle:
+                              const TextStyle(color: AppColors.textSecondary),
+                          prefixIcon: const Icon(Icons.location_city_outlined,
+                              color: AppColors.textSecondary),
                           border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 16),
                         ),
                         items: _haryanaDistricts.map((district) {
                           return DropdownMenuItem<String>(
@@ -259,9 +258,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return languageProvider.getText(
-                              'Please select your district',
-                              'कृपया अपना जिला चुनें'
-                            );
+                                'Please select your district',
+                                'कृपया अपना जिला चुनें');
                           }
                           return null;
                         },
@@ -269,43 +267,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Pincode Field
                 CustomTextField(
                   controller: _pincodeController,
                   label: languageProvider.getText('Pincode', 'पिनकोड'),
-                  hint: languageProvider.getText('Enter your pincode', 'अपना पिनकोड दर्ज करें'),
+                  hint: languageProvider.getText(
+                      'Enter your pincode', 'अपना पिनकोड दर्ज करें'),
                   keyboardType: TextInputType.number,
                   prefixIcon: Icons.location_on_outlined,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return languageProvider.getText(
-                        'Please enter your pincode',
-                        'कृपया अपना पिनकोड दर्ज करें'
-                      );
+                          'Please enter your pincode',
+                          'कृपया अपना पिनकोड दर्ज करें');
                     }
                     if (value.length != 6) {
                       return languageProvider.getText(
-                        'Pincode must be 6 digits',
-                        'पिनकोड 6 अंकों का होना चाहिए'
-                      );
+                          'Pincode must be 6 digits',
+                          'पिनकोड 6 अंकों का होना चाहिए');
                     }
                     return null;
                   },
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Password Field
                 CustomTextField(
                   controller: _passwordController,
                   label: languageProvider.getText('Password', 'पासवर्ड'),
-                  hint: languageProvider.getText('Enter your password', 'अपना पासवर्ड दर्ज करें'),
+                  hint: languageProvider.getText(
+                      'Enter your password', 'अपना पासवर्ड दर्ज करें'),
                   obscureText: _obscurePassword,
                   prefixIcon: Icons.lock_outlined,
-                  suffixIcon: _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                  suffixIcon: _obscurePassword
+                      ? Icons.visibility
+                      : Icons.visibility_off,
                   onSuffixTap: () {
                     setState(() {
                       _obscurePassword = !_obscurePassword;
@@ -314,58 +314,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return languageProvider.getText(
-                        'Please enter your password',
-                        'कृपया अपना पासवर्ड दर्ज करें'
-                      );
+                          'Please enter your password',
+                          'कृपया अपना पासवर्ड दर्ज करें');
                     }
                     if (value.length < 8) {
                       return languageProvider.getText(
-                        'Password must be at least 8 characters',
-                        'पासवर्ड कम से कम 8 अक्षर का होना चाहिए'
-                      );
+                          'Password must be at least 8 characters',
+                          'पासवर्ड कम से कम 8 अक्षर का होना चाहिए');
                     }
                     // Check for uppercase letter
                     if (!value.contains(RegExp(r'[A-Z]'))) {
                       return languageProvider.getText(
-                        'Password must contain at least one uppercase letter',
-                        'पासवर्ड में कम से कम एक बड़ा अक्षर होना चाहिए'
-                      );
+                          'Password must contain at least one uppercase letter',
+                          'पासवर्ड में कम से कम एक बड़ा अक्षर होना चाहिए');
                     }
                     // Check for lowercase letter
                     if (!value.contains(RegExp(r'[a-z]'))) {
                       return languageProvider.getText(
-                        'Password must contain at least one lowercase letter',
-                        'पासवर्ड में कम से कम एक छोटा अक्षर होना चाहिए'
-                      );
+                          'Password must contain at least one lowercase letter',
+                          'पासवर्ड में कम से कम एक छोटा अक्षर होना चाहिए');
                     }
                     // Check for digit
                     if (!value.contains(RegExp(r'[0-9]'))) {
                       return languageProvider.getText(
-                        'Password must contain at least one digit',
-                        'पासवर्ड में कम से कम एक अंक होना चाहिए'
-                      );
+                          'Password must contain at least one digit',
+                          'पासवर्ड में कम से कम एक अंक होना चाहिए');
                     }
                     // Check for special character
                     if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
                       return languageProvider.getText(
-                        'Password must contain at least one special character',
-                        'पासवर्ड में कम से कम एक विशेष वर्ण होना चाहिए'
-                      );
+                          'Password must contain at least one special character',
+                          'पासवर्ड में कम से कम एक विशेष वर्ण होना चाहिए');
                     }
                     return null;
                   },
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Confirm Password Field
                 CustomTextField(
                   controller: _confirmPasswordController,
-                  label: languageProvider.getText('Confirm Password', 'पासवर्ड की पुष्टि करें'),
-                  hint: languageProvider.getText('Confirm your password', 'अपने पासवर्ड की पुष्टि करें'),
+                  label: languageProvider.getText(
+                      'Confirm Password', 'पासवर्ड की पुष्टि करें'),
+                  hint: languageProvider.getText(
+                      'Confirm your password', 'अपने पासवर्ड की पुष्टि करें'),
                   obscureText: _obscureConfirmPassword,
                   prefixIcon: Icons.lock_outlined,
-                  suffixIcon: _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                  suffixIcon: _obscureConfirmPassword
+                      ? Icons.visibility
+                      : Icons.visibility_off,
                   onSuffixTap: () {
                     setState(() {
                       _obscureConfirmPassword = !_obscureConfirmPassword;
@@ -374,40 +372,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return languageProvider.getText(
-                        'Please confirm your password',
-                        'कृपया अपने पासवर्ड की पुष्टि करें'
-                      );
+                          'Please confirm your password',
+                          'कृपया अपने पासवर्ड की पुष्टि करें');
                     }
                     if (value != _passwordController.text) {
                       return languageProvider.getText(
-                        'Passwords do not match',
-                        'पासवर्ड मेल नहीं खाते'
-                      );
+                          'Passwords do not match', 'पासवर्ड मेल नहीं खाते');
                     }
                     return null;
                   },
                 ),
-                
+
                 const SizedBox(height: 32),
-                
+
                 // Register Button
                 CustomButton(
-                  text: languageProvider.getText('Create Account', 'खाता बनाएं'),
+                  text:
+                      languageProvider.getText('Create Account', 'खाता बनाएं'),
                   onPressed: _isLoading ? null : _handleRegister,
                   isLoading: _isLoading,
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Login Link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
                       languageProvider.getText(
-                        "Already have an account? ",
-                        'पहले से खाता है? '
-                      ),
+                          "Already have an account? ", 'पहले से खाता है? '),
                       style: const TextStyle(color: AppColors.textSecondary),
                     ),
                     TextButton(

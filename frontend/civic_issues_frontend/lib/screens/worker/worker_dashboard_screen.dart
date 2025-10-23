@@ -21,7 +21,8 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.token != null) {
-        Provider.of<IssueProvider>(context, listen: false).loadAssignedTasks(authProvider.token!);
+        Provider.of<IssueProvider>(context, listen: false)
+            .loadAssignedTasks(authProvider.token!);
       }
     });
   }
@@ -80,7 +81,7 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
-    
+
     if (difference.inDays > 0) {
       return '${difference.inDays} days ago';
     } else if (difference.inHours > 0) {
@@ -109,7 +110,7 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
     final languageProvider = Provider.of<LanguageProvider>(context);
     final issueProvider = Provider.of<IssueProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
-    
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: RefreshIndicator(
@@ -166,10 +167,8 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                languageProvider.getText(
-                                  'Welcome, Worker!',
-                                  'स्वागत है, कार्यकर्ता!'
-                                ),
+                                languageProvider.getText('Welcome, Worker!',
+                                    'स्वागत है, कार्यकर्ता!'),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 20,
@@ -179,9 +178,8 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                               const SizedBox(height: 4),
                               Text(
                                 languageProvider.getText(
-                                  'Complete your assigned tasks efficiently',
-                                  'अपने निर्दिष्ट कार्यों को कुशलतापूर्वक पूरा करें'
-                                ),
+                                    'Complete your assigned tasks efficiently',
+                                    'अपने निर्दिष्ट कार्यों को कुशलतापूर्वक पूरा करें'),
                                 style: const TextStyle(
                                   color: Colors.white70,
                                   fontSize: 14,
@@ -195,9 +193,9 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Quick Stats
               Row(
                 children: [
@@ -214,7 +212,8 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                     child: _buildStatCard(
                       languageProvider.getText('Completed', 'पूर्ण'),
                       issueProvider.assignedTasks
-                          .where((task) => task.status.toLowerCase() == 'completed')
+                          .where((task) =>
+                              task.status.toLowerCase() == 'completed')
                           .length
                           .toString(),
                       Icons.check_circle,
@@ -223,19 +222,20 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Assigned Tasks Section
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    languageProvider.getText('Assigned Tasks', 'निर्दिष्ट कार्य'),
+                    languageProvider.getText(
+                        'Assigned Tasks', 'निर्दिष्ट कार्य'),
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
                   ),
                   TextButton(
                     onPressed: () {
@@ -253,9 +253,9 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Tasks List
               Consumer<IssueProvider>(
                 builder: (context, issueProvider, child) {
@@ -264,7 +264,7 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                       child: CircularProgressIndicator(),
                     );
                   }
-                  
+
                   if (issueProvider.error != null) {
                     return Container(
                       width: double.infinity,
@@ -276,17 +276,15 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                       ),
                       child: Column(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.error_outline,
                             size: 64,
                             color: AppColors.error,
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            languageProvider.getText(
-                              'Failed to load tasks',
-                              'कार्य लोड करने में असफल'
-                            ),
+                            languageProvider.getText('Failed to load tasks',
+                                'कार्य लोड करने में असफल'),
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
@@ -303,10 +301,12 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                           ),
                           const SizedBox(height: 16),
                           CustomButton(
-                            text: languageProvider.getText('Retry', 'पुनः प्रयास'),
+                            text: languageProvider.getText(
+                                'Retry', 'पुनः प्रयास'),
                             onPressed: () {
                               if (authProvider.token != null) {
-                                issueProvider.loadAssignedTasks(authProvider.token!);
+                                issueProvider
+                                    .loadAssignedTasks(authProvider.token!);
                               }
                             },
                           ),
@@ -314,7 +314,7 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                       ),
                     );
                   }
-                  
+
                   if (issueProvider.assignedTasks.isEmpty) {
                     return Container(
                       width: double.infinity,
@@ -326,17 +326,15 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                       ),
                       child: Column(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.assignment_outlined,
                             size: 64,
                             color: AppColors.textSecondary,
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            languageProvider.getText(
-                              'No tasks assigned yet',
-                              'अभी तक कोई कार्य निर्दिष्ट नहीं किया गया'
-                            ),
+                            languageProvider.getText('No tasks assigned yet',
+                                'अभी तक कोई कार्य निर्दिष्ट नहीं किया गया'),
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
@@ -346,9 +344,8 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                           const SizedBox(height: 8),
                           Text(
                             languageProvider.getText(
-                              'Check back later for new assignments',
-                              'नए निर्देशों के लिए बाद में जांचें'
-                            ),
+                                'Check back later for new assignments',
+                                'नए निर्देशों के लिए बाद में जांचें'),
                             style: const TextStyle(
                               color: AppColors.textSecondary,
                             ),
@@ -358,7 +355,7 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                       ),
                     );
                   }
-                  
+
                   return ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -375,7 +372,8 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                           onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (context) => TaskDetailScreen(task: task),
+                                builder: (context) =>
+                                    TaskDetailScreen(task: task),
                               ),
                             );
                           },
@@ -402,9 +400,11 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                                     ),
                                     const SizedBox(width: 8),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: _getStatusColor(task.status).withValues(alpha: 0.1),
+                                        color: _getStatusColor(task.status)
+                                            .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Row(
@@ -417,9 +417,11 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
-                                            _getStatusText(task.status, languageProvider),
+                                            _getStatusText(
+                                                task.status, languageProvider),
                                             style: TextStyle(
-                                              color: _getStatusColor(task.status),
+                                              color:
+                                                  _getStatusColor(task.status),
                                               fontSize: 12,
                                               fontWeight: FontWeight.w600,
                                             ),
@@ -450,9 +452,11 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                                   children: [
                                     // Category
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: AppColors.primary.withValues(alpha: 0.1),
+                                        color: AppColors.primary
+                                            .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
@@ -469,15 +473,18 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
 
                                     // Priority
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: _getPriorityColor(task.priority).withValues(alpha: 0.1),
+                                        color: _getPriorityColor(task.priority)
+                                            .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
                                         _formatPriority(task.priority),
                                         style: TextStyle(
-                                          color: _getPriorityColor(task.priority),
+                                          color:
+                                              _getPriorityColor(task.priority),
                                           fontSize: 12,
                                           fontWeight: FontWeight.w500,
                                         ),
@@ -498,19 +505,19 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                                 ),
 
                                 // Action Button
-                                if (task.status.toLowerCase() == 'assigned') ...[
+                                if (task.status.toLowerCase() ==
+                                    'assigned') ...[
                                   const SizedBox(height: 12),
                                   SizedBox(
                                     width: double.infinity,
                                     child: CustomButton(
                                       text: languageProvider.getText(
-                                        'Start Task',
-                                        'कार्य शुरू करें'
-                                      ),
+                                          'Start Task', 'कार्य शुरू करें'),
                                       onPressed: () {
                                         Navigator.of(context).push(
                                           MaterialPageRoute(
-                                            builder: (context) => TaskDetailScreen(task: task),
+                                            builder: (context) =>
+                                                TaskDetailScreen(task: task),
                                           ),
                                         );
                                       },
@@ -534,7 +541,8 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(

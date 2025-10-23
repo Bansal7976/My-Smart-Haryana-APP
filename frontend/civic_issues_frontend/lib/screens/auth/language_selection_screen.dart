@@ -9,7 +9,8 @@ class LanguageSelectionScreen extends StatefulWidget {
   const LanguageSelectionScreen({super.key});
 
   @override
-  State<LanguageSelectionScreen> createState() => _LanguageSelectionScreenState();
+  State<LanguageSelectionScreen> createState() =>
+      _LanguageSelectionScreenState();
 }
 
 class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
@@ -18,7 +19,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
-    
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -33,32 +34,32 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                 showText: true,
                 text: 'Smart Haryana',
               ),
-              
+
               const SizedBox(height: 40),
-              
+
               // Title
               Text(
                 'Select Your Language',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: 8),
-              
+
               Text(
                 'अपनी भाषा चुनें',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.textSecondary,
-                ),
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textSecondary,
+                    ),
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: 40),
-              
+
               // Language Options
               Container(
                 decoration: BoxDecoration(
@@ -70,11 +71,11 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                   children: [
                     // English Option
                     RadioListTile<String>(
-                      title: Row(
+                      title: const Row(
                         children: [
-                          const Icon(Icons.language, color: AppColors.primary),
-                          const SizedBox(width: 12),
-                          const Text(
+                          Icon(Icons.language, color: AppColors.primary),
+                          SizedBox(width: 12),
+                          Text(
                             'English',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
@@ -96,16 +97,16 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                       },
                       activeColor: AppColors.primary,
                     ),
-                    
+
                     const Divider(height: 1),
-                    
+
                     // Hindi Option
                     RadioListTile<String>(
-                      title: Row(
+                      title: const Row(
                         children: [
-                          const Icon(Icons.language, color: AppColors.primary),
-                          const SizedBox(width: 12),
-                          const Text(
+                          Icon(Icons.language, color: AppColors.primary),
+                          SizedBox(width: 12),
+                          Text(
                             'हिंदी',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
@@ -130,21 +131,23 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 40),
-              
+
               // Continue Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _selectedLanguage != null ? () {
-                    languageProvider.setLanguage(_selectedLanguage!);
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (context) => const RegisterScreen(),
-                      ),
-                    );
-                  } : null,
+                  onPressed: _selectedLanguage != null
+                      ? () {
+                          languageProvider.setLanguage(_selectedLanguage!);
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (context) => const RegisterScreen(),
+                            ),
+                          );
+                        }
+                      : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -162,9 +165,9 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Back Button
               TextButton(
                 onPressed: () {

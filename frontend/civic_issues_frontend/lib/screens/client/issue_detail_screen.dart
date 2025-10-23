@@ -32,13 +32,14 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     try {
       final issueProvider = Provider.of<IssueProvider>(context, listen: false);
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      
+
       if (authProvider.token == null) {
         throw Exception('No authentication token available');
       }
-      
-      final detailedIssue = await issueProvider.getIssueDetails(widget.issue.id.toString(), authProvider.token!);
-      
+
+      final detailedIssue = await issueProvider.getIssueDetails(
+          widget.issue.id.toString(), authProvider.token!);
+
       setState(() {
         _detailedIssue = detailedIssue ?? widget.issue;
         _isLoading = false;
@@ -161,17 +162,15 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.error_outline,
                         size: 64,
                         color: AppColors.error,
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        languageProvider.getText(
-                          'Failed to load issue details',
-                          'समस्या विवरण लोड करने में असफल'
-                        ),
+                        languageProvider.getText('Failed to load issue details',
+                            'समस्या विवरण लोड करने में असफल'),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
@@ -225,7 +224,8 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: _getStatusColor(issue.status).withValues(alpha: 0.1),
+                                      color: _getStatusColor(issue.status)
+                                          .withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Icon(
@@ -237,22 +237,24 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                                   const SizedBox(width: 16),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          _getStatusText(issue.status, languageProvider),
+                                          _getStatusText(
+                                              issue.status, languageProvider),
                                           style: TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
-                                            color: _getStatusColor(issue.status),
+                                            color:
+                                                _getStatusColor(issue.status),
                                           ),
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
                                           languageProvider.getText(
-                                            'Current Status',
-                                            'वर्तमान स्थिति'
-                                          ),
+                                              'Current Status',
+                                              'वर्तमान स्थिति'),
                                           style: const TextStyle(
                                             color: AppColors.textSecondary,
                                             fontSize: 14,
@@ -268,14 +270,16 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                                 children: [
                                   Expanded(
                                     child: _buildInfoItem(
-                                      languageProvider.getText('Priority', 'प्राथमिकता'),
+                                      languageProvider.getText(
+                                          'Priority', 'प्राथमिकता'),
                                       _formatPriority(issue.priority),
                                       _getPriorityColor(issue.priority),
                                     ),
                                   ),
                                   Expanded(
                                     child: _buildInfoItem(
-                                      languageProvider.getText('Category', 'श्रेणी'),
+                                      languageProvider.getText(
+                                          'Category', 'श्रेणी'),
                                       issue.problemType,
                                       AppColors.textPrimary,
                                     ),
@@ -290,7 +294,8 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
 
                         // Issue Information
                         _buildSection(
-                          languageProvider.getText('Issue Information', 'समस्या की जानकारी'),
+                          languageProvider.getText(
+                              'Issue Information', 'समस्या की जानकारी'),
                           [
                             _buildInfoRow(
                               languageProvider.getText('Title', 'शीर्षक'),
@@ -304,9 +309,11 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                               languageProvider.getText('Location', 'स्थान'),
                               issue.location ?? 'Location not available',
                             ),
-                            if (issue.latitude != null && issue.longitude != null)
+                            if (issue.latitude != null &&
+                                issue.longitude != null)
                               _buildInfoRow(
-                                languageProvider.getText('Coordinates', 'निर्देशांक'),
+                                languageProvider.getText(
+                                    'Coordinates', 'निर्देशांक'),
                                 '${issue.latitude!.toStringAsFixed(6)}, ${issue.longitude!.toStringAsFixed(6)}',
                               ),
                             _buildInfoRow(
@@ -315,7 +322,8 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                             ),
                             if (issue.updatedAt != null)
                               _buildInfoRow(
-                                languageProvider.getText('Last Updated', 'अंतिम अपडेट'),
+                                languageProvider.getText(
+                                    'Last Updated', 'अंतिम अपडेट'),
                                 _formatDate(issue.updatedAt!),
                               ),
                           ],
@@ -326,10 +334,12 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                         // Assignment Information
                         if (issue.assignedTo != null)
                           _buildSection(
-                            languageProvider.getText('Assignment Information', 'निर्देशन जानकारी'),
+                            languageProvider.getText(
+                                'Assignment Information', 'निर्देशन जानकारी'),
                             [
                               _buildInfoRow(
-                                languageProvider.getText('Assigned To', 'निर्दिष्ट किया गया'),
+                                languageProvider.getText(
+                                    'Assigned To', 'निर्दिष्ट किया गया'),
                                 '${issue.assignedTo!.user.fullName} (${issue.assignedTo!.department.name})',
                               ),
                             ],
@@ -340,11 +350,14 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                         // Media Files
                         if (issue.mediaFiles.isNotEmpty)
                           ImageGallery(
-                            mediaFiles: issue.mediaFiles.map((media) => {
-                              'file_url': media.fileUrl,
-                              'media_type': media.mediaType,
-                            }).toList(),
-                            title: languageProvider.getText('Attachments', 'संलग्नक'),
+                            mediaFiles: issue.mediaFiles
+                                .map((media) => {
+                                      'file_url': media.fileUrl,
+                                      'media_type': media.mediaType,
+                                    })
+                                .toList(),
+                            title: languageProvider.getText(
+                                'Attachments', 'संलग्नक'),
                           ),
 
                         const SizedBox(height: 20),
@@ -482,9 +495,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
           const SizedBox(height: 16),
           CustomButton(
             text: languageProvider.getText(
-              'Verify Completion',
-              'पूर्णता सत्यापित करें'
-            ),
+                'Verify Completion', 'पूर्णता सत्यापित करें'),
             onPressed: () {
               _showVerificationDialog(languageProvider, issue);
             },
@@ -500,13 +511,10 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(languageProvider.getText(
-          'Verify Completion',
-          'पूर्णता सत्यापित करें'
-        )),
+            'Verify Completion', 'पूर्णता सत्यापित करें')),
         content: Text(languageProvider.getText(
-          'Are you satisfied with the work done? This will mark the issue as verified.',
-          'क्या आप किए गए काम से संतुष्ट हैं? यह समस्या को सत्यापित के रूप में चिह्नित करेगा।'
-        )),
+            'Are you satisfied with the work done? This will mark the issue as verified.',
+            'क्या आप किए गए काम से संतुष्ट हैं? यह समस्या को सत्यापित के रूप में चिह्नित करेगा।')),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -532,7 +540,8 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(Provider.of<LanguageProvider>(context, listen: false)
-                .getText('Issue verified successfully!', 'समस्या सफलतापूर्वक सत्यापित!')),
+                .getText('Issue verified successfully!',
+                    'समस्या सफलतापूर्वक सत्यापित!')),
             backgroundColor: AppColors.success,
           ),
         );
@@ -542,8 +551,8 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${Provider.of<LanguageProvider>(context, listen: false)
-                .getText('Failed to verify issue', 'समस्या सत्यापित करने में असफल')}: $e'),
+            content: Text(
+                '${Provider.of<LanguageProvider>(context, listen: false).getText('Failed to verify issue', 'समस्या सत्यापित करने में असफल')}: $e'),
             backgroundColor: AppColors.error,
           ),
         );

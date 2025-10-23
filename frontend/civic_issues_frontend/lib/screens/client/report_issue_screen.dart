@@ -25,7 +25,7 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _locationController = TextEditingController();
-  
+
   File? _selectedImage;
   String? _selectedProblemType;
   double? _latitude;
@@ -62,7 +62,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
       // Check if location services are enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        _showErrorDialog('Location services are disabled. Please enable location services.');
+        _showErrorDialog(
+            'Location services are disabled. Please enable location services.');
         return;
       }
 
@@ -71,13 +72,15 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          _showErrorDialog('Location permissions are denied. Please allow location access.');
+          _showErrorDialog(
+              'Location permissions are denied. Please allow location access.');
           return;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        _showErrorDialog('Location permissions are permanently denied. Please enable in settings.');
+        _showErrorDialog(
+            'Location permissions are permanently denied. Please enable in settings.');
         return;
       }
 
@@ -95,10 +98,12 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
       try {
         // You can use geocoding package here to get address
         // For now, we'll just show coordinates
-        _currentAddress = '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
+        _currentAddress =
+            '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
         _locationController.text = _currentAddress!;
       } catch (e) {
-        _currentAddress = '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
+        _currentAddress =
+            '${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}';
         _locationController.text = _currentAddress!;
       }
 
@@ -149,7 +154,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(Provider.of<LanguageProvider>(context, listen: false)
-              .getText('Please select a problem type', 'कृपया समस्या का प्रकार चुनें')),
+              .getText('Please select a problem type',
+                  'कृपया समस्या का प्रकार चुनें')),
           backgroundColor: Colors.red,
         ),
       );
@@ -172,15 +178,15 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
     try {
       final issueProvider = Provider.of<IssueProvider>(context, listen: false);
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      
+
       if (authProvider.token == null) {
         throw Exception('No authentication token available');
       }
-      
+
       if (authProvider.user?.district == null) {
         throw Exception('User district not available');
       }
-      
+
       final success = await issueProvider.addIssue(
         _titleController.text.trim(),
         _descriptionController.text.trim(),
@@ -196,8 +202,10 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(Provider.of<LanguageProvider>(context, listen: false)
-                  .getText('Issue reported successfully!', 'समस्या सफलतापूर्वक रिपोर्ट की गई!')),
+              content: Text(
+                  Provider.of<LanguageProvider>(context, listen: false).getText(
+                      'Issue reported successfully!',
+                      'समस्या सफलतापूर्वक रिपोर्ट की गई!')),
               backgroundColor: Colors.green,
             ),
           );
@@ -205,8 +213,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${Provider.of<LanguageProvider>(context, listen: false)
-                  .getText('Failed to submit issue', 'समस्या सबमिट करने में असफल')}: ${issueProvider.error ?? 'Unknown error'}'),
+              content: Text(
+                  '${Provider.of<LanguageProvider>(context, listen: false).getText('Failed to submit issue', 'समस्या सबमिट करने में असफल')}: ${issueProvider.error ?? 'Unknown error'}'),
               backgroundColor: Colors.red,
             ),
           );
@@ -242,7 +250,7 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
-    
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -270,48 +278,49 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
               // Title Field
               CustomTextField(
                 controller: _titleController,
-                label: languageProvider.getText('Issue Title', 'समस्या का शीर्षक'),
-                hint: languageProvider.getText('Enter a brief title', 'एक संक्षिप्त शीर्षक दर्ज करें'),
+                label:
+                    languageProvider.getText('Issue Title', 'समस्या का शीर्षक'),
+                hint: languageProvider.getText(
+                    'Enter a brief title', 'एक संक्षिप्त शीर्षक दर्ज करें'),
                 prefixIcon: Icons.title,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return languageProvider.getText(
-                      'Please enter a title',
-                      'कृपया एक शीर्षक दर्ज करें'
-                    );
+                        'Please enter a title', 'कृपया एक शीर्षक दर्ज करें');
                   }
                   return null;
                 },
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Description Field
               CustomTextField(
                 controller: _descriptionController,
                 label: languageProvider.getText('Description', 'विवरण'),
-                hint: languageProvider.getText('Describe the issue in detail', 'समस्या का विस्तार से वर्णन करें'),
+                hint: languageProvider.getText('Describe the issue in detail',
+                    'समस्या का विस्तार से वर्णन करें'),
                 maxLines: 4,
                 prefixIcon: Icons.description,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return languageProvider.getText(
-                      'Please enter a description',
-                      'कृपया एक विवरण दर्ज करें'
-                    );
+                        'Please enter a description',
+                        'कृपया एक विवरण दर्ज करें');
                   }
                   return null;
                 },
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Problem Type Dropdown
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    languageProvider.getText('Problem Type', 'समस्या का प्रकार'),
+                    languageProvider.getText(
+                        'Problem Type', 'समस्या का प्रकार'),
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -326,13 +335,17 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                       border: Border.all(color: AppColors.border),
                     ),
                     child: DropdownButtonFormField<String>(
-                      value: _selectedProblemType,
+                      initialValue: _selectedProblemType,
                       decoration: InputDecoration(
-                        hintText: languageProvider.getText('Select problem type', 'समस्या का प्रकार चुनें'),
-                        hintStyle: const TextStyle(color: AppColors.textSecondary),
-                        prefixIcon: const Icon(Icons.category_outlined, color: AppColors.textSecondary),
+                        hintText: languageProvider.getText(
+                            'Select problem type', 'समस्या का प्रकार चुनें'),
+                        hintStyle:
+                            const TextStyle(color: AppColors.textSecondary),
+                        prefixIcon: const Icon(Icons.category_outlined,
+                            color: AppColors.textSecondary),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 16),
                       ),
                       items: _problemTypes.map((type) {
                         return DropdownMenuItem<String>(
@@ -348,9 +361,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return languageProvider.getText(
-                            'Please select a problem type',
-                            'कृपया समस्या का प्रकार चुनें'
-                          );
+                              'Please select a problem type',
+                              'कृपया समस्या का प्रकार चुनें');
                         }
                         return null;
                       },
@@ -358,9 +370,9 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Location Section
               Text(
                 languageProvider.getText('Location', 'स्थान'),
@@ -370,36 +382,35 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                   color: AppColors.textPrimary,
                 ),
               ),
-              
+
               const SizedBox(height: 8),
-              
+
               // Location Field
               CustomTextField(
                 controller: _locationController,
                 label: languageProvider.getText('Location', 'स्थान'),
-                hint: languageProvider.getText('Tap to get current location', 'वर्तमान स्थान प्राप्त करने के लिए टैप करें'),
+                hint: languageProvider.getText('Tap to get current location',
+                    'वर्तमान स्थान प्राप्त करने के लिए टैप करें'),
                 prefixIcon: Icons.location_on,
                 readOnly: true,
                 onTap: _getCurrentLocation,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return languageProvider.getText(
-                      'Please get your location',
-                      'कृपया अपना स्थान प्राप्त करें'
-                    );
+                    return languageProvider.getText('Please get your location',
+                        'कृपया अपना स्थान प्राप्त करें');
                   }
                   return null;
                 },
               ),
-              
+
               const SizedBox(height: 8),
-              
+
               // Get Location Button
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: _isGettingLocation ? null : _getCurrentLocation,
-                  icon: _isGettingLocation 
+                  icon: _isGettingLocation
                       ? const SizedBox(
                           width: 16,
                           height: 16,
@@ -407,20 +418,22 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                         )
                       : const Icon(Icons.my_location),
                   label: Text(
-                    _isGettingLocation 
-                        ? languageProvider.getText('Getting Location...', 'स्थान प्राप्त कर रहे हैं...')
-                        : languageProvider.getText('Get Current Location', 'वर्तमान स्थान प्राप्त करें'),
+                    _isGettingLocation
+                        ? languageProvider.getText('Getting Location...',
+                            'स्थान प्राप्त कर रहे हैं...')
+                        : languageProvider.getText('Get Current Location',
+                            'वर्तमान स्थान प्राप्त करें'),
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.primary,
-                    side: BorderSide(color: AppColors.primary),
+                    side: const BorderSide(color: AppColors.primary),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               // Image Upload Section
               Text(
                 languageProvider.getText('Photo (Required)', 'फोटो (आवश्यक)'),
@@ -430,9 +443,9 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                   color: AppColors.textPrimary,
                 ),
               ),
-              
+
               const SizedBox(height: 8),
-              
+
               // Image Preview and Upload Button
               Container(
                 width: double.infinity,
@@ -460,7 +473,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                             child: CircleAvatar(
                               backgroundColor: Colors.black54,
                               child: IconButton(
-                                icon: const Icon(Icons.close, color: Colors.white),
+                                icon: const Icon(Icons.close,
+                                    color: Colors.white),
                                 onPressed: () {
                                   setState(() {
                                     _selectedImage = null;
@@ -475,14 +489,15 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.add_a_photo,
                               size: 48,
                               color: AppColors.textSecondary,
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              languageProvider.getText('No image selected', 'कोई छवि चयनित नहीं'),
+                              languageProvider.getText(
+                                  'No image selected', 'कोई छवि चयनित नहीं'),
                               style: const TextStyle(
                                 color: AppColors.textSecondary,
                                 fontSize: 14,
@@ -492,9 +507,9 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                         ),
                       ),
               ),
-              
+
               const SizedBox(height: 8),
-              
+
               // Upload Image Button
               SizedBox(
                 width: double.infinity,
@@ -506,21 +521,22 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.primary,
-                    side: BorderSide(color: AppColors.primary),
+                    side: const BorderSide(color: AppColors.primary),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 32),
-              
+
               // Submit Button
               CustomButton(
-                text: languageProvider.getText('Submit Issue', 'समस्या सबमिट करें'),
+                text: languageProvider.getText(
+                    'Submit Issue', 'समस्या सबमिट करें'),
                 onPressed: _isLoading ? null : _submitIssue,
                 isLoading: _isLoading,
               ),
-              
+
               const SizedBox(height: 16),
             ],
           ),

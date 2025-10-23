@@ -128,15 +128,15 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
     try {
       // 🔒 STEP 1: Get Current GPS Location
-      final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
-      
+      final languageProvider =
+          Provider.of<LanguageProvider>(context, listen: false);
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(languageProvider.getText(
-            'Getting your current location...',
-            'आपका वर्तमान स्थान प्राप्त किया जा रहा है...'
-          )),
+              'Getting your current location...',
+              'आपका वर्तमान स्थान प्राप्त किया जा रहा है...')),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -147,17 +147,15 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           throw Exception(languageProvider.getText(
-            'Location permission denied. GPS verification is required to complete tasks.',
-            'स्थान अनुमति अस्वीकृत। कार्य पूरा करने के लिए GPS सत्यापन आवश्यक है।'
-          ));
+              'Location permission denied. GPS verification is required to complete tasks.',
+              'स्थान अनुमति अस्वीकृत। कार्य पूरा करने के लिए GPS सत्यापन आवश्यक है।'));
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
         throw Exception(languageProvider.getText(
-          'Location permissions are permanently denied. Please enable in settings.',
-          'स्थान अनुमतियां स्थायी रूप से अस्वीकृत हैं। कृपया सेटिंग में सक्षम करें।'
-        ));
+            'Location permissions are permanently denied. Please enable in settings.',
+            'स्थान अनुमतियां स्थायी रूप से अस्वीकृत हैं। कृपया सेटिंग में सक्षम करें।'));
       }
 
       // Get current position
@@ -169,13 +167,13 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       // 🔒 STEP 2: Submit with GPS verification
       final issueProvider = Provider.of<IssueProvider>(context, listen: false);
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      
+
       if (authProvider.token == null) {
         throw Exception('No authentication token available');
       }
-      
+
       final success = await issueProvider.completeTask(
-        widget.task.id.toString(), 
+        widget.task.id.toString(),
         _proofImage!,
         position.latitude,
         position.longitude,
@@ -187,9 +185,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(languageProvider.getText(
-                'Task completed successfully! ✅',
-                'कार्य सफलतापूर्वक पूरा! ✅'
-              )),
+                  'Task completed successfully! ✅',
+                  'कार्य सफलतापूर्वक पूरा! ✅')),
               backgroundColor: Colors.green,
             ),
           );
@@ -198,10 +195,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           // GPS verification error will be in issueProvider.error
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(issueProvider.error ?? languageProvider.getText(
-                'Failed to complete task',
-                'कार्य पूरा करने में असफल'
-              )),
+              content: Text(issueProvider.error ??
+                  languageProvider.getText(
+                      'Failed to complete task', 'कार्य पूरा करने में असफल')),
               backgroundColor: Colors.red,
               duration: const Duration(seconds: 5),
             ),
@@ -287,7 +283,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: _getStatusColor(task.status).withValues(alpha: 0.1),
+                          color: _getStatusColor(task.status)
+                              .withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -312,9 +309,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                             const SizedBox(height: 4),
                             Text(
                               languageProvider.getText(
-                                'Current Status',
-                                'वर्तमान स्थिति'
-                              ),
+                                  'Current Status', 'वर्तमान स्थिति'),
                               style: const TextStyle(
                                 color: AppColors.textSecondary,
                                 fontSize: 14,
@@ -388,11 +383,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             // Media Files
             if (task.mediaFiles.isNotEmpty)
               ImageGallery(
-                mediaFiles: task.mediaFiles.map((media) => {
-                  'file_url': media.fileUrl,
-                  'media_type': media.mediaType,
-                }).toList(),
-                title: languageProvider.getText('Reference Images', 'संदर्भ छवियां'),
+                mediaFiles: task.mediaFiles
+                    .map((media) => {
+                          'file_url': media.fileUrl,
+                          'media_type': media.mediaType,
+                        })
+                    .toList(),
+                title: languageProvider.getText(
+                    'Reference Images', 'संदर्भ छवियां'),
               ),
 
             const SizedBox(height: 20),
@@ -527,25 +525,26 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppColors.warning.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+              border:
+                  Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
-                Icon(Icons.location_on, color: AppColors.warning, size: 20),
+                const Icon(Icons.location_on,
+                    color: AppColors.warning, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     languageProvider.getText(
-                      '⚠️ GPS Verification Required: You must be at the problem location (within 500 meters) to complete this task.',
-                      '⚠️ GPS सत्यापन आवश्यक: इस कार्य को पूरा करने के लिए आपको समस्या स्थान पर (500 मीटर के भीतर) होना चाहिए।'
-                    ),
-                    style: TextStyle(
+                        '⚠️ GPS Verification Required: You must be at the problem location (within 500 meters) to complete this task.',
+                        '⚠️ GPS सत्यापन आवश्यक: इस कार्य को पूरा करने के लिए आपको समस्या स्थान पर (500 मीटर के भीतर) होना चाहिए।'),
+                    style: const TextStyle(
                       color: AppColors.warning,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -557,18 +556,16 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            languageProvider.getText(
-              'Take a photo as proof of completion:',
-              'पूर्णता के प्रमाण के रूप में एक फोटो लें:'
-            ),
+            languageProvider.getText('Take a photo as proof of completion:',
+                'पूर्णता के प्रमाण के रूप में एक फोटो लें:'),
             style: const TextStyle(
               color: AppColors.textSecondary,
               fontSize: 14,
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Proof Image Preview
           Container(
             width: double.infinity,
@@ -611,14 +608,15 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.camera_alt,
                           size: 48,
                           color: AppColors.textSecondary,
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          languageProvider.getText('No proof photo', 'कोई प्रमाण फोटो नहीं'),
+                          languageProvider.getText(
+                              'No proof photo', 'कोई प्रमाण फोटो नहीं'),
                           style: const TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 14,
@@ -628,9 +626,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     ),
                   ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Take Photo Button
           SizedBox(
             width: double.infinity,
@@ -642,20 +640,18 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.workerColor,
-                side: BorderSide(color: AppColors.workerColor),
+                side: const BorderSide(color: AppColors.workerColor),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Submit Button
           CustomButton(
             text: languageProvider.getText(
-              'Mark as Completed',
-              'पूर्ण के रूप में चिह्नित करें'
-            ),
+                'Mark as Completed', 'पूर्ण के रूप में चिह्नित करें'),
             onPressed: _isSubmitting ? null : _submitCompletion,
             isLoading: _isSubmitting,
             backgroundColor: AppColors.success,

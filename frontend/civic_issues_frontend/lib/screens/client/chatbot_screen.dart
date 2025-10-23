@@ -35,7 +35,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
   void _addWelcomeMessage() {
     _messages.add(ChatMessage(
-      text: "Welcome! Please select your language.\nआपका स्वागत है! कृपया अपनी भाषा चुनें।",
+      text:
+          "Welcome! Please select your language.\nआपका स्वागत है! कृपया अपनी भाषा चुनें।",
       isUser: false,
       timestamp: DateTime.now(),
       quickReplies: ["English", "हिन्दी"],
@@ -73,7 +74,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
       setState(() {
         _messages.add(ChatMessage(
-          text: response['response'] ?? 'Sorry, I couldn\'t process your request.',
+          text: response['response'] ??
+              'Sorry, I couldn\'t process your request.',
           isUser: false,
           timestamp: DateTime.now(),
           quickReplies: response['quick_replies']?.cast<String>(),
@@ -86,7 +88,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     } catch (e) {
       setState(() {
         _messages.add(ChatMessage(
-          text: 'Sorry, there was an error processing your request. Please try again.',
+          text:
+              'Sorry, there was an error processing your request. Please try again.',
           isUser: false,
           timestamp: DateTime.now(),
         ));
@@ -115,7 +118,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
-    
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -162,21 +165,21 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                     ),
                   );
                 }
-                
+
                 final message = _messages[index];
                 return _buildMessageBubble(message);
               },
             ),
           ),
-          
+
           // Quick Replies
           if (_messages.isNotEmpty && _messages.last.quickReplies != null)
             _buildQuickReplies(_messages.last.quickReplies!),
-          
+
           // Input Area
           Container(
             padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.surface,
               border: Border(
                 top: BorderSide(color: AppColors.border),
@@ -188,13 +191,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                   child: CustomTextField(
                     controller: _messageController,
                     label: languageProvider.getText(
-                      'Type your message...',
-                      'अपना संदेश टाइप करें...'
-                    ),
+                        'Type your message...', 'अपना संदेश टाइप करें...'),
                     hint: languageProvider.getText(
-                      'Type your message...',
-                      'अपना संदेश टाइप करें...'
-                    ),
+                        'Type your message...', 'अपना संदेश टाइप करें...'),
                     maxLines: 3,
                   ),
                 ),
@@ -216,9 +215,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Row(
-        mainAxisAlignment: message.isUser 
-            ? MainAxisAlignment.end 
-            : MainAxisAlignment.start,
+        mainAxisAlignment:
+            message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!message.isUser) ...[
@@ -237,13 +235,10 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             child: Container(
               padding: const EdgeInsets.all(12.0),
               decoration: BoxDecoration(
-                color: message.isUser 
-                    ? AppColors.primary 
-                    : AppColors.surface,
+                color: message.isUser ? AppColors.primary : AppColors.surface,
                 borderRadius: BorderRadius.circular(16),
-                border: message.isUser 
-                    ? null 
-                    : Border.all(color: AppColors.border),
+                border:
+                    message.isUser ? null : Border.all(color: AppColors.border),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,9 +246,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                   Text(
                     message.text,
                     style: TextStyle(
-                      color: message.isUser 
-                          ? Colors.white 
-                          : AppColors.textPrimary,
+                      color:
+                          message.isUser ? Colors.white : AppColors.textPrimary,
                       fontSize: 14,
                     ),
                   ),
@@ -261,8 +255,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                   Text(
                     _formatTime(message.timestamp),
                     style: TextStyle(
-                      color: message.isUser 
-                          ? Colors.white70 
+                      color: message.isUser
+                          ? Colors.white70
                           : AppColors.textSecondary,
                       fontSize: 12,
                     ),
@@ -291,7 +285,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   Widget _buildQuickReplies(List<String> replies) {
     return Container(
       padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.surface,
         border: Border(
           top: BorderSide(color: AppColors.border),
@@ -301,10 +295,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            Provider.of<LanguageProvider>(context, listen: false).getText(
-              'Quick Replies:',
-              'त्वरित उत्तर:'
-            ),
+            Provider.of<LanguageProvider>(context, listen: false)
+                .getText('Quick Replies:', 'त्वरित उत्तर:'),
             style: const TextStyle(
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
@@ -331,7 +323,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   String _formatTime(DateTime timestamp) {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
-    
+
     if (difference.inMinutes < 1) {
       return 'Just now';
     } else if (difference.inMinutes < 60) {
