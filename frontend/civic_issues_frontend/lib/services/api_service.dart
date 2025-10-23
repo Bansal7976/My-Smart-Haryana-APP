@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart' as http_parser;
 
 class ApiService {
   // For mobile: Replace 192.168.1.100 with YOUR computer's IP address from ipconfig
@@ -41,14 +42,28 @@ class ApiService {
           ...data,
           'user': userProfile,
         };
+      } else if (response.statusCode == 401) {
+        throw Exception('Invalid email or password. Please try again.');
+      } else if (response.statusCode == 403) {
+        throw Exception('Account is inactive. Please contact admin.');
+      } else if (response.statusCode >= 500) {
+        throw Exception('Server error. Please try again later.');
       } else {
-        throw Exception('Login failed: ${response.statusCode}');
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['detail'] ?? 'Login failed. Please check your credentials.');
       }
     } catch (e) {
       if (kDebugMode) {
         print('Login error: $e');
       }
-      throw Exception('Login failed: $e');
+      // If it's already our custom exception, re-throw it
+      if (e.toString().contains('Invalid email') || 
+          e.toString().contains('Account is inactive') ||
+          e.toString().contains('Server error')) {
+        rethrow;
+      }
+      // Network or other errors
+      throw Exception('Unable to connect. Please check your internet connection.');
     }
   }
 
@@ -553,15 +568,26 @@ class ApiService {
     }
   }
 
+  /// Create a new admin user
   static Future<Map<String, dynamic>> createAdmin(
-    String token,
-    Map<String, dynamic> adminData,
-  ) async {
+    String token, {
+    required String fullName,
+    required String email,
+    required String password,
+    required String district,
+    String? pincode,
+  }) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/super-admin/create-admin'),
         headers: _getAuthHeaders(token),
-        body: jsonEncode(adminData),
+        body: jsonEncode({
+          'full_name': fullName,
+          'email': email,
+          'password': password,
+          'district': district,
+          'pincode': pincode,
+        }),
       );
 
       if (response.statusCode == 201) {
@@ -787,7 +813,7 @@ class ApiService {
       // Add language
       request.fields['language'] = language;
 
-      // Add audio file
+      // Add audio file with explicit content type
       if (kIsWeb) {
         final bytes = await audioFile.readAsBytes();
         final filename = 'audio_${DateTime.now().millisecondsSinceEpoch}.webm';
@@ -796,11 +822,20 @@ class ApiService {
             'audio_file',
             bytes,
             filename: filename,
+            contentType: http_parser.MediaType('audio', 'webm'),
           ),
         );
       } else {
+        // Determine content type from file extension
+        final extension = audioFile.path.split('.').last.toLowerCase();
+        final contentType = _getAudioContentType(extension);
+        
         request.files.add(
-          await http.MultipartFile.fromPath('audio_file', audioFile.path),
+          await http.MultipartFile.fromPath(
+            'audio_file',
+            audioFile.path,
+            contentType: contentType,
+          ),
         );
       }
 
@@ -840,6 +875,131 @@ class ApiService {
         print('Get supported languages error: $e');
       }
       throw Exception('Failed to fetch supported languages: $e');
+    }
+  }
+
+  // ========== SUPER ADMIN APIs ==========
+
+  /// Get Haryana overview (super admin analytics)
+  static Future<Map<String, dynamic>> getSuperAdminOverview(
+      String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/super-admin/analytics/overview'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception(
+            'Failed to fetch super admin overview: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Get super admin overview error: $e');
+      }
+      throw Exception('Failed to fetch super admin overview: $e');
+    }
+  }
+
+  /// Get district-wise analytics
+  static Future<List<Map<String, dynamic>>> getDistrictAnalytics(
+      String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/super-admin/analytics/districts'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> stats = jsonDecode(response.body);
+        return stats.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception(
+            'Failed to fetch district analytics: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Get district analytics error: $e');
+      }
+      throw Exception('Failed to fetch district analytics: $e');
+    }
+  }
+
+  /// Deactivate an admin
+  static Future<void> deactivateAdmin(String token, int adminId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/super-admin/admins/$adminId'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode != 204) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to deactivate admin');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Deactivate admin error: $e');
+      }
+      throw Exception('Failed to deactivate admin: $e');
+    }
+  }
+
+  // ========== ADMIN APIs ==========
+
+  /// Get admin analytics/dashboard stats
+  static Future<Map<String, dynamic>> getAdminAnalytics(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/admin/analytics/stats'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // Add district info from user profile
+        final user = await getUserProfile(token);
+        return {
+          ...data,
+          'district': user['district'],
+          'total_workers': 0, // Can be fetched from separate endpoint if needed
+        };
+      } else {
+        throw Exception(
+            'Failed to fetch admin analytics: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Get admin analytics error: $e');
+      }
+      throw Exception('Failed to fetch admin analytics: $e');
+    }
+  }
+
+  // Helper function to get audio content type from file extension
+  static http_parser.MediaType _getAudioContentType(String extension) {
+    switch (extension) {
+      case 'm4a':
+        return http_parser.MediaType('audio', 'mp4');
+      case 'mp3':
+        return http_parser.MediaType('audio', 'mpeg');
+      case 'wav':
+        return http_parser.MediaType('audio', 'wav');
+      case 'ogg':
+        return http_parser.MediaType('audio', 'ogg');
+      case 'webm':
+        return http_parser.MediaType('audio', 'webm');
+      case 'aac':
+        return http_parser.MediaType('audio', 'aac');
+      case 'opus':
+        return http_parser.MediaType('audio', 'opus');
+      case 'flac':
+        return http_parser.MediaType('audio', 'flac');
+      default:
+        // Default to m4a for unknown extensions (common on mobile)
+        return http_parser.MediaType('audio', 'm4a');
     }
   }
 }

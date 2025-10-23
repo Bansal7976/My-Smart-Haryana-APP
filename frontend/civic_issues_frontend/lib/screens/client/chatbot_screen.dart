@@ -99,8 +99,77 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 
   void _sendQuickReply(String reply) {
+    // Check if this is language selection
+    if (reply == "English" || reply == "हिन्दी") {
+      _handleLanguageSelection(reply);
+      return;
+    }
+    
     _messageController.text = reply;
     _sendMessage();
+  }
+  
+  Future<void> _handleLanguageSelection(String language) async {
+    // Update app language
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+    if (language == "हिन्दी") {
+      languageProvider.setLanguage('hi');
+    } else {
+      languageProvider.setLanguage('en');
+    }
+    
+    // Add user message
+    setState(() {
+      _messages.add(ChatMessage(
+        text: language,
+        isUser: true,
+        timestamp: DateTime.now(),
+      ));
+      _isLoading = true;
+    });
+    
+    _scrollToBottom();
+    
+    // Send welcome message in selected language
+    final welcomeMessage = language == "हिन्दी"
+        ? "नमस्ते! मैं स्मार्ट हरियाणा सहायक हूं। मैं आपकी कैसे मदद कर सकता हूं?"
+        : "Hello! I'm Smart Haryana Assistant. How can I help you today?";
+    
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.token == null) {
+        throw Exception('No authentication token');
+      }
+      
+      // Send to backend
+      final response = await ApiService.chatWithBot(
+        authProvider.token!,
+        language == "हिन्दी" ? "हिन्दी में बात करें" : "Speak in English",
+        sessionId: _sessionId,
+      );
+      
+      setState(() {
+        _messages.add(ChatMessage(
+          text: response['response'] ?? welcomeMessage,
+          isUser: false,
+          timestamp: DateTime.now(),
+        ));
+        _sessionId = response['session_id'];
+        _isLoading = false;
+      });
+      
+      _scrollToBottom();
+    } catch (e) {
+      setState(() {
+        _messages.add(ChatMessage(
+          text: welcomeMessage,
+          isUser: false,
+          timestamp: DateTime.now(),
+        ));
+        _isLoading = false;
+      });
+      _scrollToBottom();
+    }
   }
 
   void _scrollToBottom() {

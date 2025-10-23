@@ -2,12 +2,16 @@
 from typing import Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from .base_agent import BaseAgent
-from tavily import TavilyClient
+# ✅ CORRECTION: Import AsyncTavilyClient
+from tavily import AsyncTavilyClient
+import logging
+
+logger = logging.getLogger(__name__)
 
 class WebSearchAgent(BaseAgent):
     """
     Agent responsible for searching the web for Haryana government schemes and policies.
-    Uses Tavily API for optimized search results.
+    Uses Tavily API for optimized search results. (Asynchronous)
     """
     
     def __init__(self, tavily_api_key: str):
@@ -20,9 +24,13 @@ class WebSearchAgent(BaseAgent):
         
         if tavily_api_key:
             try:
-                self.client = TavilyClient(api_key=tavily_api_key)
+                # ✅ CORRECTION: Use AsyncTavilyClient
+                self.client = AsyncTavilyClient(api_key=tavily_api_key)
+                logger.info("✅ Tavily Async client initialized.")
             except Exception as e:
-                print(f"Tavily initialization error: {e}")
+                logger.error(f"❌ Tavily initialization error: {e}")
+        else:
+            logger.warning("WebSearchAgent: TAVILY_API_KEY not set. Web search will be unavailable.")
     
     async def can_handle(self, query: str, context: Dict[str, Any]) -> bool:
         """
@@ -60,8 +68,8 @@ class WebSearchAgent(BaseAgent):
             # Enhance query with Haryana context
             search_query = f"Haryana government {query}"
             
-            # Search using Tavily
-            response = self.client.search(
+            # ✅ CORRECTION: Use await with the async client
+            response = await self.client.search(
                 query=search_query,
                 search_depth="advanced",
                 max_results=3,
@@ -77,9 +85,8 @@ class WebSearchAgent(BaseAgent):
                     "agent_type": "web_search"
                 }
             
-            # Format response
-            response_text = f"🔍 **Search Results for: '{query}'**\n\n"
-            response_text += "Here's what I found from official sources:\n\n"
+            # Format response text (this will be enhanced by Gemini)
+            response_text = f"Here's what I found online about '{query}':\n\n"
             
             for idx, result in enumerate(results, 1):
                 title = result.get("title", "No title")
@@ -92,10 +99,9 @@ class WebSearchAgent(BaseAgent):
                 
                 response_text += f"**{idx}. {title}**\n"
                 response_text += f"{content}\n"
-                response_text += f"🔗 Source: {url}\n\n"
+                response_text += f"Source: {url}\n\n"
             
-            response_text += "📌 **Note**: Please visit the official links above for complete and up-to-date information.\n"
-            response_text += "For application procedures, visit the official Haryana government portal."
+            response_text += "Please verify this information at the official sources provided."
             
             return {
                 "response": response_text,
@@ -108,10 +114,9 @@ class WebSearchAgent(BaseAgent):
             }
             
         except Exception as e:
-            print(f"Web search error: {str(e)}")  # Log for debugging
+            logger.error(f"❌ Web search error: {str(e)}", exc_info=True)
             return {
                 "response": "I encountered an error while searching. Please try again or rephrase your question.",
                 "metadata": {"error": "search_failed"},
                 "agent_type": "web_search"
             }
-

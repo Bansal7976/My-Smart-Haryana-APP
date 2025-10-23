@@ -7,6 +7,9 @@ from langchain_community.vectorstores import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 class RAGAgent(BaseAgent):
     """
@@ -30,6 +33,7 @@ class RAGAgent(BaseAgent):
     def _initialize_rag(self):
         """Initialize embeddings and vector store"""
         if not self.google_api_key:
+            logger.warning("RAG Agent: GOOGLE_API_KEY not set. RAG will be unavailable.")
             return
         
         try:
@@ -42,26 +46,33 @@ class RAGAgent(BaseAgent):
             # Create knowledge base documents
             documents = self._create_knowledge_base()
             
+            if not documents:
+                 logger.warning("RAG Agent: No knowledge base documents found or loaded.")
+                 return
+
             # Create or load vector store
             os.makedirs(self.vector_store_path, exist_ok=True)
             
             # Check if vector store exists
             if os.path.exists(os.path.join(self.vector_store_path, "chroma.sqlite3")):
                 # Load existing vector store
+                logger.info(f"Loading existing vector store from {self.vector_store_path}")
                 self.vectorstore = Chroma(
                     persist_directory=self.vector_store_path,
                     embedding_function=self.embeddings
                 )
             else:
                 # Create new vector store
+                logger.info(f"Creating new vector store at {self.vector_store_path}")
                 self.vectorstore = Chroma.from_documents(
                     documents=documents,
                     embedding=self.embeddings,
                     persist_directory=self.vector_store_path
                 )
+            logger.info("✅ RAG Agent initialized successfully.")
                 
         except Exception as e:
-            print(f"RAG initialization error: {e}")
+            logger.error(f"❌ RAG initialization error: {e}", exc_info=True)
     
     def _create_knowledge_base(self) -> List[Document]:
         """Create knowledge base documents from markdown files"""
@@ -73,7 +84,7 @@ class RAGAgent(BaseAgent):
         
         # Check if knowledge base directory exists
         if not os.path.exists(kb_path):
-            print(f"Warning: Knowledge base directory not found at {kb_path}")
+            logger.warning(f"RAG Agent: Knowledge base directory not found at {kb_path}")
             return documents
         
         # Read all markdown files from knowledge base
@@ -113,14 +124,14 @@ class RAGAgent(BaseAgent):
                             )
                         )
                     
-                    print(f"✓ Loaded {len(chunks)} chunks from {filename}")
+                    logger.info(f"✓ RAG: Loaded {len(chunks)} chunks from {filename}")
                     
                 except Exception as e:
-                    print(f"Error loading {filename}: {e}")
+                    logger.error(f"RAG: Error loading {filename}: {e}")
             else:
-                print(f"Warning: {filename} not found")
+                logger.warning(f"RAG: Knowledge base file not found: {filename}")
         
-        print(f"Total documents loaded: {len(documents)}")
+        logger.info(f"RAG: Total documents loaded: {len(documents)}")
         return documents
     
     async def can_handle(self, query: str, context: Dict[str, Any]) -> bool:
@@ -164,11 +175,12 @@ class RAGAgent(BaseAgent):
                 search_kwargs={"k": 3}  # Top 3 most relevant chunks
             )
             
-            docs = retriever.get_relevant_documents(query)
+            # ✅ CORRECTION: Use async aget_relevant_documents
+            docs = await retriever.aget_relevant_documents(query)
             
             if not docs:
                 return {
-                    "response": "I don't have specific information about that. Could you rephrase your question or ask about a different topic?",
+                    "response": "I don't have specific information about that in my knowledge base. Could you rephrase your question?",
                     "metadata": {"docs_found": 0},
                     "agent_type": "rag"
                 }
@@ -176,28 +188,22 @@ class RAGAgent(BaseAgent):
             # Combine retrieved context
             context_text = "\n\n".join([doc.page_content for doc in docs])
             
-            # Simple response generation (we'll use LLM in coordinator if needed)
-            # For now, return the most relevant chunk
-            response_text = f"Based on Smart Haryana documentation:\n\n{docs[0].page_content}"
-            
-            # Add helpful note
-            if "how to report" in query.lower() or "कैसे रिपोर्ट" in query.lower():
-                response_text += "\n\n💡 **Quick Steps:**\n1. Click 'Report New Issue'\n2. Fill details and take photo\n3. Allow location access\n4. Submit!"
+            # This context will be sent to the Gemini agent for enhancement
+            response_text = context_text
             
             return {
                 "response": response_text,
                 "metadata": {
                     "docs_retrieved": len(docs),
-                    "sources": [doc.metadata.get("source", "unknown") for doc in docs]
+                    "sources": list(set([doc.metadata.get("source", "unknown") for doc in docs]))
                 },
                 "agent_type": "rag"
             }
             
         except Exception as e:
-            print(f"RAG agent error: {str(e)}")  # Log for debugging
+            logger.error(f"❌ RAG agent error: {str(e)}", exc_info=True)
             return {
                 "response": "I encountered an error while searching my knowledge base. Please try rephrasing your question.",
                 "metadata": {"error": "retrieval_failed"},
                 "agent_type": "rag"
             }
-

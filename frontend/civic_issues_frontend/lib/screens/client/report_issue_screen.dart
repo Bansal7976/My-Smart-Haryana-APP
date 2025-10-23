@@ -3,6 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:record/record.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import '../../providers/language_provider.dart';
 import '../../providers/issue_provider.dart';
@@ -11,7 +14,7 @@ import '../../utils/app_colors.dart';
 import '../../widgets/web_compatible_image.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/custom_button.dart';
-import '../../models/issue_model.dart';
+import '../../services/api_service.dart';
 
 class ReportIssueScreen extends StatefulWidget {
   const ReportIssueScreen({super.key});
@@ -33,6 +36,9 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
   String? _currentAddress;
   bool _isLoading = false;
   bool _isGettingLocation = false;
+  bool _isRecording = false;
+  bool _isTranscribing = false;
+  final AudioRecorder _audioRecorder = AudioRecorder();
 
   final List<String> _problemTypes = [
     'Pothole',
@@ -52,7 +58,124 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
     _titleController.dispose();
     _descriptionController.dispose();
     _locationController.dispose();
+    _audioRecorder.dispose();
     super.dispose();
+  }
+
+  Future<void> _startStopRecording() async {
+    if (_isRecording) {
+      // Stop recording
+      await _stopRecording();
+    } else {
+      // Start recording
+      await _startRecording();
+    }
+  }
+
+  Future<void> _startRecording() async {
+    try {
+      // Request microphone permission
+      final status = await Permission.microphone.request();
+      if (!status.isGranted) {
+        _showErrorDialog('Microphone permission denied');
+        return;
+      }
+
+      // Get temporary directory
+      final Directory tempDir = await getTemporaryDirectory();
+      final String filePath = '${tempDir.path}/recording_${DateTime.now().millisecondsSinceEpoch}.wav';
+
+      // Start recording
+      await _audioRecorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.wav,
+          sampleRate: 16000,
+          numChannels: 1,
+        ),
+        path: filePath,
+      );
+
+      setState(() {
+        _isRecording = true;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(Provider.of<LanguageProvider>(context, listen: false)
+              .getText('Recording...', 'रिकॉर्डिंग...')),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    } catch (e) {
+      _showErrorDialog('Failed to start recording: ${e.toString()}');
+    }
+  }
+
+  Future<void> _stopRecording() async {
+    try {
+      final String? path = await _audioRecorder.stop();
+      
+      setState(() {
+        _isRecording = false;
+        _isTranscribing = true;
+      });
+
+      if (path != null) {
+        // Convert audio to text
+        await _transcribeAudio(path);
+      }
+    } catch (e) {
+      setState(() {
+        _isRecording = false;
+        _isTranscribing = false;
+      });
+      _showErrorDialog('Failed to stop recording: ${e.toString()}');
+    }
+  }
+
+  Future<void> _transcribeAudio(String audioPath) async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+      
+      if (authProvider.token == null) {
+        throw Exception('No authentication token');
+      }
+
+      // Convert to text using API
+      final result = await ApiService.convertVoiceToText(
+        authProvider.token!,
+        File(audioPath),
+        language: languageProvider.currentLanguage == 'hi' ? 'hi-IN' : 'en-IN',
+      );
+
+      if (result['text'] != null && result['text'].isNotEmpty) {
+        setState(() {
+          // Append to existing description
+          if (_descriptionController.text.isNotEmpty) {
+            _descriptionController.text += ' ${result['text']}';
+          } else {
+            _descriptionController.text = result['text'];
+          }
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(languageProvider.getText(
+                'Voice converted to text successfully!',
+                'आवाज सफलतापूर्वक टेक्स्ट में परिवर्तित हुई!')),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      _showErrorDialog('Failed to convert voice: ${e.toString()}');
+    } finally {
+      setState(() {
+        _isTranscribing = false;
+      });
+    }
   }
 
   Future<void> _getCurrentLocation() async {
@@ -294,22 +417,92 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
 
               const SizedBox(height: 16),
 
-              // Description Field
-              CustomTextField(
-                controller: _descriptionController,
-                label: languageProvider.getText('Description', 'विवरण'),
-                hint: languageProvider.getText('Describe the issue in detail',
-                    'समस्या का विस्तार से वर्णन करें'),
-                maxLines: 4,
-                prefixIcon: Icons.description,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return languageProvider.getText(
-                        'Please enter a description',
-                        'कृपया एक विवरण दर्ज करें');
-                  }
-                  return null;
-                },
+              // Description Field with Voice Input
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    languageProvider.getText('Description', 'विवरण'),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: TextFormField(
+                      controller: _descriptionController,
+                      maxLines: 4,
+                      decoration: InputDecoration(
+                        hintText: languageProvider.getText(
+                            'Describe the issue in detail',
+                            'समस्या का विस्तार से वर्णन करें'),
+                        hintStyle: const TextStyle(color: AppColors.textSecondary),
+                        prefixIcon: const Icon(Icons.description,
+                            color: AppColors.textSecondary),
+                        suffixIcon: _isTranscribing
+                            ? const Padding(
+                                padding: EdgeInsets.all(12.0),
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              )
+                            : IconButton(
+                                icon: Icon(
+                                  _isRecording ? Icons.stop : Icons.mic,
+                                  color: _isRecording ? Colors.red : AppColors.primary,
+                                ),
+                                onPressed: _startStopRecording,
+                                tooltip: _isRecording
+                                    ? languageProvider.getText(
+                                        'Stop Recording', 'रिकॉर्डिंग बंद करें')
+                                    : languageProvider.getText(
+                                        'Start Voice Input', 'आवाज इनपुट शुरू करें'),
+                              ),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 16),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return languageProvider.getText(
+                              'Please enter a description',
+                              'कृपया एक विवरण दर्ज करें');
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  if (_isRecording)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.fiber_manual_record,
+                              color: Colors.red, size: 12),
+                          const SizedBox(width: 4),
+                          Text(
+                            languageProvider.getText(
+                                'Recording... Tap mic to stop',
+                                'रिकॉर्डिंग... रोकने के लिए माइक पर टैप करें'),
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
               ),
 
               const SizedBox(height: 16),

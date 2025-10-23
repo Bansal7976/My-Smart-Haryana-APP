@@ -44,5 +44,9 @@ class HaryanaDistricts {
   static bool isValid(String district) {
     return all.contains(district);
   }
+
+  static List<String> getAllDistricts() {
+    return all;
+  }
 }
 

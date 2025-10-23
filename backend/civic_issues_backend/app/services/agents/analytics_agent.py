@@ -294,4 +294,3 @@ class AnalyticsAgent(BaseAgent):
             },
             "agent_type": "analytics"
         }
-

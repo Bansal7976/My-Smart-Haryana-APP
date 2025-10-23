@@ -65,7 +65,12 @@ async def get_my_assigned_tasks(
         models.Problem.status == models.ProblemStatusEnum.ASSIGNED
     ).options(
         selectinload(models.Problem.submitted_by),
-        selectinload(models.Problem.media_files)
+        selectinload(models.Problem.media_files),
+        selectinload(models.Problem.feedback),
+        selectinload(models.Problem.assigned_to).options(
+            selectinload(models.WorkerProfile.user),
+            selectinload(models.WorkerProfile.department)
+        )
     ).order_by(models.Problem.priority.desc())
     
     result = await db.execute(query)
@@ -86,7 +91,12 @@ async def complete_task(
     """
     query = select(models.Problem).where(models.Problem.id == problem_id).options(
         selectinload(models.Problem.submitted_by),
-        selectinload(models.Problem.media_files)
+        selectinload(models.Problem.media_files),
+        selectinload(models.Problem.feedback),
+        selectinload(models.Problem.assigned_to).options(
+            selectinload(models.WorkerProfile.user),
+            selectinload(models.WorkerProfile.department)
+        )
     )
     problem = (await db.execute(query)).scalar_one_or_none()
 
@@ -139,6 +149,17 @@ async def complete_task(
     # Mark as completed
     problem.status = models.ProblemStatusEnum.COMPLETED
     await db.commit()
-    await db.refresh(problem)
     
-    return problem
+    # Reload with all relationships
+    final_query = select(models.Problem).where(models.Problem.id == problem_id).options(
+        selectinload(models.Problem.submitted_by),
+        selectinload(models.Problem.media_files),
+        selectinload(models.Problem.feedback),
+        selectinload(models.Problem.assigned_to).options(
+            selectinload(models.WorkerProfile.user),
+            selectinload(models.WorkerProfile.department)
+        )
+    )
+    final_problem = (await db.execute(final_query)).scalar_one()
+    
+    return final_problem

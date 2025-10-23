@@ -8,6 +8,7 @@ from .routers import auth, users, admin, worker, super_admin, chatbot
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from . import scheduler
 from .seed_admins import seed_admins
+from .seed_departments import seed_departments
 from starlette.middleware.base import BaseHTTPMiddleware
 import time
 import logging
@@ -67,13 +68,14 @@ async def on_startup():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     
-    # Seed admin accounts (only inserts if they don't exist)
+    # Seed departments and admin accounts (only inserts if they don't exist)
     try:
         async for db in get_db():
+            await seed_departments(db)
             await seed_admins(db)
             break
     except Exception as e:
-        logger.warning(f"Admin seeding skipped: {str(e)}")
+        logger.warning(f"Seeding skipped: {str(e)}")
     
     # Start scheduled jobs
     job_scheduler.add_job(scheduler.reset_daily_task_counts, "cron", hour=0, minute=0)

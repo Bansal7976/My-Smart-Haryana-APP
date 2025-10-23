@@ -59,7 +59,15 @@ async def deactivate_worker(worker_user_id: int, db: AsyncSession = Depends(data
 
 @router.get("/problems", response_model=List[schemas.Problem])
 async def get_problems_for_my_district(db: AsyncSession = Depends(database.get_db), admin_user: models.User = Depends(get_current_admin_user)):
-    query = select(models.Problem).options(selectinload(models.Problem.submitted_by), selectinload(models.Problem.media_files)).where(models.Problem.district == admin_user.district).order_by(models.Problem.created_at.desc())
+    query = select(models.Problem).options(
+        selectinload(models.Problem.submitted_by),
+        selectinload(models.Problem.media_files),
+        selectinload(models.Problem.feedback),
+        selectinload(models.Problem.assigned_to).options(
+            selectinload(models.WorkerProfile.user),
+            selectinload(models.WorkerProfile.department)
+        )
+    ).where(models.Problem.district == admin_user.district).order_by(models.Problem.created_at.desc())
     result = await db.execute(query)
     return result.scalars().all()
 

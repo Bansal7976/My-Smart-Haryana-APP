@@ -1,11 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/language_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../services/api_service.dart';
 import '../../utils/app_colors.dart';
 import '../../widgets/custom_button.dart';
+import 'manage_admins_screen.dart';
+import 'super_admin_analytics_screen.dart';
 
-class SuperAdminDashboardScreen extends StatelessWidget {
+class SuperAdminDashboardScreen extends StatefulWidget {
   const SuperAdminDashboardScreen({super.key});
+
+  @override
+  State<SuperAdminDashboardScreen> createState() =>
+      _SuperAdminDashboardScreenState();
+}
+
+class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
+  Map<String, dynamic>? _overview;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOverview();
+  }
+
+  Future<void> _loadOverview() async {
+    setState(() => _isLoading = true);
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final overview = await ApiService.getSuperAdminOverview(authProvider.token!);
+      setState(() {
+        _overview = overview;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -93,51 +126,59 @@ class SuperAdminDashboardScreen extends StatelessWidget {
             const SizedBox(height: 24),
             
             // System Overview Stats
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    languageProvider.getText('System Status', 'सिस्टम स्थिति'),
-                    'Active',
-                    Icons.check_circle,
-                    AppColors.success,
+            _isLoading
+                ? const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                : Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatCard(
+                          languageProvider.getText('Total Users', 'कुल उपयोगकर्ता'),
+                          _overview?['total_users']?.toString() ?? '0',
+                          Icons.people,
+                          AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildStatCard(
+                          languageProvider.getText('Total Problems', 'कुल समस्याएं'),
+                          _overview?['total_problems']?.toString() ?? '0',
+                          Icons.assignment,
+                          AppColors.warning,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatCard(
-                    languageProvider.getText('Total Users', 'कुल उपयोगकर्ता'),
-                    '1,234',
-                    Icons.people,
-                    AppColors.primary,
-                  ),
-                ),
-              ],
-            ),
             
             const SizedBox(height: 16),
             
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    languageProvider.getText('Active Issues', 'सक्रिय समस्याएं'),
-                    '89',
-                    Icons.assignment,
-                    AppColors.warning,
+            if (!_isLoading)
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      languageProvider.getText('Total Admins', 'कुल एडमिन'),
+                      _overview?['total_admins']?.toString() ?? '0',
+                      Icons.admin_panel_settings,
+                      AppColors.adminColor,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatCard(
-                    languageProvider.getText('Workers Online', 'ऑनलाइन कार्यकर्ता'),
-                    '45',
-                    Icons.work,
-                    AppColors.info,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildStatCard(
+                      languageProvider.getText('Total Workers', 'कुल कार्यकर्ता'),
+                      _overview?['total_workers']?.toString() ?? '0',
+                      Icons.work,
+                      AppColors.workerColor,
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
             
             const SizedBox(height: 24),
             
@@ -163,26 +204,30 @@ class SuperAdminDashboardScreen extends StatelessWidget {
               children: [
                 _buildActionCard(
                   context,
-                  languageProvider.getText('User Management', 'उपयोगकर्ता प्रबंधन'),
-                  Icons.people,
-                  AppColors.primary,
+                  languageProvider.getText('Manage Admins', 'एडमिन प्रबंधन'),
+                  Icons.admin_panel_settings,
+                  AppColors.adminColor,
                   () {
-                    _showComingSoonDialog(context, languageProvider.getText(
-                      'User Management',
-                      'उपयोगकर्ता प्रबंधन'
-                    ));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ManageAdminsScreen(),
+                      ),
+                    );
                   },
                 ),
                 _buildActionCard(
                   context,
-                  languageProvider.getText('System Settings', 'सिस्टम सेटिंग्स'),
-                  Icons.settings,
-                  AppColors.adminColor,
+                  languageProvider.getText('Analytics', 'विश्लेषण'),
+                  Icons.analytics,
+                  AppColors.primary,
                   () {
-                    _showComingSoonDialog(context, languageProvider.getText(
-                      'System Settings',
-                      'सिस्टम सेटिंग्स'
-                    ));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SuperAdminAnalyticsScreen(),
+                      ),
+                    );
                   },
                 ),
                 _buildActionCard(
@@ -191,21 +236,23 @@ class SuperAdminDashboardScreen extends StatelessWidget {
                   Icons.assessment,
                   AppColors.workerColor,
                   () {
-                    _showComingSoonDialog(context, languageProvider.getText(
-                      'Reports',
-                      'रिपोर्ट्स'
-                    ));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SuperAdminAnalyticsScreen(),
+                      ),
+                    );
                   },
                 ),
                 _buildActionCard(
                   context,
-                  languageProvider.getText('Backup & Restore', 'बैकअप और रिस्टोर'),
-                  Icons.backup,
+                  languageProvider.getText('System Settings', 'सिस्टम सेटिंग्स'),
+                  Icons.settings,
                   AppColors.superAdminColor,
                   () {
                     _showComingSoonDialog(context, languageProvider.getText(
-                      'Backup & Restore',
-                      'बैकअप और रिस्टोर'
+                      'System Settings',
+                      'सिस्टम सेटिंग्स'
                     ));
                   },
                 ),
@@ -229,12 +276,14 @@ class SuperAdminDashboardScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: CustomButton(
-                text: languageProvider.getText('Create New Admin', 'नया एडमिन बनाएं'),
+                text: languageProvider.getText('Manage Admins', 'एडमिन प्रबंधन'),
                 onPressed: () {
-                  _showComingSoonDialog(context, languageProvider.getText(
-                    'Create New Admin',
-                    'नया एडमिन बनाएं'
-                  ));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ManageAdminsScreen(),
+                    ),
+                  );
                 },
                 backgroundColor: AppColors.adminColor,
               ),
@@ -245,14 +294,16 @@ class SuperAdminDashboardScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: CustomButton(
-                text: languageProvider.getText('System Maintenance', 'सिस्टम रखरखाव'),
+                text: languageProvider.getText('View Analytics', 'विश्लेषण देखें'),
                 onPressed: () {
-                  _showComingSoonDialog(context, languageProvider.getText(
-                    'System Maintenance',
-                    'सिस्टम रखरखाव'
-                  ));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SuperAdminAnalyticsScreen(),
+                    ),
+                  );
                 },
-                backgroundColor: AppColors.warning,
+                backgroundColor: AppColors.primary,
               ),
             ),
             
@@ -261,14 +312,9 @@ class SuperAdminDashboardScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: CustomButton(
-                text: languageProvider.getText('View System Logs', 'सिस्टम लॉग देखें'),
-                onPressed: () {
-                  _showComingSoonDialog(context, languageProvider.getText(
-                    'View System Logs',
-                    'सिस्टम लॉग देखें'
-                  ));
-                },
-                backgroundColor: AppColors.textSecondary,
+                text: languageProvider.getText('Refresh Data', 'डेटा रीफ्रेश करें'),
+                onPressed: _loadOverview,
+                backgroundColor: AppColors.success,
               ),
             ),
             

@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     # Multi-Agent Chatbot Configuration
     GOOGLE_API_KEY: str = ""  # For Gemini LLM (required for AI features)
     TAVILY_API_KEY: str = ""  # For web search (optional)
-    CHATBOT_MODEL: str = "gemini-1.5-flash"  # Production-ready Gemini model
+    CHATBOT_MODEL: str = "gemini-pro"  # Stable production model
     CHATBOT_TEMPERATURE: float = 0.7
     MAX_CHAT_HISTORY: int = 10
     

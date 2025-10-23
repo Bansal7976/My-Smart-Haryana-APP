@@ -379,17 +379,20 @@ class _AdminIssuesScreenState extends State<AdminIssuesScreen> {
                                     color: AppColors.textSecondary,
                                   ),
                                   const SizedBox(width: 4),
-                                  Text(
-                                    issue.problemType,
-                                    style: const TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 12,
+                                  Expanded(
+                                    child: Text(
+                                      issue.problemType,
+                                      style: const TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 12,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  const Spacer(),
+                                  const SizedBox(width: 8),
                                   Container(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 2),
+                                        horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
                                       color: _getStatusColor(issue.status)
                                           .withValues(alpha: 0.1),
@@ -400,9 +403,10 @@ class _AdminIssuesScreenState extends State<AdminIssuesScreen> {
                                           issue.status, languageProvider),
                                       style: TextStyle(
                                         color: _getStatusColor(issue.status),
-                                        fontSize: 12,
+                                        fontSize: 11,
                                         fontWeight: FontWeight.w500,
                                       ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ],

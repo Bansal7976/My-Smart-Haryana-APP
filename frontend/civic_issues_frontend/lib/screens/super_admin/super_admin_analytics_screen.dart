@@ -5,15 +5,17 @@ import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
 import '../../utils/app_colors.dart';
 
-class AdminAnalyticsScreen extends StatefulWidget {
-  const AdminAnalyticsScreen({super.key});
+class SuperAdminAnalyticsScreen extends StatefulWidget {
+  const SuperAdminAnalyticsScreen({super.key});
 
   @override
-  State<AdminAnalyticsScreen> createState() => _AdminAnalyticsScreenState();
+  State<SuperAdminAnalyticsScreen> createState() =>
+      _SuperAdminAnalyticsScreenState();
 }
 
-class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
-  Map<String, dynamic>? _analytics;
+class _SuperAdminAnalyticsScreenState extends State<SuperAdminAnalyticsScreen> {
+  Map<String, dynamic>? _overview;
+  List<Map<String, dynamic>> _districtStats = [];
   bool _isLoading = true;
   String? _error;
 
@@ -31,10 +33,13 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
 
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final analytics = await ApiService.getAdminAnalytics(authProvider.token!);
+      final overview = await ApiService.getSuperAdminOverview(authProvider.token!);
+      final districtStats =
+          await ApiService.getDistrictAnalytics(authProvider.token!);
 
       setState(() {
-        _analytics = analytics;
+        _overview = overview;
+        _districtStats = districtStats;
         _isLoading = false;
       });
     } catch (e) {
@@ -53,13 +58,13 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
-          languageProvider.getText('Analytics Dashboard', 'विश्लेषण डैशबोर्ड'),
+          languageProvider.getText('Analytics & Reports', 'विश्लेषण और रिपोर्ट'),
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: AppColors.adminColor,
+        backgroundColor: AppColors.superAdminColor,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -110,70 +115,23 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // District Overview
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [AppColors.adminColor, Color(0xFF1565C0)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.adminColor.withValues(alpha: 0.3),
-                                blurRadius: 10,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
+                        // Haryana Overview
+                        Text(
+                          languageProvider.getText(
+                            'Haryana Overview',
+                            'हरियाणा अवलोकन',
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(
-                                    Icons.location_city,
-                                    color: Colors.white,
-                                    size: 32,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          _analytics?['district'] ?? 'Your District',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        Text(
-                                          languageProvider.getText(
-                                            'District Analytics',
-                                            'जिला विश्लेषण',
-                                          ),
-                                          style: const TextStyle(
-                                            color: Colors.white70,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
                               ),
-                            ],
-                          ),
                         ),
+                        const SizedBox(height: 16),
 
-                        const SizedBox(height: 24),
-
-                        // Key Metrics Grid
+                        // Overview Stats Grid
                         GridView.count(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
@@ -182,36 +140,36 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
                           mainAxisSpacing: 16,
                           childAspectRatio: 1.3,
                           children: [
-                            _buildMetricCard(
+                            _buildStatCard(
+                              languageProvider.getText('Total Users', 'कुल उपयोगकर्ता'),
+                              _overview?['total_users']?.toString() ?? '0',
+                              Icons.people,
+                              AppColors.primary,
+                            ),
+                            _buildStatCard(
                               languageProvider.getText('Total Problems', 'कुल समस्याएं'),
-                              _analytics?['total_problems']?.toString() ?? '0',
+                              _overview?['total_problems']?.toString() ?? '0',
                               Icons.assignment,
                               AppColors.info,
                             ),
-                            _buildMetricCard(
-                              languageProvider.getText('Active Workers', 'सक्रिय कार्यकर्ता'),
-                              _analytics?['total_workers']?.toString() ?? '0',
-                              Icons.engineering,
+                            _buildStatCard(
+                              languageProvider.getText('Total Admins', 'कुल एडमिन'),
+                              _overview?['total_admins']?.toString() ?? '0',
+                              Icons.admin_panel_settings,
+                              AppColors.adminColor,
+                            ),
+                            _buildStatCard(
+                              languageProvider.getText('Total Workers', 'कुल कार्यकर्ता'),
+                              _overview?['total_workers']?.toString() ?? '0',
+                              Icons.work,
                               AppColors.workerColor,
-                            ),
-                            _buildMetricCard(
-                              languageProvider.getText('Pending', 'लंबित'),
-                              _analytics?['pending_problems']?.toString() ?? '0',
-                              Icons.pending,
-                              AppColors.pending,
-                            ),
-                            _buildMetricCard(
-                              languageProvider.getText('Completed', 'पूर्ण'),
-                              _analytics?['completed_problems']?.toString() ?? '0',
-                              Icons.check_circle,
-                              AppColors.success,
                             ),
                           ],
                         ),
 
                         const SizedBox(height: 24),
 
-                        // Problem Breakdown
+                        // Problem Status Breakdown
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -224,8 +182,8 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
                             children: [
                               Text(
                                 languageProvider.getText(
-                                  'Problem Status Breakdown',
-                                  'समस्या स्थिति विवरण',
+                                  'Problem Status',
+                                  'समस्या स्थिति',
                                 ),
                                 style: const TextStyle(
                                   fontSize: 18,
@@ -235,23 +193,38 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
                               const SizedBox(height: 16),
                               _buildStatusRow(
                                 languageProvider.getText('Pending', 'लंबित'),
-                                _analytics?['pending_problems']?.toString() ?? '0',
+                                _overview?['problems_by_status']?['pending']
+                                        ?.toString() ??
+                                    '0',
                                 AppColors.pending,
                               ),
                               _buildStatusRow(
                                 languageProvider.getText('Assigned', 'निर्दिष्ट'),
-                                _analytics?['assigned_problems']?.toString() ?? '0',
+                                _overview?['problems_by_status']?['assigned']
+                                        ?.toString() ??
+                                    '0',
                                 AppColors.inProgress,
                               ),
                               _buildStatusRow(
                                 languageProvider.getText('Completed', 'पूर्ण'),
-                                _analytics?['completed_problems']?.toString() ?? '0',
+                                _overview?['problems_by_status']?['completed']
+                                        ?.toString() ??
+                                    '0',
                                 AppColors.success,
                               ),
                               _buildStatusRow(
                                 languageProvider.getText('Verified', 'सत्यापित'),
-                                _analytics?['verified_problems']?.toString() ?? '0',
+                                _overview?['problems_by_status']?['verified']
+                                        ?.toString() ??
+                                    '0',
                                 AppColors.success,
+                              ),
+                              _buildStatusRow(
+                                languageProvider.getText('Rejected', 'अस्वीकृत'),
+                                _overview?['problems_by_status']?['rejected']
+                                        ?.toString() ??
+                                    '0',
+                                AppColors.error,
                               ),
                             ],
                           ),
@@ -259,11 +232,11 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
 
                         const SizedBox(height: 24),
 
-                        // Performance Metrics
+                        // District-wise Analytics
                         Text(
                           languageProvider.getText(
-                            'Performance Metrics',
-                            'प्रदर्शन मेट्रिक्स',
+                            'District-wise Statistics',
+                            'जिलेवार आंकड़े',
                           ),
                           style: Theme.of(context)
                               .textTheme
@@ -275,30 +248,32 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        _buildPerformanceCard(
-                          languageProvider.getText('Completion Rate', 'पूर्णता दर'),
-                          _calculateCompletionRate(),
-                          Icons.trending_up,
-                          AppColors.success,
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        _buildPerformanceCard(
-                          languageProvider.getText('Average Response Time', 'औसत प्रतिक्रिया समय'),
-                          _analytics?['avg_response_time']?.toString() ?? 'N/A',
-                          Icons.schedule,
-                          AppColors.info,
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        _buildPerformanceCard(
-                          languageProvider.getText('Worker Utilization', 'कार्यकर्ता उपयोग'),
-                          _calculateWorkerUtilization(),
-                          Icons.people,
-                          AppColors.workerColor,
-                        ),
+                        // District Stats List
+                        _districtStats.isEmpty
+                            ? Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(32),
+                                  child: Text(
+                                    languageProvider.getText(
+                                      'No district data available',
+                                      'कोई जिला डेटा उपलब्ध नहीं है',
+                                    ),
+                                    style: const TextStyle(
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: _districtStats.length,
+                                itemBuilder: (context, index) {
+                                  final district = _districtStats[index];
+                                  return _buildDistrictCard(
+                                      district, languageProvider);
+                                },
+                              ),
 
                         const SizedBox(height: 20),
                       ],
@@ -308,7 +283,7 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
     );
   }
 
-  Widget _buildMetricCard(
+  Widget _buildStatCard(
       String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -409,44 +384,83 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
     );
   }
 
-  Widget _buildPerformanceCard(
-      String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
+  Widget _buildDistrictCard(
+      Map<String, dynamic> district, LanguageProvider languageProvider) {
+    final totalProblems = district['total_problems'] ?? 0;
+    final pendingProblems = district['pending_problems'] ?? 0;
+    final completedProblems = district['completed_problems'] ?? 0;
+    final districtName = district['district'] ?? 'Unknown';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+      child: ExpansionTile(
+        leading: CircleAvatar(
+          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+          child: Text(
+            districtName[0].toUpperCase(),
+            style: const TextStyle(
+              color: AppColors.primary,
+              fontWeight: FontWeight.bold,
             ),
-            child: Icon(icon, color: color, size: 24),
           ),
-          const SizedBox(width: 16),
-          Expanded(
+        ),
+        title: Text(
+          districtName,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+        subtitle: Text(
+          '${languageProvider.getText('Total', 'कुल')}: $totalProblems ${languageProvider.getText('problems', 'समस्याएं')}',
+          style: const TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 14,
+          ),
+        ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildDistrictStat(
+                      languageProvider.getText('Pending', 'लंबित'),
+                      pendingProblems.toString(),
+                      AppColors.pending,
+                    ),
+                    _buildDistrictStat(
+                      languageProvider.getText('Completed', 'पूर्ण'),
+                      completedProblems.toString(),
+                      AppColors.success,
+                    ),
+                    _buildDistrictStat(
+                      languageProvider.getText('Workers', 'कार्यकर्ता'),
+                      (district['total_workers'] ?? 0).toString(),
+                      AppColors.workerColor,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 12),
+                LinearProgressIndicator(
+                  value: totalProblems > 0
+                      ? completedProblems / totalProblems
+                      : 0,
+                  backgroundColor: AppColors.pending.withValues(alpha: 0.2),
+                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.success),
+                ),
+                const SizedBox(height: 8),
                 Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: color,
+                  '${totalProblems > 0 ? ((completedProblems / totalProblems) * 100).toStringAsFixed(1) : 0}% ${languageProvider.getText('Completion Rate', 'पूर्णता दर')}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -457,21 +471,27 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
     );
   }
 
-  String _calculateCompletionRate() {
-    if (_analytics == null) return '0%';
-    final total = _analytics!['total_problems'] ?? 0;
-    final completed = _analytics!['completed_problems'] ?? 0;
-    if (total == 0) return '0%';
-    final rate = (completed / total * 100).toStringAsFixed(1);
-    return '$rate%';
-  }
-
-  String _calculateWorkerUtilization() {
-    if (_analytics == null) return '0%';
-    final workers = _analytics!['total_workers'] ?? 0;
-    final assigned = _analytics!['assigned_problems'] ?? 0;
-    if (workers == 0) return '0%';
-    final utilization = (assigned / workers * 100).toStringAsFixed(1);
-    return '$utilization%';
+  Widget _buildDistrictStat(String label, String value, Color color) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ],
+    );
   }
 }
+

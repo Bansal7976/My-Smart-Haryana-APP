@@ -61,7 +61,7 @@ async def calculate_priority_score(
         # Spatial query to find nearby pending problems within 500m
         query = text("""
             SELECT COUNT(id) FROM problems
-            WHERE status = 'pending' 
+            WHERE status = 'PENDING'::problemstatusenum
             AND ST_DWithin(
                 location,
                 ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography,

@@ -7,11 +7,14 @@ from sqlalchemy import func, select, case
 from sqlalchemy.orm import selectinload
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
+from pathlib import Path
+import logging
 
 from .. import database, schemas, models, utils, storage
 from ..services import priority, sentiment
 from ..services.voice_to_text import convert_audio_to_text, get_supported_languages
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/users", tags=["Client & Issues"])
 
 @router.get("/me", response_model=schemas.User)
@@ -75,7 +78,12 @@ async def create_issue(
     db.add(new_media)
     
     # Pass coordinates directly to avoid GeoAlchemy2 parsing issues
-    new_problem.priority = await priority.calculate_priority_score(db, new_problem, longitude, latitude)
+    try:
+        new_problem.priority = await priority.calculate_priority_score(db, new_problem, longitude, latitude)
+    except Exception as e:
+        logger.warning(f"Priority calculation failed, using default: {str(e)}")
+        new_problem.priority = 5.0  # Default medium priority
+    
     await db.commit()
     await db.refresh(new_problem)
     
@@ -298,11 +306,17 @@ async def convert_voice_to_text(
     The audio will be automatically transcribed to text that can be used
     for issue descriptions, feedback, or any text field.
     """
-    # Validate audio file
-    if not audio_file.content_type or not audio_file.content_type.startswith('audio/'):
+    # Validate audio file - check both content type and filename extension
+    valid_audio_extensions = {'.webm', '.ogg', '.mp3', '.wav', '.m4a', '.aac', '.opus', '.flac'}
+    file_extension = Path(audio_file.filename or '').suffix.lower()
+    
+    is_valid_content_type = audio_file.content_type and audio_file.content_type.startswith('audio/')
+    is_valid_extension = file_extension in valid_audio_extensions
+    
+    if not is_valid_content_type and not is_valid_extension:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File must be an audio file (webm, ogg, mp3, wav, etc.)"
+            detail=f"File must be an audio file. Got: {audio_file.content_type or 'unknown type'}, extension: {file_extension or 'no extension'}"
         )
     
     # Read audio bytes
