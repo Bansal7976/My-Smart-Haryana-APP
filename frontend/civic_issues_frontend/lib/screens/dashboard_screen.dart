@@ -63,7 +63,7 @@ class DashboardScreen extends StatelessWidget {
           // Profile Menu
           PopupMenuButton<String>(
             icon: const Icon(Icons.account_circle, color: Colors.white),
-            onSelected: (value) {
+            onSelected: (value) async {
               switch (value) {
                 case 'profile':
                   _showProfileDialog(context);
@@ -72,7 +72,7 @@ class DashboardScreen extends StatelessWidget {
                   _showAboutDialog(context);
                   break;
                 case 'logout':
-                  _handleLogout(context);
+                  await _handleLogout(context);
                   break;
               }
             },
@@ -360,8 +360,8 @@ class DashboardScreen extends StatelessWidget {
                     Expanded(
                       child: Text(
                         languageProvider.getText(
-                            'Every voice matters, every issue counts — powered by AI for a smarter Haryana.',
-                            'हर आवाज़ मायने रखती है, हर मुद्दा गिनती करता है — एक स्मार्ट हरियाणा के लिए AI द्वारा संचालित।'),
+                            'Every voice matters, every issue counts — powered by Vishal Bansal for a smarter Haryana.',
+                            'हर आवाज़ मायने रखती है, हर मुद्दा गिनती करता है — एक स्मार्ट हरियाणा के लिए विशाल बंसल द्वारा संचालित।'),
                         style: const TextStyle(
                           fontSize: 14,
                           fontStyle: FontStyle.italic,
@@ -475,7 +475,7 @@ class DashboardScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '© 2024 Smart Haryana',
+                      '© 2025 Smart Haryana',
                       style: TextStyle(
                         fontSize: 11,
                         color: AppColors.textSecondary.withValues(alpha: 0.6),
@@ -546,31 +546,36 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Future<void> _handleLogout(BuildContext context) async {
+    // Get providers BEFORE logout to avoid context issues
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final languageProvider =
-        Provider.of<LanguageProvider>(context, listen: false);
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+    
+    // Get BuildContext reference that won't be deactivated
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     try {
+      // Perform logout
       await authProvider.logout();
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(languageProvider.getText(
-                'Logged out successfully', 'सफलतापूर्वक लॉग आउट')),
-            backgroundColor: AppColors.success,
-          ),
-        );
-      }
+      
+      // Show success message using saved messenger
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(languageProvider.getText(
+              'Logged out successfully', 'सफलतापूर्वक लॉग आउट')),
+          backgroundColor: AppColors.success,
+          duration: const Duration(seconds: 2),
+        ),
+      );
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Logout successful'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-      }
+      // Show error message using saved messenger
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(languageProvider.getText(
+              'Logout error, but session cleared', 'लॉगआउट त्रुटि, लेकिन सत्र साफ़ हो गया')),
+          backgroundColor: AppColors.warning,
+          duration: const Duration(seconds: 2),
+        ),
+      );
     }
   }
 }

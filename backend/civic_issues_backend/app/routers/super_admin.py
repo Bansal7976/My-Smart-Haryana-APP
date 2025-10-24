@@ -81,6 +81,7 @@ async def get_all_districts_analytics(
     """
     from sqlalchemy import func, case
     
+    # Get problem stats per district
     query = select(
         models.Problem.district,
         func.count(models.Problem.id).label("total_problems"),
@@ -93,6 +94,18 @@ async def get_all_districts_analytics(
     result = await db.execute(query)
     districts = result.all()
     
+    # Get workers count per district
+    workers_query = select(
+        models.User.district,
+        func.count(models.User.id).label("workers_count")
+    ).where(
+        models.User.role == models.RoleEnum.WORKER,
+        models.User.is_active == True
+    ).group_by(models.User.district)
+    
+    workers_result = await db.execute(workers_query)
+    workers_by_district = {row.district: row.workers_count for row in workers_result.all()}
+    
     return [
         {
             "district_name": row.district,
@@ -101,6 +114,7 @@ async def get_all_districts_analytics(
             "assigned_problems": row.assigned,
             "completed_problems": row.completed,
             "verified_problems": row.verified,
+            "total_workers": workers_by_district.get(row.district, 0),
             "resolution_rate": round((row.completed + row.verified) / row.total_problems * 100, 1) if row.total_problems > 0 else 0.0
         }
         for row in districts

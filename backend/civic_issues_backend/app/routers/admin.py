@@ -95,14 +95,37 @@ async def get_department_activity(db: AsyncSession = Depends(database.get_db), a
 
 @router.get("/analytics/worker-performance", response_model=List[schemas.WorkerPerformanceStats])
 async def get_worker_performance(db: AsyncSession = Depends(database.get_db), admin_user: models.User = Depends(get_current_admin_user)):
-    query = (select(models.WorkerProfile.id, models.User.full_name, models.Department.name, func.count(models.Problem.id).label("tasks_completed"), func.avg(models.Feedback.rating).label("average_rating"))
-             .select_from(models.WorkerProfile).join(models.User).join(models.Department)
-             .outerjoin(models.Problem, models.WorkerProfile.id == models.Problem.assigned_worker_id)
-             .outerjoin(models.Feedback, models.Problem.id == models.Feedback.problem_id)
-             .where(models.User.district == admin_user.district, models.Problem.status.in_([models.ProblemStatusEnum.COMPLETED, models.ProblemStatusEnum.VERIFIED]))
-             .group_by(models.WorkerProfile.id, models.User.full_name, models.Department.name).order_by(models.User.full_name))
+    # Get all workers with their assigned and completed task counts
+    query = (
+        select(
+            models.WorkerProfile.id,
+            models.User.full_name,
+            models.Department.name,
+            func.count(case((models.Problem.status.in_([models.ProblemStatusEnum.ASSIGNED, models.ProblemStatusEnum.COMPLETED, models.ProblemStatusEnum.VERIFIED]), 1))).label("tasks_assigned"),
+            func.count(case((models.Problem.status.in_([models.ProblemStatusEnum.COMPLETED, models.ProblemStatusEnum.VERIFIED]), 1))).label("tasks_completed"),
+            func.avg(case((models.Problem.status.in_([models.ProblemStatusEnum.COMPLETED, models.ProblemStatusEnum.VERIFIED]), models.Feedback.rating))).label("average_rating")
+        )
+        .select_from(models.WorkerProfile)
+        .join(models.User)
+        .join(models.Department)
+        .outerjoin(models.Problem, models.WorkerProfile.id == models.Problem.assigned_worker_id)
+        .outerjoin(models.Feedback, models.Problem.id == models.Feedback.problem_id)
+        .where(models.User.district == admin_user.district)
+        .group_by(models.WorkerProfile.id, models.User.full_name, models.Department.name)
+        .order_by(models.User.full_name)
+    )
     result = await db.execute(query)
-    return [{"worker_id": row.id, "worker_name": row.full_name, "department_name": row.name, "tasks_completed": row.tasks_completed, "average_rating": round(row.average_rating, 2) if row.average_rating else None} for row in result.all()]
+    return [
+        {
+            "worker_id": row.id,
+            "worker_name": row.full_name,
+            "department_name": row.name,
+            "tasks_assigned": row.tasks_assigned or 0,
+            "tasks_completed": row.tasks_completed or 0,
+            "average_rating": round(row.average_rating, 2) if row.average_rating else None
+        }
+        for row in result.all()
+    ]
 
 @router.get("/workers", response_model=List[schemas.WorkerWithProfile])
 async def get_all_workers_in_district(

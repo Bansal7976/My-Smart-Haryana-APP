@@ -274,6 +274,7 @@ class WorkerPerformanceStats(BaseModel):
     worker_id: int
     worker_name: str
     department_name: str
+    tasks_assigned: int
     tasks_completed: int
     average_rating: Optional[float] = None
 
@@ -337,6 +338,7 @@ class DistrictStats(BaseModel):
     assigned_problems: int
     completed_problems: int
     verified_problems: int
+    total_workers: int
     resolution_rate: float
 
 class SuperAdminOverview(BaseModel):

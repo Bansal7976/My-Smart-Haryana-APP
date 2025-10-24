@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../utils/app_colors.dart';
+import '../services/api_service.dart';
 
 class ImageGallery extends StatelessWidget {
   final List<Map<String, dynamic>> mediaFiles;
@@ -173,8 +174,9 @@ class ImageGallery extends StatelessWidget {
       fullUrl = fileUrl;
     } else {
       // Assume it's a relative path like "uploads/filename.jpg"
-      const baseUrl = 'http://192.168.5.19:8000';
-      fullUrl = fileUrl.startsWith('/') ? '$baseUrl$fileUrl' : '$baseUrl/$fileUrl';
+      fullUrl = fileUrl.startsWith('/') 
+          ? '${ApiService.baseUrl}$fileUrl' 
+          : '${ApiService.baseUrl}/$fileUrl';
     }
 
     // For web compatibility, we'll use Image.network
@@ -238,8 +240,9 @@ class ImageGallery extends StatelessWidget {
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       fullUrl = imageUrl;
     } else {
-      const baseUrl = 'http://192.168.5.19:8000';
-      fullUrl = imageUrl.startsWith('/') ? '$baseUrl$imageUrl' : '$baseUrl/$imageUrl';
+      fullUrl = imageUrl.startsWith('/') 
+          ? '${ApiService.baseUrl}$imageUrl' 
+          : '${ApiService.baseUrl}/$imageUrl';
     }
 
     showDialog(

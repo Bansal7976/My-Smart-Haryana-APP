@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     GOOGLE_API_KEY: str = ""  # For Gemini LLM (required for AI features)
     TAVILY_API_KEY: str = ""  # For web search (optional)
     PINECONE_API_KEY: str = ""  # For Pinecone vector database (optional, but recommended for RAG)
-    CHATBOT_MODEL: str = "gemini-1.5-flash"  # Updated model (gemini-pro is deprecated)
+    CHATBOT_MODEL: str = "gemini-2.5-flash"  # Updated model (gemini-pro is deprecated)
     CHATBOT_TEMPERATURE: float = 0.7
     MAX_CHAT_HISTORY: int = 10
     
@@ -91,3 +91,4 @@ except ValidationError as e:
         print(f"  - {field}: {message}")
     print("\nPlease check your .env file and fix the above errors.")
     sys.exit(1)
+    

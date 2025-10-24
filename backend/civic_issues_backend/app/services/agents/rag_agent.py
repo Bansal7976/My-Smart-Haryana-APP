@@ -1,4 +1,6 @@
+# rag_agent.py
 # RAG Agent - Retrieval Augmented Generation for Smart Haryana App Knowledge
+
 from typing import Dict, Any, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from .base_agent import BaseAgent
@@ -6,119 +8,96 @@ from langchain_community.embeddings import SentenceTransformerEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
-from pinecone import Pinecone, ServerlessSpec
 from dotenv import load_dotenv
-load_dotenv()
+from pinecone import Pinecone, ServerlessSpec
 import os
 import logging
 import time
 
+# Load environment variables
+load_dotenv()
+
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
 
 class RAGAgent(BaseAgent):
     """
     Agent that uses RAG (Retrieval Augmented Generation) to answer questions
     about the Smart Haryana app, its features, and how to use it.
     """
-    
+
     def __init__(self, google_api_key: str, pinecone_api_key: str = None, index_name: str = "smart-haryana"):
         super().__init__(
             name="RAG Agent",
             description="Answers questions about Smart Haryana app using knowledge base"
         )
-        self.google_api_key = google_api_key 
+        self.google_api_key = google_api_key
         self.pinecone_api_key = pinecone_api_key or os.getenv("PINECONE_API_KEY")
         self.index_name = index_name
         self.vectorstore = None
         self.embeddings = None
-        self.pc = None
-        
-        # Initialize embeddings and vector store
+        self.index = None
+
         self._initialize_rag()
-    
+
     def _initialize_rag(self):
         """Initialize embeddings and Pinecone vector store"""
-        
         try:
-            # Initialize local embeddings
+            # Step 1: Initialize local embeddings
             logger.info("Initializing local embeddings (all-MiniLM-L6-v2)...")
             self.embeddings = SentenceTransformerEmbeddings(
                 model_name="all-MiniLM-L6-v2",
-                model_kwargs={'device': 'cpu'}
+                model_kwargs={"device": "cpu"}
             )
             logger.info("Local embeddings initialized.")
-            
-            # Check if Pinecone API key is available
+
+            # Step 2: Check Pinecone API key
             if not self.pinecone_api_key:
-                logger.warning("⚠️ Pinecone API key not found. RAG will work with in-memory fallback.")
-                logger.warning("To use Pinecone, set PINECONE_API_KEY in your .env file")
+                logger.warning("⚠️ Pinecone API key not found. Using in-memory vectorstore fallback.")
                 return
-            
-            # Initialize Pinecone
+
+            # Step 3: Initialize Pinecone client (v5+)
             logger.info("Connecting to Pinecone...")
-            self.pc = Pinecone(api_key=self.pinecone_api_key)
-            
-            # Check if index exists
-            existing_indexes = [index.name for index in self.pc.list_indexes()]
-            
-            if self.index_name not in existing_indexes:
-                logger.info(f"Creating new Pinecone index: {self.index_name}")
-                # Create index with appropriate dimensions for all-MiniLM-L6-v2 (384 dimensions)
-                self.pc.create_index(
+            pc = Pinecone(api_key=self.pinecone_api_key)
+            index_list = pc.list_indexes().names()
+
+            # Step 4: Create index if it doesn't exist
+            if self.index_name not in index_list:
+                logger.info(f"Creating Pinecone index: {self.index_name}")
+                pc.create_index(
                     name=self.index_name,
-                    dimension=384,  # all-MiniLM-L6-v2 embedding dimension
+                    dimension=384,
                     metric="cosine",
-                    spec=ServerlessSpec(
-                        cloud="aws",
-                        region="us-east-1"  # Free tier region
-                    )
+                    spec=ServerlessSpec(cloud="gcp", region="us-east1")
                 )
-                # Wait for index to be ready
-                logger.info("Waiting for index to be ready...")
-                time.sleep(10)
-                
-                # Create knowledge base and populate index
-                documents = self._create_knowledge_base()
-                if documents:
-                    logger.info(f"Adding {len(documents)} documents to Pinecone...")
-                    self.vectorstore = PineconeVectorStore.from_documents(
-                        documents=documents,
-                        embedding=self.embeddings,
-                        index_name=self.index_name
-                    )
-                    logger.info("✅ Pinecone index populated successfully")
-                else:
-                    logger.warning("No knowledge base documents found")
-            else:
-                # Connect to existing index
-                logger.info(f"Connecting to existing Pinecone index: {self.index_name}")
-                self.vectorstore = PineconeVectorStore.from_existing_index(
-                    index_name=self.index_name,
-                    embedding=self.embeddings
-                )
-            
+                time.sleep(5)  # wait for index creation
+
+            # Step 5: Connect to the index
+            self.index = pc.Index(self.index_name)
+
+            # Step 6: Initialize LangChain Pinecone vectorstore
+            self.vectorstore = PineconeVectorStore(
+                index=self.index,
+                embedding=self.embeddings,
+                text_key="page_content"
+            )
+
             logger.info("✅ RAG Agent with Pinecone initialized successfully")
-                
+
         except Exception as e:
             logger.error(f"❌ RAG initialization error: {e}", exc_info=True)
-            logger.warning("RAG will continue with fallback mode")
-    
+            logger.warning("RAG will use in-memory vectorstore fallback mode")
+
     def _create_knowledge_base(self) -> List[Document]:
-        """Create knowledge base documents from markdown files"""
-        
+        """Load knowledge base documents from markdown files"""
         documents = []
-        
-        # Path to knowledge base directory
-        # Assumes knowledge_base is 3 levels up from this file
-        # (app/services/agents/rag_agent.py -> app/services -> app -> root/knowledge_base)
         kb_path = os.path.join(os.path.dirname(__file__), "../../../knowledge_base")
-        
-        # Check if knowledge base directory exists
+
         if not os.path.exists(kb_path):
-            logger.warning(f"RAG Agent: Knowledge base directory not found at {kb_path}")
+            logger.warning(f"Knowledge base directory not found at {kb_path}")
             return documents
-        
-        # Read all markdown files from knowledge base
+
         md_files = [
             "app_guide.md",
             "features.md",
@@ -127,26 +106,22 @@ class RAGAgent(BaseAgent):
             "haryana_info.md",
             "troubleshooting.md"
         ]
-        
+
         for filename in md_files:
             file_path = os.path.join(kb_path, filename)
-            
             if os.path.exists(file_path):
                 try:
-                    with open(file_path, 'r', encoding='utf-8') as f:
+                    with open(file_path, "r", encoding="utf-8") as f:
                         content = f.read()
-                        
-                    # Split text into chunks
+
                     text_splitter = RecursiveCharacterTextSplitter(
                         chunk_size=1000,
                         chunk_overlap=200,
-                        length_function=len,
                         separators=["\n\n", "\n", ". ", " ", ""]
                     )
-                    
+
                     chunks = text_splitter.split_text(content)
-                    
-                    # Create documents with source metadata
+
                     for chunk in chunks:
                         documents.append(
                             Document(
@@ -154,22 +129,20 @@ class RAGAgent(BaseAgent):
                                 metadata={"source": filename}
                             )
                         )
-                    
-                    logger.info(f"✓ RAG: Loaded {len(chunks)} chunks from {filename}")
-                    
+
+                    logger.info(f"Loaded {len(chunks)} chunks from {filename}")
+
                 except Exception as e:
-                    logger.error(f"RAG: Error loading {filename}: {e}")
+                    logger.error(f"Error loading {filename}: {e}")
             else:
-                logger.warning(f"RAG: Knowledge base file not found: {filename}")
-        
-        logger.info(f"RAG: Total documents loaded: {len(documents)}")
+                logger.warning(f"Knowledge base file not found: {filename}")
+
+        logger.info(f"Total documents loaded: {len(documents)}")
         return documents
-    
+
     async def can_handle(self, query: str, context: Dict[str, Any]) -> bool:
-        """
-        Check if query is about the app itself, features, or how-to questions.
-        """
-        app_keywords = [
+        """Check if query is about the app"""
+        keywords = [
             "how to", "कैसे", "what is", "क्या है", "how do i", "मैं कैसे",
             "report", "रिपोर्ट", "track", "ट्रैक", "issue", "समस्या",
             "app", "ऐप", "platform", "feature", "सुविधा", "use", "उपयोग",
@@ -178,50 +151,36 @@ class RAGAgent(BaseAgent):
             "priority", "प्राथमिकता", "assignment", "आवंटन", "worker", "कर्मचारी",
             "tutorial", "guide", "help", "मदद", "question", "प्रश्न"
         ]
-        
         query_lower = query.lower()
-        return any(keyword in query_lower for keyword in app_keywords)
-    
+        return any(keyword in query_lower for keyword in keywords)
+
     async def execute(
-        self, 
-        query: str, 
+        self,
+        query: str,
         context: Dict[str, Any],
         db: AsyncSession,
         user_id: int
     ) -> Dict[str, Any]:
-        """
-        Execute RAG query to answer app-related questions.
-        """
-        
+        """Execute RAG query"""
         if not self.vectorstore:
             return {
-                "response": "I'm sorry, but my knowledge base is currently unavailable. Please try again later.",
+                "response": "Knowledge base is currently unavailable.",
                 "metadata": {"error": "vectorstore_not_initialized"},
                 "agent_type": "rag"
             }
-        
+
         try:
-            # Retrieve relevant documents
-            retriever = self.vectorstore.as_retriever(
-                search_kwargs={"k": 3}  # Top 3 most relevant chunks
-            )
-            
-            # Use async aget_relevant_documents
-            docs = await retriever.aget_relevant_documents(query)
-            
+            # Use synchronous search to avoid aiohttp session issues
+            docs = self.vectorstore.similarity_search(query, k=3)
+
             if not docs:
                 return {
-                    "response": "I don't have specific information about that in my knowledge base. Could you rephrase your question?",
+                    "response": "No relevant information found in knowledge base.",
                     "metadata": {"docs_found": 0},
                     "agent_type": "rag"
                 }
-            
-            # Combine retrieved context
-            context_text = "\n\n".join([doc.page_content for doc in docs])
-            
-            # This context will be sent to the Gemini agent for enhancement
-            response_text = context_text
-            
+
+            response_text = "\n\n".join([doc.page_content for doc in docs])
             return {
                 "response": response_text,
                 "metadata": {
@@ -230,11 +189,21 @@ class RAGAgent(BaseAgent):
                 },
                 "agent_type": "rag"
             }
-            
+
+        except RuntimeError as e:
+            if "Session is closed" in str(e):
+                logger.error("RAG session closed error - reinitializing vectorstore")
+                self._initialize_rag()
+                return {
+                    "response": "Knowledge base temporarily unavailable. Please try again.",
+                    "metadata": {"error": "session_closed_reinitializing"},
+                    "agent_type": "rag"
+                }
+            raise
         except Exception as e:
-            logger.error(f"❌ RAG agent error: {str(e)}", exc_info=True)
+            logger.error(f"RAG execution error: {str(e)}", exc_info=True)
             return {
-                "response": "I encountered an error while searching my knowledge base. Please try rephrasing your question.",
+                "response": "Error retrieving information. Please try again.",
                 "metadata": {"error": "retrieval_failed"},
                 "agent_type": "rag"
             }

@@ -1,2 +1,1 @@
-# Keep this directory in Git but ignore the uploaded files
-
+# This file keeps the uploads directory in git while ignoring the actual uploaded files

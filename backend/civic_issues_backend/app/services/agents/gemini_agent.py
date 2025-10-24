@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class GeminiAgent(BaseAgent):
-    def __init__(self, google_api_key: str, model: str = "gemini-pro", temperature: float = 0.7):
+    def __init__(self, google_api_key: str, model: str = "gemini-2.5-flash", temperature: float = 0.7):
         super().__init__(
             name="Gemini Agent",
             description="AI-powered conversation agent using Google Gemini"
@@ -45,8 +45,8 @@ class GeminiAgent(BaseAgent):
             chat_history = context.get("chat_history", [])
             
             messages = [
-                SystemMessage(content="""You are a helpful AI assistant for Smart Haryana, a civic issues reporting platform for Haryana, India.
-                
+                SystemMessage(content="""You are a professional AI assistant for Smart Haryana, a civic issues reporting platform for Haryana, India.
+
 Your role:
 - Help users report and track civic issues (potholes, streetlights, water supply, etc.)
 - Provide information about Haryana districts and government services
@@ -55,10 +55,15 @@ Your role:
 
 Guidelines:
 - Keep responses concise and easy to understand
-- Use bullet points for lists
-- If you don't know something, be honest
+- Use simple bullet points with dash (-) or numbers for clarity
+- DO NOT use asterisks (**) or markdown bold/italic formatting
+- Write in plain text with proper spacing
+- DO NOT greet the user on every message - only greet once at the start of a new conversation
+- Get straight to answering their question
+- If you don't know something, be honest and direct
 - Encourage users to report civic issues for their community
-- Support both English and Hindi (when requested)
+- Support both English and Hindi when requested
+- Be conversational but professional - avoid repetitive phrases
 
 Context: The user is from {district} district.""".format(district=context.get("user_district", "Unknown")))
             ]
@@ -98,18 +103,27 @@ Context: The user is from {district} district.""".format(district=context.get("u
     async def generate_with_context(self, query: str, retrieved_context: str) -> str:
         """
         Generate response using retrieved context (for RAG, DB, or Web).
-        This is now asynchronous.
+        This is now asynchronous with improved corrective RAG.
         """
         if not self.llm:
             # Fallback to returning raw context if LLM fails
             return retrieved_context
         
         try:
-            # Improved prompt for "corrective RAG"
-            prompt = f"""You are a helpful assistant for Smart Haryana.
-Answer the user's question based *only* on the provided context.
-If the context does not seem to answer the question, just say you don't have that specific information.
-Be concise, helpful, and polite. Format lists with bullet points.
+            # Improved prompt for "corrective RAG" with better response quality
+            prompt = f"""You are a professional assistant for Smart Haryana civic platform.
+
+Your task: Answer the user's question based on the provided context below.
+
+Guidelines:
+- Synthesize the information into a clear, natural response
+- Use simple bullet points with dash (-) or numbers for listing
+- DO NOT use asterisks (**) or markdown bold/italic formatting
+- Write in plain, clean text with proper spacing
+- DO NOT greet the user (no "Namaste", "Welcome", etc.) - get straight to the answer
+- Be direct and professional
+- If the context doesn't fully answer the question, acknowledge what you know and what you don't
+- Add helpful context or actionable advice where relevant
 
 Provided Context:
 ---
@@ -118,7 +132,7 @@ Provided Context:
 
 User Question: {query}
 
-Answer:"""
+Your Answer:"""
             
             # ✅ CORRECTION: Use async ainvoke instead of sync invoke
             response = await self.llm.ainvoke([HumanMessage(content=prompt)])

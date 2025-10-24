@@ -21,13 +21,17 @@ class AnalyticsAgent(BaseAgent):
     
     async def can_handle(self, query: str, context: Dict[str, Any]) -> bool:
         """
-        Check if query is about statistics, best city, trends, etc.
+        Check if query is about statistics, best city, trends, or user's own problems.
         """
         keywords = [
             "best", "सबसे अच्छा", "top", "most", "सबसे", "statistics", "आंकड़े",
             "how many", "कितने", "which city", "कौन सा शहर", "district", "जिला",
             "resolved", "solved", "हल", "completed", "पूर्ण", "ranking", "रैंकिंग",
-            "comparison", "तुलना", "performance", "प्रदर्शन", "worst", "least"
+            "comparison", "तुलना", "performance", "प्रदर्शन", "worst", "least",
+            # User's own problems
+            "my issues", "my problems", "मेरी समस्याएं", "मेरे मुद्दे", "reported",
+            "my report", "मेरी रिपोर्ट", "last", "recent", "latest", "नवीनतम",
+            "show my", "दिखाओ मेरे", "status", "स्थिति", "track", "ट्रैक"
         ]
         query_lower = query.lower()
         return any(keyword in query_lower for keyword in keywords)
@@ -46,7 +50,12 @@ class AnalyticsAgent(BaseAgent):
         query_lower = query.lower()
         
         # Determine what kind of analytics to provide
-        if any(word in query_lower for word in ["best", "top", "सबसे अच्छा"]):
+        # Check for user's own problems first (higher priority)
+        if any(word in query_lower for word in ["my issues", "my problems", "my report", "मेरी समस्याएं", "मेरे मुद्दे", "show my"]):
+            return await self._get_user_problems(db, user_id, query_lower)
+        elif any(word in query_lower for word in ["latest", "last problem", "recent problem", "नवीनतम", "status of"]) and any(word in query_lower for word in ["my", "मेरा"]):
+            return await self._get_latest_problem_status(db, user_id)
+        elif any(word in query_lower for word in ["best", "top", "सबसे अच्छा"]):
             return await self._get_best_performing_cities(db, query_lower)
         elif any(word in query_lower for word in ["worst", "least", "सबसे खराब"]):
             return await self._get_worst_performing_cities(db, query_lower)
@@ -291,6 +300,171 @@ class AnalyticsAgent(BaseAgent):
             "response": response_text,
             "metadata": {
                 "departments": [{"name": d, "count": c} for d, c in departments]
+            },
+            "agent_type": "analytics"
+        }
+    
+    async def _get_user_problems(self, db: AsyncSession, user_id: int, query: str) -> Dict[str, Any]:
+        """
+        Get user's recently reported problems.
+        """
+        # Determine how many to show (default 3)
+        limit = 3
+        if "4" in query or "four" in query or "चार" in query:
+            limit = 4
+        elif "5" in query or "five" in query or "पांच" in query:
+            limit = 5
+        elif "last" in query or "latest" in query:
+            limit = 3
+        
+        # Query user's problems
+        problems_query = select(models.Problem).where(
+            models.Problem.submitted_by_id == user_id
+        ).order_by(
+            desc(models.Problem.created_at)
+        ).limit(limit).options(
+            selectinload(models.Problem.assigned_to)
+        )
+        
+        result = await db.execute(problems_query)
+        problems = result.scalars().all()
+        
+        if not problems:
+            return {
+                "response": "You haven't reported any issues yet. Use the app to report civic problems in your area!",
+                "metadata": {"count": 0},
+                "agent_type": "analytics"
+            }
+        
+        # Format response
+        response_text = f"📋 Your Last {len(problems)} Reported Issue{'s' if len(problems) > 1 else ''}:\n\n"
+        
+        status_icons = {
+            "PENDING": "⏳",
+            "ASSIGNED": "👷",
+            "COMPLETED": "✅",
+            "VERIFIED": "✓"
+        }
+        
+        for idx, problem in enumerate(problems, 1):
+            status_icon = status_icons.get(problem.status.value, "📌")
+            status_text = problem.status.value.replace("_", " ").title()
+            
+            # Format date
+            created_date = problem.created_at.strftime("%d %b %Y")
+            
+            response_text += f"{idx}. {status_icon} Problem ID: #{problem.id}\n"
+            response_text += f"   Type: {problem.problem_type}\n"
+            response_text += f"   Status: {status_text}\n"
+            response_text += f"   Location: {problem.area}, {problem.district}\n"
+            response_text += f"   Reported: {created_date}\n"
+            
+            if problem.description and len(problem.description) > 0:
+                desc_preview = problem.description[:60] + "..." if len(problem.description) > 60 else problem.description
+                response_text += f"   Description: {desc_preview}\n"
+            
+            response_text += "\n"
+        
+        response_text += "💡 Tip: You can track these issues in the 'My Issues' section of the app!"
+        
+        return {
+            "response": response_text,
+            "metadata": {
+                "count": len(problems),
+                "problems": [
+                    {
+                        "id": p.id,
+                        "type": p.problem_type,
+                        "status": p.status.value,
+                        "district": p.district,
+                        "created_at": p.created_at.isoformat()
+                    } for p in problems
+                ]
+            },
+            "agent_type": "analytics"
+        }
+    
+    async def _get_latest_problem_status(self, db: AsyncSession, user_id: int) -> Dict[str, Any]:
+        """
+        Get status of user's latest reported problem.
+        """
+        # Query latest problem
+        problem_query = select(models.Problem).where(
+            models.Problem.submitted_by_id == user_id
+        ).order_by(
+            desc(models.Problem.created_at)
+        ).limit(1).options(
+            selectinload(models.Problem.assigned_to).selectinload(models.WorkerProfile.user),
+            selectinload(models.Problem.assigned_to).selectinload(models.WorkerProfile.department),
+            selectinload(models.Problem.feedback)
+        )
+        
+        result = await db.execute(problem_query)
+        problem = result.scalar_one_or_none()
+        
+        if not problem:
+            return {
+                "response": "You haven't reported any issues yet. Use the app to report civic problems in your area!",
+                "metadata": {},
+                "agent_type": "analytics"
+            }
+        
+        # Format detailed status
+        status_icons = {
+            "PENDING": "⏳",
+            "ASSIGNED": "👷",
+            "COMPLETED": "✅",
+            "VERIFIED": "✓"
+        }
+        
+        status_icon = status_icons.get(problem.status.value, "📌")
+        status_text = problem.status.value.replace("_", " ").title()
+        
+        created_date = problem.created_at.strftime("%d %b %Y at %I:%M %p")
+        updated_date = problem.updated_at.strftime("%d %b %Y at %I:%M %p")
+        
+        response_text = f"🔍 Status of Your Latest Report:\n\n"
+        response_text += f"📌 Problem ID: #{problem.id}\n"
+        response_text += f"📍 Location: {problem.area}, {problem.district}\n"
+        response_text += f"🏷️ Type: {problem.problem_type}\n"
+        response_text += f"{status_icon} Status: {status_text}\n"
+        response_text += f"📅 Reported: {created_date}\n"
+        response_text += f"🔄 Last Updated: {updated_date}\n"
+        
+        if problem.description:
+            response_text += f"\n📝 Description:\n{problem.description}\n"
+        
+        # Add worker info if assigned
+        if problem.assigned_to and problem.assigned_to.user:
+            worker_name = problem.assigned_to.user.full_name
+            dept_name = problem.assigned_to.department.name if problem.assigned_to.department else "Unknown"
+            response_text += f"\n👷 Assigned to: {worker_name} ({dept_name})\n"
+        
+        # Add feedback if verified
+        if problem.status.value == "VERIFIED" and problem.feedback:
+            feedback = problem.feedback[0]
+            response_text += f"\n⭐ Your Rating: {feedback.rating}/5\n"
+            if feedback.comment:
+                response_text += f"💬 Your Feedback: {feedback.comment}\n"
+        
+        # Add action guidance
+        if problem.status.value == "PENDING":
+            response_text += "\n💡 Your issue is waiting to be assigned to a worker. We'll notify you once it's picked up!"
+        elif problem.status.value == "ASSIGNED":
+            response_text += "\n💡 A worker is currently working on your issue. You'll be notified when it's completed!"
+        elif problem.status.value == "COMPLETED":
+            response_text += "\n💡 The work is done! Please verify and provide feedback in the app."
+        elif problem.status.value == "VERIFIED":
+            response_text += "\n✨ Thank you for your feedback! Your issue has been successfully resolved."
+        
+        return {
+            "response": response_text,
+            "metadata": {
+                "problem_id": problem.id,
+                "status": problem.status.value,
+                "type": problem.problem_type,
+                "created_at": problem.created_at.isoformat(),
+                "updated_at": problem.updated_at.isoformat()
             },
             "agent_type": "analytics"
         }

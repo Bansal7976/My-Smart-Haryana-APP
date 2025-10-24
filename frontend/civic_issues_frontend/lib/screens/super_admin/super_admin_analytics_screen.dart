@@ -136,9 +136,9 @@ class _SuperAdminAnalyticsScreenState extends State<SuperAdminAnalyticsScreen> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           crossAxisCount: 2,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 1.5,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          childAspectRatio: 1.6,
                           children: [
                             _buildStatCard(
                               languageProvider.getText('Total Users', 'कुल उपयोगकर्ता'),
@@ -288,15 +288,15 @@ class _SuperAdminAnalyticsScreenState extends State<SuperAdminAnalyticsScreen> {
   Widget _buildStatCard(
       String title, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 5,
+            blurRadius: 4,
             offset: const Offset(0, 2),
           ),
         ],
@@ -306,33 +306,33 @@ class _SuperAdminAnalyticsScreenState extends State<SuperAdminAnalyticsScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
             ),
             child: Icon(
               icon,
               color: color,
-              size: 24,
+              size: 20,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             value,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
               color: color,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
             title,
             style: const TextStyle(
-              fontSize: 11,
+              fontSize: 10,
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w500,
             ),

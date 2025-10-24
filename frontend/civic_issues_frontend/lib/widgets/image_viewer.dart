@@ -1,8 +1,7 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'dart:io';
 import '../utils/app_colors.dart';
+import '../services/api_service.dart';
 
 class ImageViewer extends StatelessWidget {
   final String imageUrl;
@@ -15,6 +14,15 @@ class ImageViewer extends StatelessWidget {
     this.title,
     this.description,
   });
+
+  // Helper to convert relative URL to absolute
+  String get _fullImageUrl {
+    if (imageUrl.startsWith('http')) {
+      return imageUrl;
+    } else {
+      return '${ApiService.baseUrl}$imageUrl';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,93 +70,95 @@ class ImageViewer extends StatelessWidget {
   }
 
   Widget _buildImage() {
-    if (imageUrl.startsWith('http')) {
-      return CachedNetworkImage(
-        imageUrl: imageUrl,
-        fit: BoxFit.contain,
-        placeholder: (context, url) => Container(
-          color: Colors.grey[300],
-          child: const Center(
-            child: CircularProgressIndicator(
-              color: AppColors.primary,
-            ),
+    // Always use network image (either already http or converted)
+    return CachedNetworkImage(
+      imageUrl: _fullImageUrl,
+      fit: BoxFit.contain,
+      maxHeightDiskCache: 1000,
+      maxWidthDiskCache: 1000,
+      memCacheHeight: 600,
+      memCacheWidth: 600,
+      fadeInDuration: const Duration(milliseconds: 300),
+      fadeOutDuration: const Duration(milliseconds: 200),
+      placeholder: (context, url) => Container(
+        color: Colors.grey[200],
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(
+                color: AppColors.primary,
+                strokeWidth: 3,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Loading image...',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 12,
+                ),
+              ),
+            ],
           ),
         ),
-        errorWidget: (context, url, error) => Container(
-          color: Colors.grey[300],
-          child: const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  color: Colors.red,
-                  size: 48,
+      ),
+      errorWidget: (context, url, error) => Container(
+        color: Colors.grey[200],
+        padding: const EdgeInsets.all(20),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.broken_image_outlined,
+                color: Colors.grey[400],
+                size: 64,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Failed to load image',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
                 ),
-                SizedBox(height: 8),
-                Text(
-                  'Failed to load image',
-                  style: TextStyle(color: Colors.red),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Tap to retry',
+                style: TextStyle(
+                  color: Colors.grey[500],
+                  fontSize: 12,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: () {
+                  // Force refresh by rebuilding widget
+                  Navigator.of(context).pop();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ImageViewer(imageUrl: imageUrl),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.refresh, size: 18),
+                label: const Text('Retry'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-      );
-    } else {
-      // For web compatibility, use Image.network instead of Image.file
-      if (kIsWeb) {
-        return Image.network(
-          imageUrl,
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) => Container(
-            color: Colors.grey[300],
-            child: const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    color: Colors.red,
-                    size: 48,
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Failed to load image',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      } else {
-        return Image.file(
-          File(imageUrl),
-          fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) => Container(
-            color: Colors.grey[300],
-            child: const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    color: Colors.red,
-                    size: 48,
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Failed to load image',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      }
-    }
+      ),
+    );
   }
 }
 
@@ -213,10 +223,15 @@ class ImageGallery extends StatelessWidget {
     );
   }
 
-  Widget _buildImageCard(BuildContext context, Map<String, dynamic> media, int index) {
-    final imageUrl = media['file_url'] ?? '';
+  Widget _buildImageCard(
+      BuildContext context, Map<String, dynamic> media, int index) {
+    final fileUrl = media['file_url'] ?? '';
     final mediaType = media['media_type'] ?? '';
-    
+
+    // Convert relative URL to absolute URL
+    final imageUrl =
+        fileUrl.startsWith('http') ? fileUrl : '${ApiService.baseUrl}$fileUrl';
+
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(
@@ -245,69 +260,55 @@ class ImageGallery extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           child: Stack(
             children: [
-              // Image
-              if (imageUrl.startsWith('http'))
-                CachedNetworkImage(
-                  imageUrl: imageUrl,
-                  width: double.infinity,
-                  height: double.infinity,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    color: AppColors.surfaceVariant,
-                    child: const Center(
+              // Image - Always use network image with full URL
+              CachedNetworkImage(
+                imageUrl: imageUrl,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                maxHeightDiskCache: 800,
+                maxWidthDiskCache: 800,
+                memCacheHeight: 400,
+                memCacheWidth: 400,
+                fadeInDuration: const Duration(milliseconds: 200),
+                placeholder: (context, url) => Container(
+                  color: AppColors.surfaceVariant,
+                  child: const Center(
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
                       child: CircularProgressIndicator(
                         color: AppColors.primary,
-                        strokeWidth: 2,
+                        strokeWidth: 2.5,
                       ),
                     ),
                   ),
-                  errorWidget: (context, url, error) => Container(
-                    color: AppColors.surfaceVariant,
-                    child: const Center(
-                      child: Icon(
-                        Icons.broken_image,
-                        color: AppColors.textSecondary,
-                        size: 32,
-                      ),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  color: AppColors.surfaceVariant.withValues(alpha: 0.3),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.broken_image_outlined,
+                          color: AppColors.textSecondary.withValues(alpha: 0.6),
+                          size: 36,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Failed',
+                          style: TextStyle(
+                            color: AppColors.textSecondary.withValues(alpha: 0.6),
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                )
-              else
-                // For web compatibility, use Image.network instead of Image.file
-                kIsWeb
-                  ? Image.network(
-                      imageUrl,
-                      width: double.infinity,
-                      height: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        color: AppColors.surfaceVariant,
-                        child: const Center(
-                          child: Icon(
-                            Icons.broken_image,
-                            color: AppColors.textSecondary,
-                            size: 32,
-                          ),
-                        ),
-                      ),
-                    )
-                  : Image.file(
-                      File(imageUrl),
-                      width: double.infinity,
-                      height: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        color: AppColors.surfaceVariant,
-                        child: const Center(
-                          child: Icon(
-                            Icons.broken_image,
-                            color: AppColors.textSecondary,
-                            size: 32,
-                          ),
-                        ),
-                      ),
-                    ),
-              
+                ),
+              ),
+
               // Overlay with media type
               if (mediaType.isNotEmpty)
                 Positioned(
@@ -315,7 +316,8 @@ class ImageGallery extends StatelessWidget {
                   left: 0,
                   right: 0,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.7),
                       borderRadius: const BorderRadius.only(
@@ -336,7 +338,7 @@ class ImageGallery extends StatelessWidget {
                     ),
                   ),
                 ),
-              
+
               // Zoom icon
               Positioned(
                 top: 8,
@@ -361,6 +363,3 @@ class ImageGallery extends StatelessWidget {
     );
   }
 }
-
-
-

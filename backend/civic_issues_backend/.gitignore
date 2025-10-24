@@ -16,54 +16,93 @@ parts/
 sdist/
 var/
 wheels/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # Virtual Environment
 venv/
 env/
 ENV/
-.venv
+env.bak/
+venv.bak/
+hry/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
 
 # Environment Variables
 .env
 .env.local
 .env.*.local
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
 # Database
 *.db
-*.sqlite
 *.sqlite3
-
-# Logs
 *.log
-logs/
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Uploads (don't commit user files)
-uploads/*.jpg
-uploads/*.jpeg
-uploads/*.png
-uploads/*.webp
-uploads/*.gif
-!uploads/.gitkeep
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+.jupyter/
 
 # Testing
 .pytest_cache/
 .coverage
 htmlcov/
+*.cover
+.hypothesis/
 
-# Alembic
+# Uploaded Files (keep structure but ignore content)
+uploads/*.jpg
+uploads/*.jpeg
+uploads/*.png
+uploads/*.gif
+uploads/*.pdf
+uploads/*.webp
+# Keep the uploads directory
+!uploads/.gitkeep
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Alembic (if you add migrations later)
 alembic/versions/*.pyc
+
+# Pinecone data (if stored locally)
+pinecone_data/
+
+# Models cache (sentence transformers)
+.cache/
+models/
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Secrets
+*.key
+*.pem
+*.p12
+
+# Don't ignore these important files
+!requirements.txt
+!.env.example
+!README.md
 
