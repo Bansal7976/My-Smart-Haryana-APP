@@ -16,7 +16,7 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final languageProvider = Provider.of<LanguageProvider>(context);
-    
+
     // Role-based navigation
     Widget getRoleBasedScreen() {
       switch (authProvider.user!.role.toLowerCase()) {
@@ -32,7 +32,7 @@ class DashboardScreen extends StatelessWidget {
           return const ClientDashboardScreen(); // Default fallback
       }
     }
-    
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -116,8 +116,9 @@ class DashboardScreen extends StatelessWidget {
   }
 
   void _showLanguageDialog(BuildContext context) {
-    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
-    
+    final languageProvider =
+        Provider.of<LanguageProvider>(context, listen: false);
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -149,9 +150,10 @@ class DashboardScreen extends StatelessWidget {
 
   void _showProfileDialog(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+    final languageProvider =
+        Provider.of<LanguageProvider>(context, listen: false);
     final user = authProvider.user;
-    
+
     // Get user-friendly role name
     String getRoleName(String role) {
       switch (role.toLowerCase()) {
@@ -167,7 +169,7 @@ class DashboardScreen extends StatelessWidget {
           return role;
       }
     }
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -180,7 +182,8 @@ class DashboardScreen extends StatelessWidget {
                 color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.person, color: AppColors.primary, size: 24),
+              child:
+                  const Icon(Icons.person, color: AppColors.primary, size: 24),
             ),
             const SizedBox(width: 12),
             Text(
@@ -279,8 +282,9 @@ class DashboardScreen extends StatelessWidget {
   }
 
   void _showAboutDialog(BuildContext context) {
-    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
-    
+    final languageProvider =
+        Provider.of<LanguageProvider>(context, listen: false);
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -297,7 +301,8 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.location_city, color: Colors.white, size: 28),
+              child: const Icon(Icons.location_city,
+                  color: Colors.white, size: 28),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -305,7 +310,8 @@ class DashboardScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    languageProvider.getText('Smart Haryana', 'स्मार्ट हरियाणा'),
+                    languageProvider.getText(
+                        'Smart Haryana', 'स्मार्ट हरियाणा'),
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -331,7 +337,7 @@ class DashboardScreen extends StatelessWidget {
             children: [
               const Divider(),
               const SizedBox(height: 16),
-              
+
               // Tagline
               Container(
                 padding: const EdgeInsets.all(16),
@@ -348,14 +354,14 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.auto_awesome, color: AppColors.primary, size: 24),
+                    const Icon(Icons.auto_awesome,
+                        color: AppColors.primary, size: 24),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         languageProvider.getText(
-                          'Every voice matters, every issue counts — powered by AI for a smarter Haryana.',
-                          'हर आवाज़ मायने रखती है, हर मुद्दा गिनती करता है — एक स्मार्ट हरियाणा के लिए AI द्वारा संचालित।'
-                        ),
+                            'Every voice matters, every issue counts — powered by AI for a smarter Haryana.',
+                            'हर आवाज़ मायने रखती है, हर मुद्दा गिनती करता है — एक स्मार्ट हरियाणा के लिए AI द्वारा संचालित।'),
                         style: const TextStyle(
                           fontSize: 14,
                           fontStyle: FontStyle.italic,
@@ -368,9 +374,9 @@ class DashboardScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               // About Section
               Text(
                 languageProvider.getText('About This App', 'इस ऐप के बारे में'),
@@ -381,12 +387,11 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              
+
               Text(
                 languageProvider.getText(
-                  'Smart Haryana is an intelligent civic issue reporting platform designed to make governance transparent, efficient, and citizen-centric. Our AI-powered system ensures that every complaint is heard, tracked, and resolved promptly.',
-                  'स्मार्ट हरियाणा एक बुद्धिमान नागरिक समस्या रिपोर्टिंग प्लेटफॉर्म है जो शासन को पारदर्शी, कुशल और नागरिक-केंद्रित बनाने के लिए डिज़ाइन किया गया है। हमारी AI-संचालित प्रणाली सुनिश्चित करती है कि हर शिकायत सुनी जाए, ट्रैक की जाए और तुरंत हल की जाए।'
-                ),
+                    'Smart Haryana is an intelligent civic issue reporting platform designed to make governance transparent, efficient, and citizen-centric. Our AI-powered system ensures that every complaint is heard, tracked, and resolved promptly.',
+                    'स्मार्ट हरियाणा एक बुद्धिमान नागरिक समस्या रिपोर्टिंग प्लेटफॉर्म है जो शासन को पारदर्शी, कुशल और नागरिक-केंद्रित बनाने के लिए डिज़ाइन किया गया है। हमारी AI-संचालित प्रणाली सुनिश्चित करती है कि हर शिकायत सुनी जाए, ट्रैक की जाए और तुरंत हल की जाए।'),
                 style: const TextStyle(
                   fontSize: 14,
                   color: AppColors.textSecondary,
@@ -394,9 +399,9 @@ class DashboardScreen extends StatelessWidget {
                 ),
                 textAlign: TextAlign.justify,
               ),
-              
+
               const SizedBox(height: 20),
-              
+
               // Key Features
               Text(
                 languageProvider.getText('Key Features', 'मुख्य विशेषताएं'),
@@ -407,48 +412,60 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              
+
               _buildFeatureItem(
                 Icons.mic,
-                languageProvider.getText('Voice-Enabled Reporting', 'आवाज-सक्षम रिपोर्टिंग'),
-                languageProvider.getText('Report issues using voice in English or Hindi', 'अंग्रेजी या हिंदी में आवाज़ का उपयोग करके मुद्दों की रिपोर्ट करें'),
+                languageProvider.getText(
+                    'Voice-Enabled Reporting', 'आवाज-सक्षम रिपोर्टिंग'),
+                languageProvider.getText(
+                    'Report issues using voice in English or Hindi',
+                    'अंग्रेजी या हिंदी में आवाज़ का उपयोग करके मुद्दों की रिपोर्ट करें'),
               ),
               _buildFeatureItem(
                 Icons.smart_toy,
-                languageProvider.getText('AI-Powered Assistant', 'AI-संचालित सहायक'),
-                languageProvider.getText('24/7 multilingual chatbot support', '24/7 बहुभाषी चैटबॉट समर्थन'),
+                languageProvider.getText(
+                    'AI-Powered Assistant', 'AI-संचालित सहायक'),
+                languageProvider.getText('24/7 multilingual chatbot support',
+                    '24/7 बहुभाषी चैटबॉट समर्थन'),
               ),
               _buildFeatureItem(
                 Icons.location_on,
                 languageProvider.getText('GPS Verification', 'GPS सत्यापन'),
-                languageProvider.getText('Location-based issue tracking and verification', 'स्थान-आधारित मुद्दा ट्रैकिंग और सत्यापन'),
+                languageProvider.getText(
+                    'Location-based issue tracking and verification',
+                    'स्थान-आधारित मुद्दा ट्रैकिंग और सत्यापन'),
               ),
               _buildFeatureItem(
                 Icons.security,
-                languageProvider.getText('Transparent System', 'पारदर्शी प्रणाली'),
-                languageProvider.getText('Real-time tracking and status updates', 'वास्तविक समय ट्रैकिंग और स्थिति अपडेट'),
+                languageProvider.getText(
+                    'Transparent System', 'पारदर्शी प्रणाली'),
+                languageProvider.getText(
+                    'Real-time tracking and status updates',
+                    'वास्तविक समय ट्रैकिंग और स्थिति अपडेट'),
               ),
               _buildFeatureItem(
                 Icons.analytics,
                 languageProvider.getText('Smart Analytics', 'स्मार्ट विश्लेषण'),
-                languageProvider.getText('Priority-based assignment and resolution', 'प्राथमिकता-आधारित असाइनमेंट और समाधान'),
+                languageProvider.getText(
+                    'Priority-based assignment and resolution',
+                    'प्राथमिकता-आधारित असाइनमेंट और समाधान'),
               ),
-              
+
               const SizedBox(height: 16),
               const Divider(),
               const SizedBox(height: 12),
-              
+
               // Footer
               Center(
                 child: Column(
                   children: [
-                    const Icon(Icons.favorite, color: AppColors.error, size: 20),
+                    const Icon(Icons.favorite,
+                        color: AppColors.error, size: 20),
                     const SizedBox(height: 8),
                     Text(
                       languageProvider.getText(
-                        'Built with passion for the people of Haryana',
-                        'हरियाणा के लोगों के लिए जुनून के साथ बनाया गया'
-                      ),
+                          'Built with passion for the people of Haryana',
+                          'हरियाणा के लोगों के लिए जुनून के साथ बनाया गया'),
                       style: TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary.withValues(alpha: 0.8),
@@ -530,15 +547,17 @@ class DashboardScreen extends StatelessWidget {
 
   Future<void> _handleLogout(BuildContext context) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
-    
+    final languageProvider =
+        Provider.of<LanguageProvider>(context, listen: false);
+
     try {
       await authProvider.logout();
-      
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(languageProvider.getText('Logged out successfully', 'सफलतापूर्वक लॉग आउट')),
+            content: Text(languageProvider.getText(
+                'Logged out successfully', 'सफलतापूर्वक लॉग आउट')),
             backgroundColor: AppColors.success,
           ),
         );
@@ -546,7 +565,7 @@ class DashboardScreen extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Logout successful'),
             backgroundColor: AppColors.success,
           ),
@@ -555,7 +574,3 @@ class DashboardScreen extends StatelessWidget {
     }
   }
 }
-
-
-
-
