@@ -2,12 +2,16 @@
 from typing import Dict, Any, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from .base_agent import BaseAgent
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_community.embeddings import SentenceTransformerEmbeddings
+from langchain_pinecone import PineconeVectorStore
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
+from pinecone import Pinecone, ServerlessSpec
+from dotenv import load_dotenv
+load_dotenv()
 import os
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -17,62 +21,87 @@ class RAGAgent(BaseAgent):
     about the Smart Haryana app, its features, and how to use it.
     """
     
-    def __init__(self, google_api_key: str, vector_store_path: str = "data/vector_store"):
+    def __init__(self, google_api_key: str, pinecone_api_key: str = None, index_name: str = "smart-haryana"):
         super().__init__(
             name="RAG Agent",
             description="Answers questions about Smart Haryana app using knowledge base"
         )
-        self.google_api_key = google_api_key
-        self.vector_store_path = vector_store_path
+        self.google_api_key = google_api_key 
+        self.pinecone_api_key = pinecone_api_key or os.getenv("PINECONE_API_KEY")
+        self.index_name = index_name
         self.vectorstore = None
         self.embeddings = None
+        self.pc = None
         
         # Initialize embeddings and vector store
         self._initialize_rag()
     
     def _initialize_rag(self):
-        """Initialize embeddings and vector store"""
-        if not self.google_api_key:
-            logger.warning("RAG Agent: GOOGLE_API_KEY not set. RAG will be unavailable.")
-            return
+        """Initialize embeddings and Pinecone vector store"""
         
         try:
-            # Initialize Gemini embeddings
-            self.embeddings = GoogleGenerativeAIEmbeddings(
-                model="models/embedding-001",
-                google_api_key=self.google_api_key
+            # Initialize local embeddings
+            logger.info("Initializing local embeddings (all-MiniLM-L6-v2)...")
+            self.embeddings = SentenceTransformerEmbeddings(
+                model_name="all-MiniLM-L6-v2",
+                model_kwargs={'device': 'cpu'}
             )
+            logger.info("Local embeddings initialized.")
             
-            # Create knowledge base documents
-            documents = self._create_knowledge_base()
+            # Check if Pinecone API key is available
+            if not self.pinecone_api_key:
+                logger.warning("⚠️ Pinecone API key not found. RAG will work with in-memory fallback.")
+                logger.warning("To use Pinecone, set PINECONE_API_KEY in your .env file")
+                return
             
-            if not documents:
-                 logger.warning("RAG Agent: No knowledge base documents found or loaded.")
-                 return
-
-            # Create or load vector store
-            os.makedirs(self.vector_store_path, exist_ok=True)
+            # Initialize Pinecone
+            logger.info("Connecting to Pinecone...")
+            self.pc = Pinecone(api_key=self.pinecone_api_key)
             
-            # Check if vector store exists
-            if os.path.exists(os.path.join(self.vector_store_path, "chroma.sqlite3")):
-                # Load existing vector store
-                logger.info(f"Loading existing vector store from {self.vector_store_path}")
-                self.vectorstore = Chroma(
-                    persist_directory=self.vector_store_path,
-                    embedding_function=self.embeddings
+            # Check if index exists
+            existing_indexes = [index.name for index in self.pc.list_indexes()]
+            
+            if self.index_name not in existing_indexes:
+                logger.info(f"Creating new Pinecone index: {self.index_name}")
+                # Create index with appropriate dimensions for all-MiniLM-L6-v2 (384 dimensions)
+                self.pc.create_index(
+                    name=self.index_name,
+                    dimension=384,  # all-MiniLM-L6-v2 embedding dimension
+                    metric="cosine",
+                    spec=ServerlessSpec(
+                        cloud="aws",
+                        region="us-east-1"  # Free tier region
+                    )
                 )
+                # Wait for index to be ready
+                logger.info("Waiting for index to be ready...")
+                time.sleep(10)
+                
+                # Create knowledge base and populate index
+                documents = self._create_knowledge_base()
+                if documents:
+                    logger.info(f"Adding {len(documents)} documents to Pinecone...")
+                    self.vectorstore = PineconeVectorStore.from_documents(
+                        documents=documents,
+                        embedding=self.embeddings,
+                        index_name=self.index_name
+                    )
+                    logger.info("✅ Pinecone index populated successfully")
+                else:
+                    logger.warning("No knowledge base documents found")
             else:
-                # Create new vector store
-                logger.info(f"Creating new vector store at {self.vector_store_path}")
-                self.vectorstore = Chroma.from_documents(
-                    documents=documents,
-                    embedding=self.embeddings,
-                    persist_directory=self.vector_store_path
+                # Connect to existing index
+                logger.info(f"Connecting to existing Pinecone index: {self.index_name}")
+                self.vectorstore = PineconeVectorStore.from_existing_index(
+                    index_name=self.index_name,
+                    embedding=self.embeddings
                 )
-            logger.info("✅ RAG Agent initialized successfully.")
+            
+            logger.info("✅ RAG Agent with Pinecone initialized successfully")
                 
         except Exception as e:
             logger.error(f"❌ RAG initialization error: {e}", exc_info=True)
+            logger.warning("RAG will continue with fallback mode")
     
     def _create_knowledge_base(self) -> List[Document]:
         """Create knowledge base documents from markdown files"""
@@ -80,6 +109,8 @@ class RAGAgent(BaseAgent):
         documents = []
         
         # Path to knowledge base directory
+        # Assumes knowledge_base is 3 levels up from this file
+        # (app/services/agents/rag_agent.py -> app/services -> app -> root/knowledge_base)
         kb_path = os.path.join(os.path.dirname(__file__), "../../../knowledge_base")
         
         # Check if knowledge base directory exists
@@ -175,7 +206,7 @@ class RAGAgent(BaseAgent):
                 search_kwargs={"k": 3}  # Top 3 most relevant chunks
             )
             
-            # ✅ CORRECTION: Use async aget_relevant_documents
+            # Use async aget_relevant_documents
             docs = await retriever.aget_relevant_documents(query)
             
             if not docs:

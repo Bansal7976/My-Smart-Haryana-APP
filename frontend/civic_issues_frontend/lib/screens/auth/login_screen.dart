@@ -66,11 +66,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _quickLogin(String email, String password) async {
-    _emailController.text = email;
-    _passwordController.text = password;
-    await _handleLogin();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -187,72 +182,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   isLoading: _isLoading,
                 ),
 
-                const SizedBox(height: 24),
-
-                // Quick Login Section
-                Text(
-                  languageProvider.getText('Quick Login:', 'त्वरित लॉगिन:'),
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Quick Login Buttons
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () =>
-                        _quickLogin('client@haryana.gov.in', 'client123'),
-                    icon: const Icon(Icons.person, size: 18),
-                    label: Text(languageProvider.getText(
-                        'Login as Citizen', 'नागरिक के रूप में लॉगिन')),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.clientColor,
-                      side: const BorderSide(color: AppColors.clientColor),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () =>
-                        _quickLogin('worker@haryana.gov.in', 'worker123'),
-                    icon: const Icon(Icons.work, size: 18),
-                    label: Text(languageProvider.getText(
-                        'Login as Worker', 'कार्यकर्ता के रूप में लॉगिन')),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.workerColor,
-                      side: const BorderSide(color: AppColors.workerColor),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () =>
-                        _quickLogin('admin@haryana.gov.in', 'admin123'),
-                    icon: const Icon(Icons.admin_panel_settings, size: 18),
-                    label: Text(languageProvider.getText(
-                        'Login as Admin', 'एडमिन के रूप में लॉगिन')),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.adminColor,
-                      side: const BorderSide(color: AppColors.adminColor),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-
                 const SizedBox(height: 32),
 
                 // Register Link
@@ -314,3 +243,4 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
+

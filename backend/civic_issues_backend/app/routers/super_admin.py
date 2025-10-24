@@ -96,12 +96,12 @@ async def get_all_districts_analytics(
     return [
         {
             "district_name": row.district,
-            "total_problems": row.total,
+            "total_problems": row.total_problems,
             "pending_problems": row.pending,
             "assigned_problems": row.assigned,
             "completed_problems": row.completed,
             "verified_problems": row.verified,
-            "resolution_rate": round((row.completed + row.verified) / row.total * 100, 1) if row.total > 0 else 0.0
+            "resolution_rate": round((row.completed + row.verified) / row.total_problems * 100, 1) if row.total_problems > 0 else 0.0
         }
         for row in districts
     ]

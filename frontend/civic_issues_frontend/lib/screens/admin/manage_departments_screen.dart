@@ -215,7 +215,7 @@ class _ManageDepartmentsScreenState extends State<ManageDepartmentsScreen> {
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 20, vertical: 12),
                             leading: CircleAvatar(
-                              backgroundColor: AppColors.primary.withOpacity(0.1),
+                              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                               child: const Icon(Icons.business,
                                   color: AppColors.primary),
                             ),
@@ -250,4 +250,5 @@ class _ManageDepartmentsScreenState extends State<ManageDepartmentsScreen> {
     );
   }
 }
+
 

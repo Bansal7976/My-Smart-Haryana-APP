@@ -598,15 +598,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 size: 24,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
               title,
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
-                fontSize: 14,
+                fontSize: 12,
               ),
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -685,3 +687,5 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
   }
 }
+
+

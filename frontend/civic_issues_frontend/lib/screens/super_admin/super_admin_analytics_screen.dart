@@ -136,13 +136,15 @@ class _SuperAdminAnalyticsScreenState extends State<SuperAdminAnalyticsScreen> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           crossAxisCount: 2,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          childAspectRatio: 1.3,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 1.5,
                           children: [
                             _buildStatCard(
                               languageProvider.getText('Total Users', 'कुल उपयोगकर्ता'),
-                              _overview?['total_users']?.toString() ?? '0',
+                              (((_overview?['total_clients'] ?? 0) + 
+                                (_overview?['total_workers'] ?? 0) + 
+                                (_overview?['total_admins'] ?? 0))).toString(),
                               Icons.people,
                               AppColors.primary,
                             ),
@@ -286,7 +288,7 @@ class _SuperAdminAnalyticsScreenState extends State<SuperAdminAnalyticsScreen> {
   Widget _buildStatCard(
       String title, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
@@ -301,6 +303,7 @@ class _SuperAdminAnalyticsScreenState extends State<SuperAdminAnalyticsScreen> {
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
             padding: const EdgeInsets.all(8),
@@ -314,24 +317,28 @@ class _SuperAdminAnalyticsScreenState extends State<SuperAdminAnalyticsScreen> {
               size: 24,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
             value,
             style: TextStyle(
-              fontSize: 28,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
               color: color,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 4),
           Text(
             title,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -389,7 +396,7 @@ class _SuperAdminAnalyticsScreenState extends State<SuperAdminAnalyticsScreen> {
     final totalProblems = district['total_problems'] ?? 0;
     final pendingProblems = district['pending_problems'] ?? 0;
     final completedProblems = district['completed_problems'] ?? 0;
-    final districtName = district['district'] ?? 'Unknown';
+    final districtName = district['district_name'] ?? district['district'] ?? 'Unknown';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -494,4 +501,6 @@ class _SuperAdminAnalyticsScreenState extends State<SuperAdminAnalyticsScreen> {
     );
   }
 }
+
+
 

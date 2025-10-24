@@ -60,18 +60,23 @@ async def get_my_assigned_tasks(
     db: AsyncSession = Depends(database.get_db),
     current_worker: models.WorkerProfile = Depends(get_current_worker_profile)
 ):
+    """Get all tasks assigned to the current worker (ASSIGNED, COMPLETED, and VERIFIED)"""
     query = select(models.Problem).where(
         models.Problem.assigned_worker_id == current_worker.id,
-        models.Problem.status == models.ProblemStatusEnum.ASSIGNED
+        models.Problem.status.in_([
+            models.ProblemStatusEnum.ASSIGNED,
+            models.ProblemStatusEnum.COMPLETED,
+            models.ProblemStatusEnum.VERIFIED
+        ])
     ).options(
         selectinload(models.Problem.submitted_by),
         selectinload(models.Problem.media_files),
         selectinload(models.Problem.feedback),
-        selectinload(models.Problem.assigned_to).options(
-            selectinload(models.WorkerProfile.user),
-            selectinload(models.WorkerProfile.department)
-        )
-    ).order_by(models.Problem.priority.desc())
+        selectinload(models.Problem.assigned_to).selectinload(models.WorkerProfile.user),
+        selectinload(models.Problem.assigned_to).selectinload(models.WorkerProfile.department)
+    ).order_by(
+        models.Problem.created_at.desc()
+    )
     
     result = await db.execute(query)
     return result.scalars().all()

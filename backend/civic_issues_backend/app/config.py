@@ -20,13 +20,14 @@ class Settings(BaseSettings):
     # Multi-Agent Chatbot Configuration
     GOOGLE_API_KEY: str = ""  # For Gemini LLM (required for AI features)
     TAVILY_API_KEY: str = ""  # For web search (optional)
-    CHATBOT_MODEL: str = "gemini-pro"  # Stable production model
+    PINECONE_API_KEY: str = ""  # For Pinecone vector database (optional, but recommended for RAG)
+    CHATBOT_MODEL: str = "gemini-1.5-flash"  # Updated model (gemini-pro is deprecated)
     CHATBOT_TEMPERATURE: float = 0.7
     MAX_CHAT_HISTORY: int = 10
     
     # RAG Configuration
     EMBEDDING_MODEL: str = "models/embedding-001"  # Gemini embeddings
-    VECTOR_STORE_PATH: str = "data/vector_store"
+    PINECONE_INDEX_NAME: str = "smart-haryana"  # Pinecone index name
     CHUNK_SIZE: int = 1000
     CHUNK_OVERLAP: int = 200
     

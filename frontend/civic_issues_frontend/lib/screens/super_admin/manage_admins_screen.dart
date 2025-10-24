@@ -69,7 +69,8 @@ class _ManageAdminsScreenState extends State<ManageAdminsScreen> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: Text(languageProvider.getText('Deactivate', 'निष्क्रिय करें')),
+            child:
+                Text(languageProvider.getText('Deactivate', 'निष्क्रिय करें')),
           ),
         ],
       ),
@@ -137,7 +138,8 @@ class _ManageAdminsScreenState extends State<ManageAdminsScreen> {
                 CustomTextField(
                   controller: nameController,
                   label: languageProvider.getText('Full Name', 'पूरा नाम'),
-                  hint: languageProvider.getText('Enter full name', 'पूरा नाम दर्ज करें'),
+                  hint: languageProvider.getText(
+                      'Enter full name', 'पूरा नाम दर्ज करें'),
                   prefixIcon: Icons.person,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -153,7 +155,8 @@ class _ManageAdminsScreenState extends State<ManageAdminsScreen> {
                 CustomTextField(
                   controller: emailController,
                   label: languageProvider.getText('Email', 'ईमेल'),
-                  hint: languageProvider.getText('Enter email', 'ईमेल दर्ज करें'),
+                  hint:
+                      languageProvider.getText('Enter email', 'ईमेल दर्ज करें'),
                   prefixIcon: Icons.email,
                   keyboardType: TextInputType.emailAddress,
                   validator: (value) {
@@ -176,7 +179,8 @@ class _ManageAdminsScreenState extends State<ManageAdminsScreen> {
                 CustomTextField(
                   controller: passwordController,
                   label: languageProvider.getText('Password', 'पासवर्ड'),
-                  hint: languageProvider.getText('Enter password', 'पासवर्ड दर्ज करें'),
+                  hint: languageProvider.getText(
+                      'Enter password', 'पासवर्ड दर्ज करें'),
                   prefixIcon: Icons.lock,
                   obscureText: true,
                   validator: (value) {
@@ -197,10 +201,9 @@ class _ManageAdminsScreenState extends State<ManageAdminsScreen> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: selectedDistrict,
+                  initialValue: selectedDistrict,
                   decoration: InputDecoration(
-                    labelText:
-                        languageProvider.getText('District', 'जिला'),
+                    labelText: languageProvider.getText('District', 'जिला'),
                     prefixIcon: const Icon(Icons.location_city),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -228,8 +231,10 @@ class _ManageAdminsScreenState extends State<ManageAdminsScreen> {
                 const SizedBox(height: 12),
                 CustomTextField(
                   controller: pincodeController,
-                  label: languageProvider.getText('Pincode (Optional)', 'पिनकोड (वैकल्पिक)'),
-                  hint: languageProvider.getText('Enter pincode', 'पिनकोड दर्ज करें'),
+                  label: languageProvider.getText(
+                      'Pincode (Optional)', 'पिनकोड (वैकल्पिक)'),
+                  hint: languageProvider.getText(
+                      'Enter pincode', 'पिनकोड दर्ज करें'),
                   prefixIcon: Icons.pin_drop,
                   keyboardType: TextInputType.number,
                 ),
@@ -353,7 +358,8 @@ class _ManageAdminsScreenState extends State<ManageAdminsScreen> {
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: _loadAdmins,
-                        child: Text(languageProvider.getText('Retry', 'पुन: प्रयास करें')),
+                        child: Text(languageProvider.getText(
+                            'Retry', 'पुन: प्रयास करें')),
                       ),
                     ],
                   ),
@@ -376,18 +382,25 @@ class _ManageAdminsScreenState extends State<ManageAdminsScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           _buildStatItem(
-                            languageProvider.getText('Total Admins', 'कुल एडमिन'),
+                            languageProvider.getText(
+                                'Total Admins', 'कुल एडमिन'),
                             _admins.length.toString(),
                             Icons.people,
                           ),
                           _buildStatItem(
                             languageProvider.getText('Active', 'सक्रिय'),
-                            _admins.where((a) => a['is_active'] == true).length.toString(),
+                            _admins
+                                .where((a) => a['is_active'] == true)
+                                .length
+                                .toString(),
                             Icons.check_circle,
                           ),
                           _buildStatItem(
                             languageProvider.getText('Inactive', 'निष्क्रिय'),
-                            _admins.where((a) => a['is_active'] == false).length.toString(),
+                            _admins
+                                .where((a) => a['is_active'] == false)
+                                .length
+                                .toString(),
                             Icons.cancel,
                           ),
                         ],
@@ -421,7 +434,8 @@ class _ManageAdminsScreenState extends State<ManageAdminsScreen> {
                               ),
                             )
                           : ListView.builder(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
                               itemCount: _admins.length,
                               itemBuilder: (context, index) {
                                 final admin = _admins[index];
@@ -476,7 +490,9 @@ class _ManageAdminsScreenState extends State<ManageAdminsScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: isActive ? AppColors.success.withValues(alpha: 0.3) : AppColors.error.withValues(alpha: 0.3),
+          color: isActive
+              ? AppColors.success.withValues(alpha: 0.3)
+              : AppColors.error.withValues(alpha: 0.3),
           width: 2,
         ),
       ),
@@ -536,14 +552,16 @@ class _ManageAdminsScreenState extends State<ManageAdminsScreen> {
             const SizedBox(height: 12),
             Row(
               children: [
-                const Icon(Icons.location_city, size: 16, color: AppColors.textSecondary),
+                const Icon(Icons.location_city,
+                    size: 16, color: AppColors.textSecondary),
                 const SizedBox(width: 4),
                 Text(
                   admin['district'] ?? 'N/A',
                   style: const TextStyle(color: AppColors.textSecondary),
                 ),
                 const SizedBox(width: 16),
-                const Icon(Icons.badge, size: 16, color: AppColors.textSecondary),
+                const Icon(Icons.badge,
+                    size: 16, color: AppColors.textSecondary),
                 const SizedBox(width: 4),
                 Text(
                   'ID: ${admin['id']}',
@@ -556,8 +574,10 @@ class _ManageAdminsScreenState extends State<ManageAdminsScreen> {
               SizedBox(
                 width: double.infinity,
                 child: CustomButton(
-                  text: languageProvider.getText('Deactivate', 'निष्क्रिय करें'),
-                  onPressed: () => _deactivateAdmin(admin['id'], admin['full_name']),
+                  text:
+                      languageProvider.getText('Deactivate', 'निष्क्रिय करें'),
+                  onPressed: () =>
+                      _deactivateAdmin(admin['id'], admin['full_name']),
                   backgroundColor: AppColors.error,
                 ),
               ),

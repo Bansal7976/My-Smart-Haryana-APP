@@ -27,7 +27,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
             .loadUserIssues(authProvider.token!)
             .catchError((error) {
           // If loading fails, just log it - don't block the UI
-          print('Failed to load user issues: $error');
+          debugPrint('Failed to load user issues: $error');
         });
       }
     });
@@ -484,3 +484,5 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     }
   }
 }
+
+

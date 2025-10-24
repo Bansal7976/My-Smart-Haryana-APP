@@ -89,7 +89,10 @@ async def create_issue(
     
     query = select(models.Problem).where(models.Problem.id == new_problem.id).options(
         selectinload(models.Problem.submitted_by),
-        selectinload(models.Problem.media_files)
+        selectinload(models.Problem.media_files),
+        selectinload(models.Problem.feedback),
+        selectinload(models.Problem.assigned_to).selectinload(models.WorkerProfile.user),
+        selectinload(models.Problem.assigned_to).selectinload(models.WorkerProfile.department)
     )
     final_problem = (await db.execute(query)).scalar_one()
     
@@ -187,7 +190,10 @@ async def verify_issue_completion(
     """
     query = select(models.Problem).where(models.Problem.id == problem_id, models.Problem.user_id == current_user.id).options(
         selectinload(models.Problem.submitted_by),
-        selectinload(models.Problem.media_files)
+        selectinload(models.Problem.media_files),
+        selectinload(models.Problem.feedback),
+        selectinload(models.Problem.assigned_to).selectinload(models.WorkerProfile.user),
+        selectinload(models.Problem.assigned_to).selectinload(models.WorkerProfile.department)
     )
     problem = (await db.execute(query)).scalar_one_or_none()
 
@@ -199,7 +205,16 @@ async def verify_issue_completion(
     
     problem.status = models.ProblemStatusEnum.VERIFIED
     await db.commit()
-    await db.refresh(problem)
+    
+    # Refresh with eager loading
+    query = select(models.Problem).where(models.Problem.id == problem_id).options(
+        selectinload(models.Problem.submitted_by),
+        selectinload(models.Problem.media_files),
+        selectinload(models.Problem.feedback),
+        selectinload(models.Problem.assigned_to).selectinload(models.WorkerProfile.user),
+        selectinload(models.Problem.assigned_to).selectinload(models.WorkerProfile.department)
+    )
+    problem = (await db.execute(query)).scalar_one()
     return problem
     
 @router.get("/dashboard/my-district", response_model=schemas.UserDashboardStats)

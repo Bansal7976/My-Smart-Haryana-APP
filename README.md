@@ -16,13 +16,14 @@
 
 | Feature | Description |
 |---------|-------------|
-| 🤖 **AI Multi-Agent System** | LangGraph-powered chatbot with RAG, analytics, and web search |
-| 🎤 **Voice Input** | Report issues in English, Hindi, or Punjabi |
+| 🤖 **AI Multi-Agent System** | LangGraph-powered chatbot with Pinecone RAG, analytics, and web search |
+| 🎤 **Voice Input** | Report issues and chat in English, Hindi, or Punjabi |
 | 🔍 **AI Image Detection** | Automatically rejects AI-generated/fake images |
 | 👥 **Auto Admin Setup** | Super Admin + 22 district admins created automatically |
 | 📍 **GPS Verification** | Workers must be on-site (500m radius) to complete tasks |
 | 📊 **Real-Time Analytics** | District and state-level performance dashboards |
 | 🏥 **Production Ready** | Health checks, monitoring, and zero-config deployment |
+| ✅ **Fully Tested** | All features verified and working on Android |
 
 </div>
 
@@ -30,6 +31,7 @@
 
 ## 📋 Table of Contents
 
+- [Recent Updates](#-recent-updates-v20)
 - [Overview](#-overview)
 - [Key Features](#-features)
 - [Architecture](#-architecture)
@@ -45,6 +47,42 @@
 - [Troubleshooting](#-troubleshooting)
 - [Contributing](#-contributing)
 - [License](#-license)
+
+---
+
+## 🎊 Recent Updates (v2.0)
+
+### ✅ **Latest Fixes & Improvements**
+
+| Component | Fix | Status |
+|-----------|-----|--------|
+| **Backend** | PostGIS location field serialization | ✅ Fixed |
+| **Backend** | Verify endpoint eager loading (feedback & assigned_to) | ✅ Fixed |
+| **Backend** | Pinecone vector database integration (replaces ChromaDB) | ✅ Implemented |
+| **Backend** | Bcrypt compatibility (downgraded to 3.2.2) | ✅ Fixed |
+| **Frontend** | Image display with full URL construction | ✅ Fixed |
+| **Frontend** | Super Admin analytics UI overflow | ✅ Fixed |
+| **Frontend** | Login button text overflow | ✅ Fixed |
+| **Frontend** | Worker feedback visibility | ✅ Fixed |
+| **Frontend** | Total users calculation (clients + workers + admins) | ✅ Fixed |
+| **Features** | Citizens can view uploaded & proof photos | ✅ Working |
+| **Features** | Feedback system (star rating + comments) | ✅ Working |
+| **Features** | Voice input for chatbot & issue reporting | ✅ Working |
+| **Features** | About page in citizen dashboard | ✅ Added |
+
+### 🚀 **Verified & Working Features**
+- ✅ Login/Registration (all user types)
+- ✅ Issue reporting with voice-to-text
+- ✅ Image upload (initial + proof photos)
+- ✅ Auto-assignment with priority calculation
+- ✅ Worker task completion with GPS verification
+- ✅ Feedback system with sentiment analysis
+- ✅ Multi-agent chatbot with Pinecone RAG
+- ✅ Real-time analytics (district & state-level)
+- ✅ AI image detection
+- ✅ Multi-language support (English/Hindi)
+
+**Tagline:** *"Every voice matters, every issue counts — powered by AI for a smarter Haryana."*
 
 ---
 
@@ -156,8 +194,8 @@
 - **AI/ML:**
   - Google Gemini 1.5 Flash (LLM)
   - LangChain 0.1+ & LangGraph 0.0.55+ (Multi-Agent System)
-  - ChromaDB 0.4+ (Vector Database for RAG)
-  - Sentence Transformers 2.3+ (Embeddings)
+  - Pinecone (Cloud Vector Database for RAG)
+  - Sentence Transformers (all-MiniLM-L6-v2) 2.3+ (Embeddings)
   - TextBlob 0.17+ (Sentiment Analysis)
 - **Voice Processing:**
   - SpeechRecognition 3.10+ (Audio to text)
@@ -203,8 +241,9 @@
 - Android device or emulator
 
 ### API Keys
-- **Google AI Studio API Key** (for Gemini LLM)
-- **Tavily API Key** (optional, for web search)
+- **Google AI Studio API Key** (for Gemini LLM) - Required
+- **Pinecone API Key** (for RAG vector storage) - Optional but recommended
+- **Tavily API Key** (for web search) - Optional
 
 ---
 
@@ -281,9 +320,11 @@ ACCESS_TOKEN_EXPIRE_MINUTES=10080  # 7 days
 # AI Configuration
 GOOGLE_API_KEY=AIzaSy...  # Get from https://aistudio.google.com/
 TAVILY_API_KEY=tvly-...   # Optional: Get from https://tavily.com
+PINECONE_API_KEY=pcsk_...  # Optional: Get from https://www.pinecone.io/
+PINECONE_INDEX_NAME=smart-haryana  # Pinecone index name (auto-created)
 CHATBOT_MODEL=gemini-1.5-flash
 CHATBOT_TEMPERATURE=0.7
-EMBEDDING_MODEL=models/embedding-001
+EMBEDDING_MODEL=all-MiniLM-L6-v2
 
 # Worker & Task Settings
 MAX_DAILY_TASKS_PER_WORKER=10

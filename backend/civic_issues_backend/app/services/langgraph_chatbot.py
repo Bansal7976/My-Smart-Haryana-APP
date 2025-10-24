@@ -13,7 +13,7 @@ from .. import models
 from ..config import settings
 from .agents.rag_agent import RAGAgent
 # ✅ CORRECTION: Fixed import path
-from .agents.web_search_agent import WebSearchAgent
+from .agents.web_search_agent_tavily import WebSearchAgent
 from .agents.analytics_agent import AnalyticsAgent
 from .agents.gemini_agent import GeminiAgent
 
@@ -48,7 +48,8 @@ class LangGraphChatbot:
         # Initialize agents
         self.rag_agent = RAGAgent(
             google_api_key=settings.GOOGLE_API_KEY,
-            vector_store_path=settings.VECTOR_STORE_PATH
+            pinecone_api_key=settings.PINECONE_API_KEY,
+            index_name=settings.PINECONE_INDEX_NAME
         )
         self.web_agent = WebSearchAgent(tavily_api_key=settings.TAVILY_API_KEY)
         self.analytics_agent = AnalyticsAgent()
@@ -192,7 +193,7 @@ class LangGraphChatbot:
         
         query = state["query"]
         context_to_enhance = None
-        agent_used = "gemini" # Default
+        agent_used = "gemini" 
         metadata = {}
 
         if state.get("rag_result"):
@@ -252,7 +253,7 @@ class LangGraphChatbot:
         return "try_database"
     
     def _should_use_database(self, state: AgentState) -> str:
-        """Deca-ide if database result is good enough"""
+        """Decide if database result is good enough"""
         if state.get("db_result") and state["db_result"].get("response"):
             return "use_database"
         return "try_web"

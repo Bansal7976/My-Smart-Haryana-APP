@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:record/record.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 import '../../providers/language_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
@@ -19,6 +23,9 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   final List<ChatMessage> _messages = [];
   bool _isLoading = false;
   String? _sessionId;
+  bool _isRecording = false;
+  bool _isTranscribing = false;
+  final AudioRecorder _audioRecorder = AudioRecorder();
 
   @override
   void initState() {
@@ -30,6 +37,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    _audioRecorder.dispose();
     super.dispose();
   }
 
@@ -184,6 +192,133 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     });
   }
 
+  Future<void> _startStopRecording() async {
+    if (_isRecording) {
+      await _stopRecording();
+    } else {
+      await _startRecording();
+    }
+  }
+
+  Future<void> _startRecording() async {
+    try {
+      final status = await Permission.microphone.request();
+      if (!status.isGranted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(Provider.of<LanguageProvider>(context, listen: false)
+                  .getText('Microphone permission denied', 'माइक्रोफ़ोन अनुमति अस्वीकृत')),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+        return;
+      }
+
+      final Directory tempDir = await getTemporaryDirectory();
+      final String filePath = '${tempDir.path}/chatbot_recording_${DateTime.now().millisecondsSinceEpoch}.wav';
+
+      await _audioRecorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.wav,
+          sampleRate: 16000,
+          numChannels: 1,
+        ),
+        path: filePath,
+      );
+
+      setState(() {
+        _isRecording = true;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to start recording: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _stopRecording() async {
+    try {
+      final String? path = await _audioRecorder.stop();
+      
+      setState(() {
+        _isRecording = false;
+        _isTranscribing = true;
+      });
+
+      if (path != null) {
+        await _transcribeAudio(path);
+      }
+    } catch (e) {
+      setState(() {
+        _isRecording = false;
+        _isTranscribing = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to stop recording: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _transcribeAudio(String audioPath) async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+      
+      if (authProvider.token == null) {
+        throw Exception('No authentication token');
+      }
+
+      final result = await ApiService.convertVoiceToText(
+        authProvider.token!,
+        File(audioPath),
+        language: languageProvider.currentLanguage == 'hi' ? 'hi-IN' : 'en-IN',
+      );
+
+      if (result['text'] != null && result['text'].isNotEmpty) {
+        setState(() {
+          _messageController.text = result['text'];
+        });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(languageProvider.getText(
+                  'Voice converted to text!',
+                  'आवाज टेक्स्ट में परिवर्तित हुई!')),
+              backgroundColor: AppColors.success,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to convert voice: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isTranscribing = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
@@ -260,12 +395,42 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                   child: CustomTextField(
                     controller: _messageController,
                     label: languageProvider.getText(
-                        'Type your message...', 'अपना संदेश टाइप करें...'),
+                        'Type or speak your message...', 'अपना संदेश टाइप या बोलें...'),
                     hint: languageProvider.getText(
-                        'Type your message...', 'अपना संदेश टाइप करें...'),
+                        'Type or speak your message...', 'अपना संदेश टाइप या बोलें...'),
                     maxLines: 3,
                   ),
                 ),
+                const SizedBox(width: 8),
+                // Microphone Button
+                if (_isTranscribing)
+                  const SizedBox(
+                    width: 48,
+                    height: 48,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                      ),
+                    ),
+                  )
+                else
+                  Container(
+                    decoration: BoxDecoration(
+                      color: _isRecording ? AppColors.error : AppColors.primary.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        _isRecording ? Icons.stop : Icons.mic,
+                        color: _isRecording ? Colors.white : AppColors.primary,
+                      ),
+                      onPressed: _isLoading ? null : _startStopRecording,
+                      tooltip: languageProvider.getText(
+                          _isRecording ? 'Stop Recording' : 'Voice Input',
+                          _isRecording ? 'रिकॉर्डिंग बंद करें' : 'आवाज इनपुट'),
+                    ),
+                  ),
                 const SizedBox(width: 8),
                 FloatingActionButton(
                   onPressed: _isLoading ? null : _sendMessage,
@@ -418,3 +583,4 @@ class ChatMessage {
     this.quickReplies,
   });
 }
+

@@ -90,7 +90,7 @@ class Media(MediaBase):
 
 # --- Feedback Schemas ---
 class FeedbackBase(BaseModel):
-    comment: str = Field(..., min_length=5, max_length=1000)
+    comment: str = Field(..., min_length=1, max_length=1000)
     rating: int = Field(..., ge=1, le=5)
     
     @field_validator('comment')
@@ -157,12 +157,81 @@ class Problem(ProblemBase):
     status: ProblemStatusEnum
     priority: float
     district: str
+    location: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
     submitted_by: UserInProblemResponse
     media_files: List[Media] = []
     feedback: List[Feedback] = []
     assigned_to: Optional[WorkerInProblemResponse] = None
+    
+    @field_validator('location', mode='before')
+    @classmethod
+    def extract_location(cls, v: Any) -> Optional[str]:
+        """Convert PostGIS geometry to string coordinates"""
+        if v is None:
+            return None
+        
+        # If it's already a string, return it
+        if isinstance(v, str):
+            return v
+        
+        # If it's a PostGIS WKBElement, convert it
+        try:
+            from geoalchemy2.shape import to_shape
+            point = to_shape(v)
+            lat = point.y  # latitude
+            lng = point.x  # longitude
+            return f"{lat:.6f}, {lng:.6f}"
+        except Exception:
+            return None
+    
+    @field_validator('latitude', mode='before')
+    @classmethod
+    def extract_latitude(cls, v: Any, info) -> Optional[float]:
+        """Extract latitude from PostGIS geometry if needed"""
+        # Check if location field is a geometry object
+        location = info.data.get('location') if hasattr(info, 'data') else None
+        
+        # If latitude is already set, return it
+        if v is not None:
+            return v
+        
+        # Try to extract from location geometry
+        if location and not isinstance(location, str):
+            try:
+                from geoalchemy2.shape import to_shape
+                point = to_shape(location)
+                return point.y
+            except Exception:
+                pass
+        
+        return None
+    
+    @field_validator('longitude', mode='before')
+    @classmethod
+    def extract_longitude(cls, v: Any, info) -> Optional[float]:
+        """Extract longitude from PostGIS geometry if needed"""
+        # Check if location field is a geometry object
+        location = info.data.get('location') if hasattr(info, 'data') else None
+        
+        # If longitude is already set, return it
+        if v is not None:
+            return v
+        
+        # Try to extract from location geometry
+        if location and not isinstance(location, str):
+            try:
+                from geoalchemy2.shape import to_shape
+                point = to_shape(location)
+                return point.x
+            except Exception:
+                pass
+        
+        return None
+    
     class Config:
         from_attributes = True
 

@@ -96,11 +96,12 @@ class ImageGallery extends StatelessWidget {
     final fileUrl = media['file_url'] as String?;
     final mediaType = media['media_type'] as String?;
 
-    return GestureDetector(
-      onTap: () {
-        // You can implement image viewer here
-        _showImageDialog(fileUrl ?? '');
-      },
+    return Builder(
+      builder: (context) => GestureDetector(
+        onTap: () {
+          // You can implement image viewer here
+          _showImageDialog(context, fileUrl ?? '');
+        },
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.background,
@@ -150,6 +151,7 @@ class ImageGallery extends StatelessWidget {
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -165,13 +167,33 @@ class ImageGallery extends StatelessWidget {
       );
     }
 
+    // Construct full URL if relative path
+    final String fullUrl;
+    if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+      fullUrl = fileUrl;
+    } else {
+      // Assume it's a relative path like "uploads/filename.jpg"
+      const baseUrl = 'http://192.168.5.19:8000';
+      fullUrl = fileUrl.startsWith('/') ? '$baseUrl$fileUrl' : '$baseUrl/$fileUrl';
+    }
+
     // For web compatibility, we'll use Image.network
     if (kIsWeb) {
       return Image.network(
-        fileUrl,
+        fullUrl,
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                  : null,
+            ),
+          );
+        },
         errorBuilder: (context, error, stackTrace) => Container(
           color: Colors.grey[300],
           child: const Icon(
@@ -182,13 +204,22 @@ class ImageGallery extends StatelessWidget {
         ),
       );
     } else {
-      // For mobile, try to create a File from the URL
-      // This is a simplified approach - in a real app you'd want to download and cache images
+      // For mobile, use network image
       return Image.network(
-        fileUrl,
+        fullUrl,
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Center(
+            child: CircularProgressIndicator(
+              value: loadingProgress.expectedTotalBytes != null
+                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                  : null,
+            ),
+          );
+        },
         errorBuilder: (context, error, stackTrace) => Container(
           color: Colors.grey[300],
           child: const Icon(
@@ -201,9 +232,39 @@ class ImageGallery extends StatelessWidget {
     }
   }
 
-  void _showImageDialog(String imageUrl) {
-    // This would typically show a full-screen image viewer
-    // For now, we'll just show a placeholder
-    // TODO: Implement full-screen image viewer
+  void _showImageDialog(BuildContext context, String imageUrl) {
+    // Construct full URL for viewing
+    String fullUrl;
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      fullUrl = imageUrl;
+    } else {
+      const baseUrl = 'http://192.168.5.19:8000';
+      fullUrl = imageUrl.startsWith('/') ? '$baseUrl$imageUrl' : '$baseUrl/$imageUrl';
+    }
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => Dialog(
+        child: InteractiveViewer(
+          child: Image.network(
+            fullUrl,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) => Container(
+              padding: const EdgeInsets.all(20),
+              child: const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.error, color: Colors.red, size: 48),
+                  SizedBox(height: 8),
+                  Text('Failed to load image'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
+
+

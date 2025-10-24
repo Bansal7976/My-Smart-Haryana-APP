@@ -61,8 +61,8 @@ enum ProblemStatus {
 }
 
 enum MediaType {
-  photo_initial,
-  photo_proof,
+  photoInitial,
+  photoProof,
   audio,
   signature,
 }

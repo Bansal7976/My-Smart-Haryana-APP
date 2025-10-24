@@ -19,7 +19,7 @@ class _ManageWorkersScreenState extends State<ManageWorkersScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _pincodeController = TextEditingController();
-  
+
   List<Map<String, dynamic>> _workers = [];
   List<Map<String, dynamic>> _departments = [];
   bool _isLoading = true;
@@ -44,14 +44,15 @@ class _ManageWorkersScreenState extends State<ManageWorkersScreen> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    
+
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.token == null) return;
 
       final workers = await ApiService.getAllWorkers(authProvider.token!);
-      final departments = await ApiService.getAllDepartments(authProvider.token!);
-      
+      final departments =
+          await ApiService.getAllDepartments(authProvider.token!);
+
       if (mounted) {
         setState(() {
           _workers = workers;
@@ -144,7 +145,7 @@ class _ManageWorkersScreenState extends State<ManageWorkersScreen> {
 
   void _showCreateWorkerDialog() {
     _clearForm();
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -171,7 +172,7 @@ class _ManageWorkersScreenState extends State<ManageWorkersScreen> {
                   },
                 ),
                 const SizedBox(height: 12),
-                
+
                 CustomTextField(
                   controller: _emailController,
                   label: 'Email',
@@ -189,7 +190,7 @@ class _ManageWorkersScreenState extends State<ManageWorkersScreen> {
                   },
                 ),
                 const SizedBox(height: 12),
-                
+
                 CustomTextField(
                   controller: _passwordController,
                   label: 'Password',
@@ -207,7 +208,7 @@ class _ManageWorkersScreenState extends State<ManageWorkersScreen> {
                   },
                 ),
                 const SizedBox(height: 12),
-                
+
                 CustomTextField(
                   controller: _confirmPasswordController,
                   label: 'Confirm Password',
@@ -225,7 +226,7 @@ class _ManageWorkersScreenState extends State<ManageWorkersScreen> {
                   },
                 ),
                 const SizedBox(height: 12),
-                
+
                 // Display admin's district (read-only)
                 Container(
                   padding: const EdgeInsets.all(16),
@@ -249,7 +250,10 @@ class _ManageWorkersScreenState extends State<ManageWorkersScreen> {
                             ),
                           ),
                           Text(
-                            Provider.of<AuthProvider>(context, listen: false).user?.district ?? 'N/A',
+                            Provider.of<AuthProvider>(context, listen: false)
+                                    .user
+                                    ?.district ??
+                                'N/A',
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -261,7 +265,7 @@ class _ManageWorkersScreenState extends State<ManageWorkersScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                
+
                 CustomTextField(
                   controller: _pincodeController,
                   label: 'Pincode',
@@ -279,10 +283,10 @@ class _ManageWorkersScreenState extends State<ManageWorkersScreen> {
                   },
                 ),
                 const SizedBox(height: 12),
-                
+
                 // Department Dropdown
                 DropdownButtonFormField<int>(
-                  value: _selectedDepartmentId,
+                  initialValue: _selectedDepartmentId,
                   decoration: InputDecoration(
                     labelText: 'Department',
                     hintText: 'Select department',
@@ -347,16 +351,6 @@ class _ManageWorkersScreenState extends State<ManageWorkersScreen> {
     );
   }
 
-  String _getDepartmentName(int? departmentId) {
-    if (departmentId == null) return 'Unknown';
-    try {
-      final dept = _departments.firstWhere((d) => d['id'] == departmentId);
-      return dept['name'];
-    } catch (e) {
-      return 'Unknown';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -419,7 +413,8 @@ class _ManageWorkersScreenState extends State<ManageWorkersScreen> {
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 20, vertical: 12),
                             leading: CircleAvatar(
-                              backgroundColor: AppColors.primary.withOpacity(0.1),
+                              backgroundColor:
+                                  AppColors.primary.withValues(alpha: 0.1),
                               child: const Icon(Icons.person,
                                   color: AppColors.primary),
                             ),
@@ -465,12 +460,14 @@ class _ManageWorkersScreenState extends State<ManageWorkersScreen> {
                                   horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
                                 color: worker['user']['is_active']
-                                    ? Colors.green.withOpacity(0.1)
-                                    : Colors.red.withOpacity(0.1),
+                                    ? Colors.green.withValues(alpha: 0.1)
+                                    : Colors.red.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                worker['user']['is_active'] ? 'Active' : 'Inactive',
+                                worker['user']['is_active']
+                                    ? 'Active'
+                                    : 'Inactive',
                                 style: TextStyle(
                                   color: worker['user']['is_active']
                                       ? Colors.green

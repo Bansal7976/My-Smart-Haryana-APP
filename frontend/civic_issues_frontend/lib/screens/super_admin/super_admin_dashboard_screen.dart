@@ -135,14 +135,16 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                   )
                 : Row(
                     children: [
-                      Expanded(
-                        child: _buildStatCard(
-                          languageProvider.getText('Total Users', 'कुल उपयोगकर्ता'),
-                          _overview?['total_users']?.toString() ?? '0',
-                          Icons.people,
-                          AppColors.primary,
-                        ),
-                      ),
+                  Expanded(
+                    child: _buildStatCard(
+                      languageProvider.getText('Total Users', 'कुल उपयोगकर्ता'),
+                      (((_overview?['total_clients'] ?? 0) + 
+                        (_overview?['total_workers'] ?? 0) + 
+                        (_overview?['total_admins'] ?? 0))).toString(),
+                      Icons.people,
+                      AppColors.primary,
+                    ),
+                  ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: _buildStatCard(
@@ -536,3 +538,4 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
     );
   }
 }
+

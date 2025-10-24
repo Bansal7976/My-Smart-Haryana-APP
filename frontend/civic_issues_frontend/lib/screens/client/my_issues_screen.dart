@@ -575,11 +575,14 @@ class _MyIssuesScreenState extends State<MyIssuesScreen> {
                                         color: AppColors.textSecondary,
                                       ),
                                       const SizedBox(width: 4),
-                                      Text(
-                                        '${languageProvider.getText('Assigned to', 'निर्दिष्ट किया गया')}: ${issue.assignedTo}',
-                                        style: const TextStyle(
-                                          color: AppColors.textSecondary,
-                                          fontSize: 12,
+                                      Flexible(
+                                        child: Text(
+                                          '${languageProvider.getText('Assigned to', 'निर्दिष्ट किया गया')}: ${issue.assignedTo!.user.fullName} (${issue.assignedTo!.department.name})',
+                                          style: const TextStyle(
+                                            color: AppColors.textSecondary,
+                                            fontSize: 12,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                     ],
@@ -601,3 +604,5 @@ class _MyIssuesScreenState extends State<MyIssuesScreen> {
     );
   }
 }
+
+

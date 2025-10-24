@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/language_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/issue_provider.dart';
+import '../../services/api_service.dart';
 import '../../models/issue_model.dart';
 import '../../utils/app_colors.dart';
 import '../../widgets/custom_button.dart';
@@ -362,8 +363,12 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
 
                         const SizedBox(height: 20),
 
+                        // Feedback Section
+                        if (issue.feedback.isNotEmpty)
+                          _buildFeedbackSection(languageProvider, issue),
+
                         // Actions
-                        if (issue.status.toLowerCase() == 'completed')
+                        if (issue.status.toLowerCase() == 'completed' && issue.feedback.isEmpty)
                           _buildActionSection(languageProvider, issue),
 
                         const SizedBox(height: 20),
@@ -465,6 +470,83 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     );
   }
 
+  Widget _buildFeedbackSection(LanguageProvider languageProvider, Issue issue) {
+    final feedback = issue.feedback.first;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            languageProvider.getText('Your Feedback', 'आपकी प्रतिक्रिया'),
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Text(
+                languageProvider.getText('Rating:', 'रेटिंग:'),
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Row(
+                children: List.generate(5, (index) {
+                  return Icon(
+                    index < feedback.rating ? Icons.star : Icons.star_border,
+                    color: AppColors.warning,
+                    size: 20,
+                  );
+                }),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${feedback.rating}/5',
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          if (feedback.comment.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              languageProvider.getText('Comment:', 'टिप्पणी:'),
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              feedback.comment,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildActionSection(LanguageProvider languageProvider, Issue issue) {
     return Container(
       width: double.infinity,
@@ -495,9 +577,9 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
           const SizedBox(height: 16),
           CustomButton(
             text: languageProvider.getText(
-                'Verify Completion', 'पूर्णता सत्यापित करें'),
+                'Submit Feedback & Verify', 'फीडबैक दें और सत्यापित करें'),
             onPressed: () {
-              _showVerificationDialog(languageProvider, issue);
+              _showFeedbackDialog(languageProvider, issue);
             },
             backgroundColor: AppColors.success,
           ),
@@ -506,42 +588,115 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     );
   }
 
-  void _showVerificationDialog(LanguageProvider languageProvider, Issue issue) {
+  void _showFeedbackDialog(LanguageProvider languageProvider, Issue issue) {
+    int rating = 5;
+    final commentController = TextEditingController();
+    
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(languageProvider.getText(
-            'Verify Completion', 'पूर्णता सत्यापित करें')),
-        content: Text(languageProvider.getText(
-            'Are you satisfied with the work done? This will mark the issue as verified.',
-            'क्या आप किए गए काम से संतुष्ट हैं? यह समस्या को सत्यापित के रूप में चिह्नित करेगा।')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(languageProvider.getText('Cancel', 'रद्द करें')),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text(languageProvider.getText(
+              'Submit Feedback', 'फीडबैक दें')),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(languageProvider.getText(
+                    'How satisfied are you with the work?',
+                    'आप काम से कितने संतुष्ट हैं?')),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(5, (index) {
+                    return IconButton(
+                      icon: Icon(
+                        index < rating ? Icons.star : Icons.star_border,
+                        color: AppColors.warning,
+                        size: 32,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          rating = index + 1;
+                        });
+                      },
+                    );
+                  }),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: commentController,
+                  decoration: InputDecoration(
+                    labelText: languageProvider.getText(
+                        'Comment (Optional)', 'टिप्पणी (वैकल्पिक)'),
+                    hintText: languageProvider.getText(
+                        'Share your experience...', 'अपना अनुभव साझा करें...'),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  maxLines: 3,
+                ),
+              ],
+            ),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _verifyIssue(issue);
-            },
-            child: Text(languageProvider.getText('Verify', 'सत्यापित करें')),
-          ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(languageProvider.getText('Cancel', 'रद्द करें')),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _submitFeedbackAndVerify(
+                    issue, rating, commentController.text);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.success,
+                foregroundColor: Colors.white,
+              ),
+              child: Text(languageProvider.getText('Submit', 'जमा करें')),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Future<void> _verifyIssue(Issue issue) async {
+  Future<void> _submitFeedbackAndVerify(
+      Issue issue, int rating, String comment) async {
     try {
-      // This would call the backend API to verify the issue
-      // For now, we'll just show a success message
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final languageProvider =
+          Provider.of<LanguageProvider>(context, listen: false);
+
+      if (authProvider.token == null) {
+        throw Exception('No authentication token');
+      }
+
+      // Submit feedback
+      await ApiService.submitFeedback(
+        authProvider.token!,
+        issue.id.toString(),
+        {
+          'comment': comment.isEmpty ? 'Work completed satisfactorily' : comment,
+          'rating': rating,
+        },
+      );
+
+      // Verify issue
+      await ApiService.verifyIssueCompletion(
+        authProvider.token!,
+        issue.id.toString(),
+      );
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(Provider.of<LanguageProvider>(context, listen: false)
-                .getText('Issue verified successfully!',
-                    'समस्या सफलतापूर्वक सत्यापित!')),
+            content: Text(languageProvider.getText(
+                'Feedback submitted and issue verified!',
+                'फीडबैक सबमिट किया गया और समस्या सत्यापित!')),
             backgroundColor: AppColors.success,
           ),
         );
@@ -552,7 +707,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-                '${Provider.of<LanguageProvider>(context, listen: false).getText('Failed to verify issue', 'समस्या सत्यापित करने में असफल')}: $e'),
+                '${Provider.of<LanguageProvider>(context, listen: false).getText('Failed to submit feedback', 'फीडबैक सबमिट करने में विफल')}: $e'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -560,3 +715,4 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     }
   }
 }
+

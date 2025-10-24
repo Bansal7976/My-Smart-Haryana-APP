@@ -233,6 +233,176 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
 
+  Widget _buildFeedbackSection(LanguageProvider languageProvider, Issue task) {
+    final feedback = task.feedback.first;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.feedback,
+                  color: AppColors.success,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  languageProvider.getText('Citizen Feedback', 'नागरिक प्रतिक्रिया'),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(),
+          const SizedBox(height: 16),
+          
+          // Rating
+          Row(
+            children: [
+              Text(
+                languageProvider.getText('Rating:', 'रेटिंग:'),
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Row(
+                children: List.generate(5, (index) {
+                  return Icon(
+                    index < feedback.rating ? Icons.star : Icons.star_border,
+                    color: AppColors.warning,
+                    size: 24,
+                  );
+                }),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '${feedback.rating}/5',
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Comment
+          if (feedback.comment.isNotEmpty) ...[
+            Text(
+              languageProvider.getText('Comment:', 'टिप्पणी:'),
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Text(
+                feedback.comment,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ],
+          
+          // Sentiment (if available)
+          if (feedback.sentiment != null && feedback.sentiment!.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: feedback.sentiment!.toLowerCase() == 'positive'
+                    ? AppColors.success.withValues(alpha: 0.1)
+                    : feedback.sentiment!.toLowerCase() == 'negative'
+                        ? AppColors.error.withValues(alpha: 0.1)
+                        : AppColors.info.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    feedback.sentiment!.toLowerCase() == 'positive'
+                        ? Icons.sentiment_satisfied
+                        : feedback.sentiment!.toLowerCase() == 'negative'
+                            ? Icons.sentiment_dissatisfied
+                            : Icons.sentiment_neutral,
+                    size: 16,
+                    color: feedback.sentiment!.toLowerCase() == 'positive'
+                        ? AppColors.success
+                        : feedback.sentiment!.toLowerCase() == 'negative'
+                            ? AppColors.error
+                            : AppColors.info,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    languageProvider.getText(
+                      feedback.sentiment!,
+                      feedback.sentiment!,
+                    ),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: feedback.sentiment!.toLowerCase() == 'positive'
+                          ? AppColors.success
+                          : feedback.sentiment!.toLowerCase() == 'negative'
+                              ? AppColors.error
+                              : AppColors.info,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
@@ -392,6 +562,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 title: languageProvider.getText(
                     'Reference Images', 'संदर्भ छवियां'),
               ),
+
+            const SizedBox(height: 20),
+
+            // Feedback Section - Show if task has feedback (for completed/verified tasks)
+            if (task.feedback.isNotEmpty)
+              _buildFeedbackSection(languageProvider, task),
 
             const SizedBox(height: 20),
 
@@ -661,3 +837,5 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
 }
+
+
