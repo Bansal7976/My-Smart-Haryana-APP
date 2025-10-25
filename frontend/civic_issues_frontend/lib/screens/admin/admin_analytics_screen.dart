@@ -178,9 +178,9 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           crossAxisCount: 2,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          childAspectRatio: 1.3,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
+                          childAspectRatio: 1.5,
                           children: [
                             _buildMetricCard(
                               languageProvider.getText('Total Problems', 'कुल समस्याएं'),
@@ -286,7 +286,7 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
 
                         _buildPerformanceCard(
                           languageProvider.getText('Average Response Time', 'औसत प्रतिक्रिया समय'),
-                          _analytics?['avg_response_time']?.toString() ?? 'N/A',
+                          _formatResponseTime(),
                           Icons.schedule,
                           AppColors.info,
                         ),
@@ -311,7 +311,7 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
   Widget _buildMetricCard(
       String title, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
@@ -326,9 +326,10 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
@@ -336,27 +337,31 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
             child: Icon(
               icon,
               color: color,
-              size: 24,
+              size: 18,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           Text(
             value,
             style: TextStyle(
-              fontSize: 28,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
               color: color,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Text(
             title,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 10,
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -461,18 +466,30 @@ class _AdminAnalyticsScreenState extends State<AdminAnalyticsScreen> {
     if (_analytics == null) return '0%';
     final total = _analytics!['total_problems'] ?? 0;
     final completed = _analytics!['completed_problems'] ?? 0;
+    final verified = _analytics!['verified_problems'] ?? 0;
     if (total == 0) return '0%';
-    final rate = (completed / total * 100).toStringAsFixed(1);
+    final rate = ((completed + verified) / total * 100).toStringAsFixed(1);
     return '$rate%';
+  }
+
+  String _formatResponseTime() {
+    if (_analytics == null) return 'N/A';
+    final hours = _analytics!['average_resolution_time_hours'];
+    if (hours == null) return 'N/A';
+    return '${hours}h';
   }
 
   String _calculateWorkerUtilization() {
     if (_analytics == null) return '0%';
     final workers = _analytics!['total_workers'] ?? 0;
     final assigned = _analytics!['assigned_problems'] ?? 0;
+    final completed = _analytics!['completed_problems'] ?? 0;
+    final verified = _analytics!['verified_problems'] ?? 0;
     if (workers == 0) return '0%';
-    final utilization = (assigned / workers * 100).toStringAsFixed(1);
-    return '$utilization%';
+    // Calculate tasks per worker
+    final totalTasks = assigned + completed + verified;
+    final utilization = (totalTasks / workers).toStringAsFixed(1);
+    return utilization;
   }
 }
 

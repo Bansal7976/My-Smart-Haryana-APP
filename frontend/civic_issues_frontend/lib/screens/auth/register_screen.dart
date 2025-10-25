@@ -69,8 +69,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _isLoading = true);
 
+    // Get providers and messenger BEFORE async operations
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final success = await authProvider.register({
         'fullName': _fullNameController.text.trim(),
         'email': _emailController.text.trim(),
@@ -79,20 +83,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'pincode': _pincodeController.text.trim(),
       });
 
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+      if (!mounted) return;
+
+      if (success) {
+        scaffoldMessenger.showSnackBar(
           SnackBar(
-            content: Text(Provider.of<LanguageProvider>(context, listen: false)
-                .getText('Registration successful!', 'पंजीकरण सफल!')),
+            content: Text(languageProvider.getText('Registration successful!', 'पंजीकरण सफल!')),
             backgroundColor: Colors.green,
           ),
         );
         // Navigation will be handled automatically by the main app
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+      } else {
+        scaffoldMessenger.showSnackBar(
           SnackBar(
             content: Text(
-                '${Provider.of<LanguageProvider>(context, listen: false).getText('Registration failed', 'पंजीकरण असफल')}: ${authProvider.error ?? 'Unknown error'}'),
+                '${languageProvider.getText('Registration failed', 'पंजीकरण असफल')}: ${authProvider.error ?? 'Unknown error'}'),
             backgroundColor: Colors.red,
           ),
         );

@@ -260,6 +260,7 @@ class AdminStats(BaseModel):
     completed_problems: int
     verified_problems: int
     average_resolution_time_hours: Optional[float] = None
+    total_workers: int = 0
 
 class HeatmapPoint(BaseModel):
     latitude: float
@@ -347,6 +348,7 @@ class SuperAdminOverview(BaseModel):
     assigned_problems: int
     completed_problems: int
     verified_problems: int
+    rejected_problems: int
     active_districts: int
     total_clients: int
     total_workers: int

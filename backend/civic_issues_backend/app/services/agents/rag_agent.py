@@ -83,6 +83,21 @@ class RAGAgent(BaseAgent):
                 text_key="page_content"
             )
 
+            # Step 7: Load knowledge base into Pinecone if empty
+            stats = self.index.describe_index_stats()
+            total_vectors = stats.get('total_vector_count', 0)
+            
+            if total_vectors == 0:
+                logger.info("Pinecone index is empty. Loading knowledge base...")
+                documents = self._create_knowledge_base()
+                if documents:
+                    self.vectorstore.add_documents(documents)
+                    logger.info(f"✅ Uploaded {len(documents)} documents to Pinecone")
+                else:
+                    logger.warning("No documents found in knowledge base")
+            else:
+                logger.info(f"✅ Pinecone index has {total_vectors} vectors")
+
             logger.info("✅ RAG Agent with Pinecone initialized successfully")
 
         except Exception as e:
@@ -170,22 +185,46 @@ class RAGAgent(BaseAgent):
             }
 
         try:
-            # Use synchronous search to avoid aiohttp session issues
-            docs = self.vectorstore.similarity_search(query, k=3)
+            # Use similarity_search_with_score to check semantic relevance
+            docs_with_scores = self.vectorstore.similarity_search_with_score(query, k=3)
 
-            if not docs:
+            if not docs_with_scores:
                 return {
                     "response": "No relevant information found in knowledge base.",
                     "metadata": {"docs_found": 0},
                     "agent_type": "rag"
                 }
 
-            response_text = "\n\n".join([doc.page_content for doc in docs])
+            # Filter by semantic similarity threshold (cosine similarity: 0-1, higher is better)
+            # 0.5+ is moderately relevant, 0.7+ is highly relevant
+            SIMILARITY_THRESHOLD = 0.5
+            relevant_docs = [
+                (doc, score) for doc, score in docs_with_scores 
+                if score >= SIMILARITY_THRESHOLD
+            ]
+
+            if not relevant_docs:
+                logger.info(f"No docs above similarity threshold {SIMILARITY_THRESHOLD}. Max score: {max([s for _, s in docs_with_scores]) if docs_with_scores else 0}")
+                return {
+                    "response": "No relevant information found in knowledge base.",
+                    "metadata": {
+                        "docs_found": 0,
+                        "max_score": max([s for _, s in docs_with_scores]) if docs_with_scores else 0
+                    },
+                    "agent_type": "rag"
+                }
+
+            # Return only relevant content
+            response_text = "\n\n".join([doc.page_content for doc, _ in relevant_docs])
+            scores = [float(score) for _, score in relevant_docs]
+            
             return {
                 "response": response_text,
                 "metadata": {
-                    "docs_retrieved": len(docs),
-                    "sources": list(set([doc.metadata.get("source", "unknown") for doc in docs]))
+                    "docs_retrieved": len(relevant_docs),
+                    "sources": list(set([doc.metadata.get("source", "unknown") for doc, _ in relevant_docs])),
+                    "similarity_scores": scores,
+                    "avg_score": sum(scores) / len(scores) if scores else 0
                 },
                 "agent_type": "rag"
             }

@@ -201,18 +201,20 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 
   Future<void> _startRecording() async {
+    // Capture context references BEFORE any async operations
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+
     try {
       final status = await Permission.microphone.request();
       if (!status.isGranted) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(Provider.of<LanguageProvider>(context, listen: false)
-                  .getText('Microphone permission denied', 'माइक्रोफ़ोन अनुमति अस्वीकृत')),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
+        if (!mounted) return;
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text(languageProvider.getText('Microphone permission denied', 'माइक्रोफ़ोन अनुमति अस्वीकृत')),
+            backgroundColor: AppColors.error,
+          ),
+        );
         return;
       }
 
@@ -228,25 +230,29 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         path: filePath,
       );
 
+      if (!mounted) return;
       setState(() {
         _isRecording = true;
       });
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to start recording: ${e.toString()}'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
+      if (!mounted) return;
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed to start recording: ${e.toString()}'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
   Future<void> _stopRecording() async {
+    // Capture context references BEFORE any async operations
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     try {
       final String? path = await _audioRecorder.stop();
       
+      if (!mounted) return;
       setState(() {
         _isRecording = false;
         _isTranscribing = true;
@@ -256,26 +262,27 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         await _transcribeAudio(path);
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isRecording = false;
         _isTranscribing = false;
       });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to stop recording: ${e.toString()}'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed to stop recording: ${e.toString()}'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
   Future<void> _transcribeAudio(String audioPath) async {
+    // Capture context references BEFORE any async operations
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
-      
       if (authProvider.token == null) {
         throw Exception('No authentication token');
       }
@@ -286,36 +293,37 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         language: languageProvider.currentLanguage == 'hi' ? 'hi-IN' : 'en-IN',
       );
 
+      if (!mounted) return;
+
       if (result['text'] != null && result['text'].isNotEmpty) {
         setState(() {
           _messageController.text = result['text'];
         });
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(languageProvider.getText(
-                  'Voice converted to text!',
-                  'आवाज टेक्स्ट में परिवर्तित हुई!')),
-              backgroundColor: AppColors.success,
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        scaffoldMessenger.showSnackBar(
           SnackBar(
-            content: Text('Failed to convert voice: ${e.toString()}'),
-            backgroundColor: AppColors.error,
+            content: Text(languageProvider.getText(
+                'Voice converted to text!',
+                'आवाज टेक्स्ट में परिवर्तित हुई!')),
+            backgroundColor: AppColors.success,
+            duration: const Duration(seconds: 2),
           ),
         );
       }
+    } catch (e) {
+      if (!mounted) return;
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed to convert voice: ${e.toString()}'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     } finally {
-      setState(() {
-        _isTranscribing = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isTranscribing = false;
+        });
+      }
     }
   }
 

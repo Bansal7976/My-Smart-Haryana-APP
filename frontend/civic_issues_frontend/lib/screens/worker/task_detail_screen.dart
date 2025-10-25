@@ -113,11 +113,17 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   }
 
   Future<void> _submitCompletion() async {
+    // Capture context references BEFORE any async operations
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+    final issueProvider = Provider.of<IssueProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
     if (_proofImage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         SnackBar(
-          content: Text(Provider.of<LanguageProvider>(context, listen: false)
-              .getText('Please take a proof photo', 'कृपया प्रमाण फोटो लें')),
+          content: Text(languageProvider.getText('Please take a proof photo', 'कृपया प्रमाण फोटो लें')),
           backgroundColor: Colors.red,
         ),
       );
@@ -128,11 +134,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
     try {
       // 🔒 STEP 1: Get Current GPS Location
-      final languageProvider =
-          Provider.of<LanguageProvider>(context, listen: false);
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         SnackBar(
           content: Text(languageProvider.getText(
               'Getting your current location...',
@@ -165,9 +167,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       );
 
       // 🔒 STEP 2: Submit with GPS verification
-      final issueProvider = Provider.of<IssueProvider>(context, listen: false);
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
       if (authProvider.token == null) {
         throw Exception('No authentication token available');
       }
@@ -180,29 +179,29 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         authProvider.token!,
       );
 
-      if (mounted) {
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(languageProvider.getText(
-                  'Task completed successfully! ✅',
-                  'कार्य सफलतापूर्वक पूरा! ✅')),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.of(context).pop();
-        } else {
-          // GPS verification error will be in issueProvider.error
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(issueProvider.error ??
-                  languageProvider.getText(
-                      'Failed to complete task', 'कार्य पूरा करने में असफल')),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 5),
-            ),
-          );
-        }
+      if (!mounted) return;
+
+      if (success) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text(languageProvider.getText(
+                'Task completed successfully! ✅',
+                'कार्य सफलतापूर्वक पूरा! ✅')),
+            backgroundColor: Colors.green,
+          ),
+        );
+        navigator.pop();
+      } else {
+        // GPS verification error will be in issueProvider.error
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text(issueProvider.error ??
+                languageProvider.getText(
+                    'Failed to complete task', 'कार्य पूरा करने में असफल')),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {

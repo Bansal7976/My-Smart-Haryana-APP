@@ -47,27 +47,43 @@ class AnalyticsAgent(BaseAgent):
         Execute database analytics query based on user request.
         """
         
-        query_lower = query.lower()
+        query_lower = query.lower().strip()
         
-        # Determine what kind of analytics to provide
-        # Check for user's own problems first (higher priority)
-        if any(word in query_lower for word in ["my issues", "my problems", "my report", "मेरी समस्याएं", "मेरे मुद्दे", "show my"]):
+        # Priority order: Check user-specific queries FIRST
+        
+        # 1. User's own issues (HIGHEST PRIORITY)
+        my_keywords = ["my issue", "my problem", "my report", "मेरी समस्या", "मेरे मुद्दे", 
+                       "show my", "मेरे", "mine", "i reported", "i have"]
+        if any(keyword in query_lower for keyword in my_keywords):
             return await self._get_user_problems(db, user_id, query_lower)
-        elif any(word in query_lower for word in ["latest", "last problem", "recent problem", "नवीनतम", "status of"]) and any(word in query_lower for word in ["my", "मेरा"]):
+        
+        # 2. Latest status of user's issue
+        if ("latest" in query_lower or "last" in query_lower or "recent" in query_lower or "status" in query_lower) and \
+           ("my" in query_lower or "मेरा" in query_lower):
             return await self._get_latest_problem_status(db, user_id)
-        elif any(word in query_lower for word in ["best", "top", "सबसे अच्छा"]):
-            return await self._get_best_performing_cities(db, query_lower)
-        elif any(word in query_lower for word in ["worst", "least", "सबसे खराब"]):
-            return await self._get_worst_performing_cities(db, query_lower)
-        elif any(word in query_lower for word in ["my city", "my district", "मेरा शहर", "मेरा जिला"]):
+        
+        # 3. User's city/district statistics
+        if any(keyword in query_lower for keyword in ["my city", "my district", "मेरा शहर", "मेरा जिला"]):
             return await self._get_user_city_stats(db, user_id)
-        elif any(word in query_lower for word in ["overall", "total", "haryana", "कुल"]):
-            return await self._get_overall_stats(db)
-        elif any(word in query_lower for word in ["department", "विभाग"]):
-            return await self._get_department_stats(db)
-        else:
-            # Default: best performing cities
+        
+        # 4. Best performing cities
+        if any(keyword in query_lower for keyword in ["best", "top", "winner", "सबसे अच्छा", "performing"]):
             return await self._get_best_performing_cities(db, query_lower)
+        
+        # 5. Worst performing cities
+        if any(keyword in query_lower for keyword in ["worst", "least", "poor", "सबसे खराब"]):
+            return await self._get_worst_performing_cities(db, query_lower)
+        
+        # 6. Department statistics
+        if "department" in query_lower or "विभाग" in query_lower:
+            return await self._get_department_stats(db)
+        
+        # 7. Overall Haryana statistics
+        if any(keyword in query_lower for keyword in ["overall", "total", "all", "haryana", "कुल", "statistics"]):
+            return await self._get_overall_stats(db)
+        
+        # Default: Return overall stats instead of best cities
+        return await self._get_overall_stats(db)
     
     async def _get_best_performing_cities(self, db: AsyncSession, query: str) -> Dict[str, Any]:
         """
@@ -103,15 +119,14 @@ class AnalyticsAgent(BaseAgent):
                 "agent_type": "analytics"
             }
         
-        # Format response
-        response_text = "🏆 **Top Performing Cities in Haryana (Last 3 Months)**\n\n"
-        response_text += "Based on the number of resolved civic issues:\n\n"
+        # Format response - simple text without markdown
+        response_text = "Top Performing Cities (Last 3 Months):\n\n"
         
         for idx, (district, count) in enumerate(top_cities, 1):
             medal = "🥇" if idx == 1 else "🥈" if idx == 2 else "🥉" if idx == 3 else "⭐"
-            response_text += f"{medal} **{district}**: {count} issues resolved\n"
+            response_text += f"{idx}. {medal} {district}: {count} issues resolved\n"
         
-        response_text += f"\n**Winner**: {top_cities[0][0]} with {top_cities[0][1]} issues resolved! 🎉"
+        response_text += f"\nWinner: {top_cities[0][0]} with {top_cities[0][1]} issues! 🎉"
         
         return {
             "response": response_text,
@@ -149,12 +164,12 @@ class AnalyticsAgent(BaseAgent):
                 "agent_type": "analytics"
             }
         
-        response_text = "📊 **Cities with Most Pending Issues**\n\n"
+        response_text = "Cities with Most Pending Issues:\n\n"
         
         for idx, (district, count) in enumerate(cities_with_pending, 1):
-            response_text += f"{idx}. **{district}**: {count} pending issues\n"
+            response_text += f"{idx}. {district}: {count} pending issues\n"
         
-        response_text += "\nThese cities need more attention from the administration."
+        response_text += "\nThese areas need attention from administration."
         
         return {
             "response": response_text,
@@ -192,16 +207,16 @@ class AnalyticsAgent(BaseAgent):
         
         result = (await db.execute(stats_query)).first()
         
-        response_text = f"📊 **Statistics for {district}**\n\n"
-        response_text += f"📋 Total Issues: {result.total}\n"
+        response_text = f"Statistics for {district}:\n\n"
+        response_text += f"Total Issues: {result.total}\n"
         response_text += f"⏳ Pending: {result.pending}\n"
         response_text += f"👷 Assigned: {result.assigned}\n"
         response_text += f"✅ Completed: {result.completed}\n"
-        response_text += f"✓ Verified: {result.verified}\n\n"
+        response_text += f"✓ Verified: {result.verified}\n"
         
         if result.total > 0:
             resolution_rate = ((result.completed + result.verified) / result.total) * 100
-            response_text += f"🎯 Resolution Rate: {resolution_rate:.1f}%"
+            response_text += f"\nResolution Rate: {resolution_rate:.1f}%"
         
         return {
             "response": response_text,
@@ -235,17 +250,16 @@ class AnalyticsAgent(BaseAgent):
         districts_query = select(func.count(func.distinct(models.Problem.district)))
         districts_count = (await db.execute(districts_query)).scalar()
         
-        response_text = "🏛️ **Smart Haryana - Overall Statistics**\n\n"
-        response_text += f"📊 Total Issues Reported: {result.total}\n"
-        response_text += f"📍 Districts Covered: {districts_count}\n"
+        response_text = "Smart Haryana - Overall Statistics:\n\n"
+        response_text += f"Total Issues: {result.total}\n"
+        response_text += f"Districts: {districts_count}\n"
         response_text += f"⏳ Pending: {result.pending}\n"
         response_text += f"✅ Completed: {result.completed}\n"
-        response_text += f"✓ Verified: {result.verified}\n\n"
+        response_text += f"✓ Verified: {result.verified}\n"
         
         if result.total > 0:
             resolution_rate = ((result.completed + result.verified) / result.total) * 100
-            response_text += f"🎯 Overall Resolution Rate: {resolution_rate:.1f}%\n"
-            response_text += f"\nTogether, we're making Haryana better! 🌟"
+            response_text += f"\nResolution Rate: {resolution_rate:.1f}%"
         
         return {
             "response": response_text,
@@ -291,10 +305,10 @@ class AnalyticsAgent(BaseAgent):
                 "agent_type": "analytics"
             }
         
-        response_text = "🏢 **Department-wise Statistics**\n\n"
+        response_text = "Department-wise Statistics:\n\n"
         
         for idx, (dept_name, count) in enumerate(departments, 1):
-            response_text += f"{idx}. **{dept_name}**: {count} tasks assigned\n"
+            response_text += f"{idx}. {dept_name}: {count} tasks assigned\n"
         
         return {
             "response": response_text,
@@ -319,7 +333,7 @@ class AnalyticsAgent(BaseAgent):
         
         # Query user's problems
         problems_query = select(models.Problem).where(
-            models.Problem.submitted_by_id == user_id
+            models.Problem.user_id == user_id
         ).order_by(
             desc(models.Problem.created_at)
         ).limit(limit).options(
@@ -336,12 +350,12 @@ class AnalyticsAgent(BaseAgent):
                 "agent_type": "analytics"
             }
         
-        # Format response
-        response_text = f"📋 Your Last {len(problems)} Reported Issue{'s' if len(problems) > 1 else ''}:\n\n"
+        # Format response - clean and simple
+        response_text = f"Your Last {len(problems)} Reported Issue{'s' if len(problems) > 1 else ''}:\n\n"
         
         status_icons = {
             "PENDING": "⏳",
-            "ASSIGNED": "👷",
+            "ASSIGNED": "👷", 
             "COMPLETED": "✅",
             "VERIFIED": "✓"
         }
@@ -349,23 +363,20 @@ class AnalyticsAgent(BaseAgent):
         for idx, problem in enumerate(problems, 1):
             status_icon = status_icons.get(problem.status.value, "📌")
             status_text = problem.status.value.replace("_", " ").title()
-            
-            # Format date
             created_date = problem.created_at.strftime("%d %b %Y")
             
-            response_text += f"{idx}. {status_icon} Problem ID: #{problem.id}\n"
-            response_text += f"   Type: {problem.problem_type}\n"
+            response_text += f"{idx}. {status_icon} ID #{problem.id} - {problem.problem_type}\n"
             response_text += f"   Status: {status_text}\n"
-            response_text += f"   Location: {problem.area}, {problem.district}\n"
-            response_text += f"   Reported: {created_date}\n"
+            response_text += f"   Location: {problem.district}\n"
+            response_text += f"   Date: {created_date}\n"
             
             if problem.description and len(problem.description) > 0:
-                desc_preview = problem.description[:60] + "..." if len(problem.description) > 60 else problem.description
-                response_text += f"   Description: {desc_preview}\n"
+                desc_preview = problem.description[:50] + "..." if len(problem.description) > 50 else problem.description
+                response_text += f"   Details: {desc_preview}\n"
             
             response_text += "\n"
         
-        response_text += "💡 Tip: You can track these issues in the 'My Issues' section of the app!"
+        response_text += "You can track and manage these in the 'My Issues' section."
         
         return {
             "response": response_text,
@@ -390,7 +401,7 @@ class AnalyticsAgent(BaseAgent):
         """
         # Query latest problem
         problem_query = select(models.Problem).where(
-            models.Problem.submitted_by_id == user_id
+            models.Problem.user_id == user_id
         ).order_by(
             desc(models.Problem.created_at)
         ).limit(1).options(
@@ -423,39 +434,40 @@ class AnalyticsAgent(BaseAgent):
         created_date = problem.created_at.strftime("%d %b %Y at %I:%M %p")
         updated_date = problem.updated_at.strftime("%d %b %Y at %I:%M %p")
         
-        response_text = f"🔍 Status of Your Latest Report:\n\n"
-        response_text += f"📌 Problem ID: #{problem.id}\n"
-        response_text += f"📍 Location: {problem.area}, {problem.district}\n"
-        response_text += f"🏷️ Type: {problem.problem_type}\n"
+        response_text = f"Status of Your Latest Report:\n\n"
+        response_text += f"ID: #{problem.id}\n"
+        response_text += f"Type: {problem.problem_type}\n"
+        response_text += f"Location: {problem.district}\n"
         response_text += f"{status_icon} Status: {status_text}\n"
-        response_text += f"📅 Reported: {created_date}\n"
-        response_text += f"🔄 Last Updated: {updated_date}\n"
+        response_text += f"Reported: {created_date}\n"
+        response_text += f"Updated: {updated_date}\n"
         
         if problem.description:
-            response_text += f"\n📝 Description:\n{problem.description}\n"
+            desc_short = problem.description[:100] + "..." if len(problem.description) > 100 else problem.description
+            response_text += f"\nDescription: {desc_short}\n"
         
         # Add worker info if assigned
         if problem.assigned_to and problem.assigned_to.user:
             worker_name = problem.assigned_to.user.full_name
             dept_name = problem.assigned_to.department.name if problem.assigned_to.department else "Unknown"
-            response_text += f"\n👷 Assigned to: {worker_name} ({dept_name})\n"
+            response_text += f"\nAssigned to: {worker_name} ({dept_name})\n"
         
         # Add feedback if verified
         if problem.status.value == "VERIFIED" and problem.feedback:
             feedback = problem.feedback[0]
-            response_text += f"\n⭐ Your Rating: {feedback.rating}/5\n"
+            response_text += f"\nYour Rating: {feedback.rating}/5\n"
             if feedback.comment:
-                response_text += f"💬 Your Feedback: {feedback.comment}\n"
+                response_text += f"Your Feedback: {feedback.comment}\n"
         
         # Add action guidance
         if problem.status.value == "PENDING":
-            response_text += "\n💡 Your issue is waiting to be assigned to a worker. We'll notify you once it's picked up!"
+            response_text += "\nYour issue is waiting to be assigned. We'll notify you once assigned."
         elif problem.status.value == "ASSIGNED":
-            response_text += "\n💡 A worker is currently working on your issue. You'll be notified when it's completed!"
+            response_text += "\nA worker is working on your issue. You'll be notified when completed."
         elif problem.status.value == "COMPLETED":
-            response_text += "\n💡 The work is done! Please verify and provide feedback in the app."
+            response_text += "\nWork is done! Please verify and provide feedback in the app."
         elif problem.status.value == "VERIFIED":
-            response_text += "\n✨ Thank you for your feedback! Your issue has been successfully resolved."
+            response_text += "\nThank you! Your issue has been successfully resolved."
         
         return {
             "response": response_text,

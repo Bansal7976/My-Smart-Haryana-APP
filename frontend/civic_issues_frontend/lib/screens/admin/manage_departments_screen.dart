@@ -60,8 +60,12 @@ class _ManageDepartmentsScreenState extends State<ManageDepartmentsScreen> {
 
     setState(() => _isCreating = true);
 
+    // Capture context references BEFORE any async operations
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.token == null) {
         throw Exception('No authentication token');
       }
@@ -71,18 +75,18 @@ class _ManageDepartmentsScreenState extends State<ManageDepartmentsScreen> {
         _departmentNameController.text.trim(),
       );
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Department created successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+      if (!mounted) return;
 
-        _departmentNameController.clear();
-        Navigator.of(context).pop();
-        _loadDepartments();
-      }
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(
+          content: Text('Department created successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      _departmentNameController.clear();
+      navigator.pop();
+      _loadDepartments();
     } catch (e) {
       if (mounted) {
         _showErrorDialog('Failed to create department: ${e.toString()}');

@@ -71,8 +71,12 @@ class _ManageWorkersScreenState extends State<ManageWorkersScreen> {
   Future<void> _createWorker() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Capture context references BEFORE any async operations
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
     if (_selectedDepartmentId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         const SnackBar(
           content: Text('Please select a department'),
           backgroundColor: Colors.red,
@@ -103,28 +107,28 @@ class _ManageWorkersScreenState extends State<ManageWorkersScreen> {
 
       await ApiService.createWorker(authProvider.token!, workerData);
 
-      if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Worker created successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+      if (!mounted) return;
 
-        _clearForm();
-        _loadData();
-      }
+      navigator.pop();
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(
+          content: Text('Worker created successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      _clearForm();
+      _loadData();
     } catch (e) {
-      if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      if (!mounted) return;
+
+      navigator.pop();
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() => _isCreating = false);

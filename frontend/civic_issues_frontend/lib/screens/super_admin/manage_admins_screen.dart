@@ -77,39 +77,43 @@ class _ManageAdminsScreenState extends State<ManageAdminsScreen> {
     );
 
     if (confirm != true) return;
+    if (!mounted) return;
+
+    // Capture context references AFTER dialog and mounted check
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
       await ApiService.deactivateAdmin(authProvider.token!, adminId);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              languageProvider.getText(
-                'Admin deactivated successfully',
-                'एडमिन सफलतापूर्वक निष्क्रिय किया गया',
-              ),
+      if (!mounted) return;
+
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            languageProvider.getText(
+              'Admin deactivated successfully',
+              'एडमिन सफलतापूर्वक निष्क्रिय किया गया',
             ),
-            backgroundColor: AppColors.success,
           ),
-        );
-        _loadAdmins(); // Reload list
-      }
+          backgroundColor: AppColors.success,
+        ),
+      );
+      _loadAdmins(); // Reload list
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              languageProvider.getText(
-                'Failed to deactivate admin: ${e.toString()}',
-                'एडमिन को निष्क्रिय करने में विफल: ${e.toString()}',
-              ),
+      if (!mounted) return;
+
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            languageProvider.getText(
+              'Failed to deactivate admin: ${e.toString()}',
+              'एडमिन को निष्क्रिय करने में विफल: ${e.toString()}',
             ),
-            backgroundColor: AppColors.error,
           ),
-        );
-      }
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 
@@ -250,9 +254,12 @@ class _ManageAdminsScreenState extends State<ManageAdminsScreen> {
           ElevatedButton(
             onPressed: () async {
               if (formKey.currentState!.validate()) {
+                // Capture context references BEFORE any async operations
+                final navigator = Navigator.of(context);
+                final scaffoldMessenger = ScaffoldMessenger.of(context);
+                final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
                 try {
-                  final authProvider =
-                      Provider.of<AuthProvider>(context, listen: false);
                   await ApiService.createAdmin(
                     authProvider.token!,
                     fullName: nameController.text,
@@ -264,35 +271,35 @@ class _ManageAdminsScreenState extends State<ManageAdminsScreen> {
                         : pincodeController.text,
                   );
 
-                  if (mounted) {
-                    Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          languageProvider.getText(
-                            'Admin created successfully',
-                            'एडमिन सफलतापूर्वक बनाया गया',
-                          ),
+                  if (!mounted) return;
+
+                  navigator.pop();
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        languageProvider.getText(
+                          'Admin created successfully',
+                          'एडमिन सफलतापूर्वक बनाया गया',
                         ),
-                        backgroundColor: AppColors.success,
                       ),
-                    );
-                    _loadAdmins(); // Reload list
-                  }
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
+                  _loadAdmins(); // Reload list
                 } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          languageProvider.getText(
-                            'Failed to create admin: ${e.toString()}',
-                            'एडमिन बनाने में विफल: ${e.toString()}',
-                          ),
+                  if (!mounted) return;
+
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        languageProvider.getText(
+                          'Failed to create admin: ${e.toString()}',
+                          'एडमिन बनाने में विफल: ${e.toString()}',
                         ),
-                        backgroundColor: AppColors.error,
                       ),
-                    );
-                  }
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
                 }
               }
             },

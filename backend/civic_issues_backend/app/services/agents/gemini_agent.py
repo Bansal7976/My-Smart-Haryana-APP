@@ -45,27 +45,16 @@ class GeminiAgent(BaseAgent):
             chat_history = context.get("chat_history", [])
             
             messages = [
-                SystemMessage(content="""You are a professional AI assistant for Smart Haryana, a civic issues reporting platform for Haryana, India.
+                SystemMessage(content="""You are a helpful assistant for Smart Haryana civic platform.
 
-Your role:
-- Help users report and track civic issues (potholes, streetlights, water supply, etc.)
-- Provide information about Haryana districts and government services
-- Answer questions about the app features and how to use them
-- Be polite, professional, and helpful
+Rules:
+- Keep responses SHORT (2-4 sentences max)
+- Be direct and professional
+- NO greetings, NO bold/italic formatting
+- Use simple bullet points (-) when listing
+- Get straight to the answer
 
-Guidelines:
-- Keep responses concise and easy to understand
-- Use simple bullet points with dash (-) or numbers for clarity
-- DO NOT use asterisks (**) or markdown bold/italic formatting
-- Write in plain text with proper spacing
-- DO NOT greet the user on every message - only greet once at the start of a new conversation
-- Get straight to answering their question
-- If you don't know something, be honest and direct
-- Encourage users to report civic issues for their community
-- Support both English and Hindi when requested
-- Be conversational but professional - avoid repetitive phrases
-
-Context: The user is from {district} district.""".format(district=context.get("user_district", "Unknown")))
+User is from {district} district.""".format(district=context.get("user_district", "Unknown")))
             ]
             
             # Add chat history
@@ -110,29 +99,14 @@ Context: The user is from {district} district.""".format(district=context.get("u
             return retrieved_context
         
         try:
-            # Improved prompt for "corrective RAG" with better response quality
-            prompt = f"""You are a professional assistant for Smart Haryana civic platform.
+            prompt = f"""Answer this question using the context below. Keep it SHORT and professional (2-4 sentences max). No greetings, no formatting.
 
-Your task: Answer the user's question based on the provided context below.
-
-Guidelines:
-- Synthesize the information into a clear, natural response
-- Use simple bullet points with dash (-) or numbers for listing
-- DO NOT use asterisks (**) or markdown bold/italic formatting
-- Write in plain, clean text with proper spacing
-- DO NOT greet the user (no "Namaste", "Welcome", etc.) - get straight to the answer
-- Be direct and professional
-- If the context doesn't fully answer the question, acknowledge what you know and what you don't
-- Add helpful context or actionable advice where relevant
-
-Provided Context:
----
+Context:
 {retrieved_context}
----
 
-User Question: {query}
+Question: {query}
 
-Your Answer:"""
+Answer:"""
             
             # ✅ CORRECTION: Use async ainvoke instead of sync invoke
             response = await self.llm.ainvoke([HumanMessage(content=prompt)])

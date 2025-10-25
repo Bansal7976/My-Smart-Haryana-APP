@@ -34,17 +34,30 @@ class WebSearchAgent(BaseAgent):
     
     async def can_handle(self, query: str, context: Dict[str, Any]) -> bool:
         """
-        Check if query is about government schemes, policies, benefits, etc.
+        Web search ONLY for: government schemes, news, events, policies, specific Haryana info.
+        Skip: greetings, language requests, general questions, conversational queries.
         """
-        keywords = [
-            "scheme", "yojana", "योजना", "policy", "नीति", "government", "सरकार",
-            "benefit", "लाभ", "apply", "आवेदन", "eligibility", "पात्रता",
-            "subsidy", "सब्सिडी", "pension", "पेंशन", "registration", "पंजीकरण",
-            "haryana govt", "हरियाणा सरकार", "cm", "मुख्यमंत्री", "chief minister",
-            "ministry", "मंत्रालय", "department scheme", "welfare", "कल्याण"
+        query_lower = query.lower().strip()
+        
+        # Skip greetings and very short queries
+        skip_keywords = ["hello", "hi", "hey", "namaste", "thanks", "thank you", "dhanyavaad", "bye", "ok", "okay"]
+        if query_lower in skip_keywords or len(query_lower) < 3:
+            return False
+        
+        # Skip language-related queries (Hindi, English, translate, convert)
+        language_keywords = ["hindi", "हिंदी", "हिन्दी", "english", "translate", "convert", "language", "bhasha", "भाषा"]
+        if any(keyword in query_lower for keyword in language_keywords):
+            return False
+        
+        # Only trigger for specific government/scheme/policy queries
+        web_search_keywords = [
+            "scheme", "योजना", "policy", "नीति", "government", "सरकार", 
+            "latest", "news", "update", "notification", "apply", "eligibility",
+            "cm manohar lal", "haryana budget", "official", "portal", "website"
         ]
-        query_lower = query.lower()
-        return any(keyword in query_lower for keyword in keywords)
+        
+        # Return True only if query contains web-search-worthy keywords
+        return any(keyword in query_lower for keyword in web_search_keywords)
     
     async def execute(
         self, 
@@ -65,15 +78,19 @@ class WebSearchAgent(BaseAgent):
             }
         
         try:
-            # Enhance query with Haryana context
-            search_query = f"Haryana government {query}"
+            # Smart query formation - add Haryana context if not present
+            if "haryana" not in query.lower():
+                search_query = f"Haryana {query}"
+            else:
+                search_query = query
             
-            # ✅ CORRECTION: Use await with the async client
+            logger.info(f"Tavily searching: {search_query}")
+            
+            # ✅ Use await with the async client
             response = await self.client.search(
                 query=search_query,
-                search_depth="advanced",
+                search_depth="basic",  # Changed to basic for faster results
                 max_results=3,
-                include_domains=["haryana.gov.in", "india.gov.in"],  # Prioritize official sites
             )
             
             results = response.get("results", [])
@@ -85,8 +102,8 @@ class WebSearchAgent(BaseAgent):
                     "agent_type": "web_search"
                 }
             
-            # Format response text (this will be enhanced by Gemini)
-            response_text = f"Here's what I found online about '{query}':\n\n"
+            # Format response text (will be enhanced by Gemini)
+            response_text = f"Web search results for '{query}':\n\n"
             
             for idx, result in enumerate(results, 1):
                 title = result.get("title", "No title")
@@ -94,14 +111,14 @@ class WebSearchAgent(BaseAgent):
                 url = result.get("url", "")
                 
                 # Truncate content if too long
-                if len(content) > 300:
-                    content = content[:300] + "..."
+                if len(content) > 250:
+                    content = content[:250] + "..."
                 
-                response_text += f"**{idx}. {title}**\n"
+                response_text += f"{idx}. {title}\n"
                 response_text += f"{content}\n"
                 response_text += f"Source: {url}\n\n"
             
-            response_text += "Please verify this information at the official sources provided."
+            response_text += "Note: Please verify at official sources."
             
             return {
                 "response": response_text,

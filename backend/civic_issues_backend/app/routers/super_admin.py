@@ -158,6 +158,7 @@ async def get_haryana_overview(
         "assigned_problems": stats.assigned,
         "completed_problems": stats.completed,
         "verified_problems": stats.verified,
+        "rejected_problems": 0,  # Not implemented in the current schema
         "active_districts": active_districts,
         "total_clients": users.clients,
         "total_workers": users.workers,

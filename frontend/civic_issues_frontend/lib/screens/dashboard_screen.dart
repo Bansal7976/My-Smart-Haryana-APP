@@ -9,8 +9,23 @@ import 'worker/worker_dashboard_screen.dart';
 import 'admin/admin_dashboard_screen.dart';
 import 'super_admin/super_admin_dashboard_screen.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  late AuthProvider _authProvider;
+  late LanguageProvider _languageProvider;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _authProvider = Provider.of<AuthProvider>(context, listen: false);
+    _languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +87,11 @@ class DashboardScreen extends StatelessWidget {
                   _showAboutDialog(context);
                   break;
                 case 'logout':
-                  await _handleLogout(context);
+                  // Wait a frame for popup to close before logging out
+                  await Future.delayed(Duration.zero);
+                  if (mounted) {
+                    await _authProvider.logout();
+                  }
                   break;
               }
             },
@@ -545,37 +564,4 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _handleLogout(BuildContext context) async {
-    // Get providers BEFORE logout to avoid context issues
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
-    
-    // Get BuildContext reference that won't be deactivated
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-
-    try {
-      // Perform logout
-      await authProvider.logout();
-      
-      // Show success message using saved messenger
-      scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text(languageProvider.getText(
-              'Logged out successfully', 'सफलतापूर्वक लॉग आउट')),
-          backgroundColor: AppColors.success,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    } catch (e) {
-      // Show error message using saved messenger
-      scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text(languageProvider.getText(
-              'Logout error, but session cleared', 'लॉगआउट त्रुटि, लेकिन सत्र साफ़ हो गया')),
-          backgroundColor: AppColors.warning,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
-  }
 }

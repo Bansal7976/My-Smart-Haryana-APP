@@ -964,7 +964,6 @@ class ApiService {
         return {
           ...data,
           'district': user['district'],
-          'total_workers': 0, // Can be fetched from separate endpoint if needed
         };
       } else {
         throw Exception(

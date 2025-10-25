@@ -79,7 +79,16 @@ async def get_analytics_stats(db: AsyncSession = Depends(database.get_db), admin
     res_time_query = select(func.avg(extract('epoch', models.Problem.updated_at) - extract('epoch', models.Problem.created_at))).where(models.Problem.status.in_(['COMPLETED', 'VERIFIED']), district_filter)
     avg_seconds = (await db.execute(res_time_query)).scalar_one_or_none()
     avg_hours = round(avg_seconds / 3600, 2) if avg_seconds else None
-    return {"total_problems": status_counts.total, "pending_problems": status_counts.pending, "assigned_problems": status_counts.assigned, "completed_problems": status_counts.completed, "verified_problems": status_counts.verified, "average_resolution_time_hours": avg_hours}
+    
+    # Get total workers in district
+    workers_query = select(func.count(models.User.id)).where(
+        models.User.role == models.RoleEnum.WORKER,
+        models.User.district == admin_user.district,
+        models.User.is_active == True
+    )
+    total_workers = (await db.execute(workers_query)).scalar_one_or_none() or 0
+    
+    return {"total_problems": status_counts.total, "pending_problems": status_counts.pending, "assigned_problems": status_counts.assigned, "completed_problems": status_counts.completed, "verified_problems": status_counts.verified, "average_resolution_time_hours": avg_hours, "total_workers": total_workers}
 
 @router.get("/analytics/heatmap", response_model=List[schemas.HeatmapPoint])
 async def get_heatmap_data(db: AsyncSession = Depends(database.get_db), admin_user: models.User = Depends(get_current_admin_user)):

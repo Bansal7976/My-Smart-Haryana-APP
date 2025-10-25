@@ -73,11 +73,17 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
   }
 
   Future<void> _startRecording() async {
+    // Capture context references BEFORE any async operations
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+
     try {
       // Request microphone permission
       final status = await Permission.microphone.request();
       if (!status.isGranted) {
-        _showErrorDialog('Microphone permission denied');
+        if (mounted) {
+          _showErrorDialog('Microphone permission denied');
+        }
         return;
       }
 
@@ -95,20 +101,22 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
         path: filePath,
       );
 
+      if (!mounted) return;
       setState(() {
         _isRecording = true;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         SnackBar(
-          content: Text(Provider.of<LanguageProvider>(context, listen: false)
-              .getText('Recording...', 'रिकॉर्डिंग...')),
+          content: Text(languageProvider.getText('Recording...', 'रिकॉर्डिंग...')),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 1),
         ),
       );
     } catch (e) {
-      _showErrorDialog('Failed to start recording: ${e.toString()}');
+      if (mounted) {
+        _showErrorDialog('Failed to start recording: ${e.toString()}');
+      }
     }
   }
 
@@ -135,10 +143,12 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
   }
 
   Future<void> _transcribeAudio(String audioPath) async {
+    // Capture context references BEFORE any async operations
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
-      
       if (authProvider.token == null) {
         throw Exception('No authentication token');
       }
@@ -150,6 +160,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
         language: languageProvider.currentLanguage == 'hi' ? 'hi-IN' : 'en-IN',
       );
 
+      if (!mounted) return;
+
       if (result['text'] != null && result['text'].isNotEmpty) {
         setState(() {
           // Append to existing description
@@ -160,7 +172,7 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
           }
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
+        scaffoldMessenger.showSnackBar(
           SnackBar(
             content: Text(languageProvider.getText(
                 'Voice converted to text successfully!',
@@ -170,23 +182,32 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
         );
       }
     } catch (e) {
-      _showErrorDialog('Failed to convert voice: ${e.toString()}');
+      if (mounted) {
+        _showErrorDialog('Failed to convert voice: ${e.toString()}');
+      }
     } finally {
-      setState(() {
-        _isTranscribing = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isTranscribing = false;
+        });
+      }
     }
   }
 
   Future<void> _getCurrentLocation() async {
     setState(() => _isGettingLocation = true);
 
+    // Capture context references BEFORE any async operations
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     try {
       // Check if location services are enabled
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        _showErrorDialog(
-            'Location services are disabled. Please enable location services.');
+        if (mounted) {
+          _showErrorDialog(
+              'Location services are disabled. Please enable location services.');
+        }
         return;
       }
 
@@ -195,15 +216,19 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          _showErrorDialog(
-              'Location permissions are denied. Please allow location access.');
+          if (mounted) {
+            _showErrorDialog(
+                'Location permissions are denied. Please allow location access.');
+          }
           return;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        _showErrorDialog(
-            'Location permissions are permanently denied. Please enable in settings.');
+        if (mounted) {
+          _showErrorDialog(
+              'Location permissions are permanently denied. Please enable in settings.');
+        }
         return;
       }
 
@@ -211,6 +236,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
+
+      if (!mounted) return;
 
       setState(() {
         _latitude = position.latitude;
@@ -230,16 +257,20 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
         _locationController.text = _currentAddress!;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         const SnackBar(
           content: Text('Location captured successfully!'),
           backgroundColor: Colors.green,
         ),
       );
     } catch (e) {
-      _showErrorDialog('Failed to get location: ${e.toString()}');
+      if (mounted) {
+        _showErrorDialog('Failed to get location: ${e.toString()}');
+      }
     } finally {
-      setState(() => _isGettingLocation = false);
+      if (mounted) {
+        setState(() => _isGettingLocation = false);
+      }
     }
   }
 
@@ -273,11 +304,17 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
   Future<void> _submitIssue() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Capture context references BEFORE any async operations
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+    final issueProvider = Provider.of<IssueProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
     if (_selectedProblemType == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         SnackBar(
-          content: Text(Provider.of<LanguageProvider>(context, listen: false)
-              .getText('Please select a problem type',
+          content: Text(languageProvider.getText('Please select a problem type',
                   'कृपया समस्या का प्रकार चुनें')),
           backgroundColor: Colors.red,
         ),
@@ -286,10 +323,9 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
     }
 
     if (_selectedImage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      scaffoldMessenger.showSnackBar(
         SnackBar(
-          content: Text(Provider.of<LanguageProvider>(context, listen: false)
-              .getText('Please select an image', 'कृपया एक छवि चुनें')),
+          content: Text(languageProvider.getText('Please select an image', 'कृपया एक छवि चुनें')),
           backgroundColor: Colors.red,
         ),
       );
@@ -299,9 +335,6 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final issueProvider = Provider.of<IssueProvider>(context, listen: false);
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
       if (authProvider.token == null) {
         throw Exception('No authentication token available');
       }
@@ -321,27 +354,26 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
         authProvider.token!,
       );
 
-      if (mounted) {
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                  Provider.of<LanguageProvider>(context, listen: false).getText(
+      if (!mounted) return;
+
+      if (success) {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text(languageProvider.getText(
                       'Issue reported successfully!',
                       'समस्या सफलतापूर्वक रिपोर्ट की गई!')),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.of(context).pop();
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                  '${Provider.of<LanguageProvider>(context, listen: false).getText('Failed to submit issue', 'समस्या सबमिट करने में असफल')}: ${issueProvider.error ?? 'Unknown error'}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+            backgroundColor: Colors.green,
+          ),
+        );
+        navigator.pop();
+      } else {
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text(
+                '${languageProvider.getText('Failed to submit issue', 'समस्या सबमिट करने में असफल')}: ${issueProvider.error ?? 'Unknown error'}'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {

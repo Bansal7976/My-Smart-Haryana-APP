@@ -34,27 +34,32 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
 
+    // Get providers and messenger BEFORE async operations
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final success = await authProvider.login(
         _emailController.text.trim(),
         _passwordController.text,
       );
 
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+      if (!mounted) return;
+
+      if (success) {
+        scaffoldMessenger.showSnackBar(
           SnackBar(
-            content: Text(Provider.of<LanguageProvider>(context, listen: false)
-                .getText('Login successful!', 'लॉगिन सफल!')),
+            content: Text(languageProvider.getText('Login successful!', 'लॉगिन सफल!')),
             backgroundColor: Colors.green,
           ),
         );
         // Navigation will be handled automatically by the main app
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+      } else {
+        scaffoldMessenger.showSnackBar(
           SnackBar(
             content: Text(
-                '${Provider.of<LanguageProvider>(context, listen: false).getText('Login failed', 'लॉगिन असफल')}: ${authProvider.error ?? 'Unknown error'}'),
+                '${languageProvider.getText('Login failed', 'लॉगिन असफल')}: ${authProvider.error ?? 'Unknown error'}'),
             backgroundColor: Colors.red,
           ),
         );

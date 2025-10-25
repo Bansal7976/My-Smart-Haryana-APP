@@ -601,9 +601,12 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
             borderRadius: BorderRadius.circular(20),
           ),
           elevation: 5,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 500),
-            padding: const EdgeInsets.all(24),
+            constraints: BoxConstraints(
+              maxWidth: 500,
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+            ),
             decoration: BoxDecoration(
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(20),
@@ -615,14 +618,16 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                 ),
               ],
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
                 // Header with Icon
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [AppColors.success, AppColors.success.withValues(alpha: 0.7)],
@@ -641,10 +646,10 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                       child: const Icon(
                         Icons.rate_review,
                         color: Colors.white,
-                        size: 28,
+                        size: 24,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -652,27 +657,29 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                           Text(
                             languageProvider.getText('Submit Feedback', 'फीडबैक दें'),
                             style: const TextStyle(
-                              fontSize: 22,
+                              fontSize: 19,
                               fontWeight: FontWeight.bold,
                               color: AppColors.textPrimary,
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 2),
                           Text(
                             languageProvider.getText('Rate the completed work', 'पूर्ण कार्य को रेट करें'),
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: 12,
                               color: AppColors.textSecondary.withValues(alpha: 0.8),
                             ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 const Divider(height: 1),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 
                 // Rating Question
                 Text(
@@ -681,17 +688,17 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                     'आप काम से कितने संतुष्ट हैं?',
                   ),
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 
                 // Star Rating with Animation
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
                   decoration: BoxDecoration(
                     color: AppColors.warning.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(16),
@@ -714,19 +721,19 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
                               curve: Curves.easeInOut,
-                              padding: const EdgeInsets.all(4),
+                              padding: const EdgeInsets.symmetric(horizontal: 3),
                               child: Icon(
                                 index < rating ? Icons.star_rounded : Icons.star_outline_rounded,
                                 color: index < rating ? AppColors.warning : AppColors.textSecondary.withValues(alpha: 0.4),
-                                size: 44,
+                                size: 40,
                               ),
                             ),
                           );
                         }),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                         decoration: BoxDecoration(
                           color: AppColors.warning.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(20),
@@ -734,7 +741,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                         child: Text(
                           '$rating ${languageProvider.getText("out of", "में से")} 5 ⭐',
                           style: const TextStyle(
-                            fontSize: 15,
+                            fontSize: 14,
                             color: AppColors.warning,
                             fontWeight: FontWeight.bold,
                           ),
@@ -743,7 +750,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 
                 // Comment TextField
                 TextField(
@@ -756,14 +763,15 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                     labelStyle: const TextStyle(
                       color: AppColors.textSecondary,
                       fontWeight: FontWeight.w500,
+                      fontSize: 13,
                     ),
                     hintText: languageProvider.getText(
-                      'Share your experience, suggestions, or concerns...',
-                      'अपना अनुभव, सुझाव या चिंताएं साझा करें...',
+                      'Share your experience...',
+                      'अपना अनुभव साझा करें...',
                     ),
                     hintStyle: TextStyle(
                       color: AppColors.textSecondary.withValues(alpha: 0.5),
-                      fontSize: 13,
+                      fontSize: 12,
                     ),
                     filled: true,
                     fillColor: AppColors.surfaceVariant.withValues(alpha: 0.3),
@@ -779,14 +787,14 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: AppColors.primary, width: 2),
                     ),
-                    contentPadding: const EdgeInsets.all(16),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   ),
-                  maxLines: 4,
+                  maxLines: 3,
                   maxLength: 500,
                   textCapitalization: TextCapitalization.sentences,
-                  style: const TextStyle(fontSize: 14),
+                  style: const TextStyle(fontSize: 13),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 
                 // Action Buttons
                 Row(
@@ -797,7 +805,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.textSecondary,
                           side: const BorderSide(color: AppColors.border, width: 1.5),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -805,13 +813,13 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                         child: Text(
                           languageProvider.getText('Cancel', 'रद्द करें'),
                           style: const TextStyle(
-                            fontSize: 15,
+                            fontSize: 14,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Expanded(
                       flex: 2,
                       child: ElevatedButton(
@@ -826,7 +834,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.success,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           elevation: 2,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -835,14 +843,18 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.check_circle, size: 20),
-                            const SizedBox(width: 8),
-                            Text(
-                              languageProvider.getText('Submit & Verify', 'जमा करें और सत्यापित करें'),
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
+                            const Icon(Icons.check_circle, size: 18),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                languageProvider.getText('Submit & Verify', 'सबमिट करें'),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -851,7 +863,8 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                     ),
                   ],
                 ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -861,11 +874,12 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
 
   Future<void> _submitFeedbackAndVerify(
       Issue issue, int rating, String comment) async {
-    try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final languageProvider =
-          Provider.of<LanguageProvider>(context, listen: false);
+    // Capture context references BEFORE any async operations
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
 
+    try {
       if (authProvider.token == null) {
         throw Exception('No authentication token');
       }
@@ -886,27 +900,27 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
         issue.id.toString(),
       );
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(languageProvider.getText(
-                'Feedback submitted and issue verified!',
-                'फीडबैक सबमिट किया गया और समस्या सत्यापित!')),
-            backgroundColor: AppColors.success,
-          ),
-        );
-        await _refreshIssue();
-      }
+      if (!mounted) return;
+
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(languageProvider.getText(
+              'Feedback submitted and issue verified!',
+              'फीडबैक सबमिट किया गया और समस्या सत्यापित!')),
+          backgroundColor: AppColors.success,
+        ),
+      );
+      await _refreshIssue();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                '${Provider.of<LanguageProvider>(context, listen: false).getText('Failed to submit feedback', 'फीडबैक सबमिट करने में विफल')}: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
+      if (!mounted) return;
+      
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(
+              '${languageProvider.getText('Failed to submit feedback', 'फीडबैक सबमिट करने में विफल')}: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 }

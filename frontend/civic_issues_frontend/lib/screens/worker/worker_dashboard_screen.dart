@@ -28,7 +28,8 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
   }
 
   Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
+    // Status is already lowercase from Issue.fromJson
+    switch (status) {
       case 'pending':
         return AppColors.pending;
       case 'assigned':
@@ -45,7 +46,8 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
   }
 
   IconData _getStatusIcon(String status) {
-    switch (status.toLowerCase()) {
+    // Status is already lowercase from Issue.fromJson
+    switch (status) {
       case 'pending':
         return Icons.schedule;
       case 'assigned':
@@ -62,7 +64,8 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
   }
 
   String _getStatusText(String status, LanguageProvider languageProvider) {
-    switch (status.toLowerCase()) {
+    // Status is already lowercase from Issue.fromJson
+    switch (status) {
       case 'pending':
         return languageProvider.getText('Pending', 'लंबित');
       case 'assigned':
@@ -128,7 +131,7 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
               // Welcome Card
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(20.0),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: AppColors.workerGradient,
@@ -174,6 +177,7 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
                                 ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 4),
                               Text(
@@ -182,8 +186,10 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                                     'अपने निर्दिष्ट कार्यों को कुशलतापूर्वक पूरा करें'),
                                 style: const TextStyle(
                                   color: Colors.white70,
-                                  fontSize: 14,
+                                  fontSize: 13,
                                 ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
@@ -194,36 +200,52 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-              // Quick Stats
+              // Quick Stats - 3 Status Cards
+              // Data comes from backend endpoint: /worker/tasks
+              // Backend returns only: ASSIGNED, COMPLETED, VERIFIED statuses
               Row(
                 children: [
                   Expanded(
                     child: _buildStatCard(
                       languageProvider.getText('Assigned', 'निर्दिष्ट'),
-                      issueProvider.assignedTasks.length.toString(),
-                      Icons.assignment,
-                      AppColors.workerColor,
+                      issueProvider.assignedTasks
+                          .where((task) => task.status == 'assigned')
+                          .length
+                          .toString(),
+                      Icons.assignment_ind,
+                      AppColors.inProgress,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: _buildStatCard(
                       languageProvider.getText('Completed', 'पूर्ण'),
                       issueProvider.assignedTasks
-                          .where((task) =>
-                              task.status.toLowerCase() == 'completed')
+                          .where((task) => task.status == 'completed')
                           .length
                           .toString(),
                       Icons.check_circle,
                       AppColors.success,
                     ),
                   ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatCard(
+                      languageProvider.getText('Verified', 'सत्यापित'),
+                      issueProvider.assignedTasks
+                          .where((task) => task.status == 'verified')
+                          .length
+                          .toString(),
+                      Icons.verified,
+                      const Color(0xFF10B981),
+                    ),
+                  ),
                 ],
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
               // Assigned Tasks Section
               Row(
@@ -505,8 +527,7 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                                 ),
 
                                 // Action Button
-                                if (task.status.toLowerCase() ==
-                                    'assigned') ...[
+                                if (task.status == 'assigned') ...[
                                   const SizedBox(height: 12),
                                   SizedBox(
                                     width: double.infinity,
@@ -544,7 +565,7 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
   Widget _buildStatCard(
       String title, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
@@ -558,9 +579,10 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
@@ -584,16 +606,19 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
           Text(
             title,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
     );
   }
 }
+
 
 

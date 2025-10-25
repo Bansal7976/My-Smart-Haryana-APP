@@ -136,9 +136,9 @@ class _SuperAdminAnalyticsScreenState extends State<SuperAdminAnalyticsScreen> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           crossAxisCount: 2,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                          childAspectRatio: 1.6,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                          childAspectRatio: 2.0,
                           children: [
                             _buildStatCard(
                               languageProvider.getText('Total Users', 'कुल उपयोगकर्ता'),
@@ -195,37 +195,27 @@ class _SuperAdminAnalyticsScreenState extends State<SuperAdminAnalyticsScreen> {
                               const SizedBox(height: 16),
                               _buildStatusRow(
                                 languageProvider.getText('Pending', 'लंबित'),
-                                _overview?['problems_by_status']?['pending']
-                                        ?.toString() ??
-                                    '0',
+                                _overview?['pending_problems']?.toString() ?? '0',
                                 AppColors.pending,
                               ),
                               _buildStatusRow(
                                 languageProvider.getText('Assigned', 'निर्दिष्ट'),
-                                _overview?['problems_by_status']?['assigned']
-                                        ?.toString() ??
-                                    '0',
+                                _overview?['assigned_problems']?.toString() ?? '0',
                                 AppColors.inProgress,
                               ),
                               _buildStatusRow(
                                 languageProvider.getText('Completed', 'पूर्ण'),
-                                _overview?['problems_by_status']?['completed']
-                                        ?.toString() ??
-                                    '0',
+                                _overview?['completed_problems']?.toString() ?? '0',
                                 AppColors.success,
                               ),
                               _buildStatusRow(
                                 languageProvider.getText('Verified', 'सत्यापित'),
-                                _overview?['problems_by_status']?['verified']
-                                        ?.toString() ??
-                                    '0',
+                                _overview?['verified_problems']?.toString() ?? '0',
                                 AppColors.success,
                               ),
                               _buildStatusRow(
                                 languageProvider.getText('Rejected', 'अस्वीकृत'),
-                                _overview?['problems_by_status']?['rejected']
-                                        ?.toString() ??
-                                    '0',
+                                _overview?['rejected_problems']?.toString() ?? '0',
                                 AppColors.error,
                               ),
                             ],
@@ -288,7 +278,7 @@ class _SuperAdminAnalyticsScreenState extends State<SuperAdminAnalyticsScreen> {
   Widget _buildStatCard(
       String title, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(10),
@@ -305,23 +295,16 @@ class _SuperAdminAnalyticsScreenState extends State<SuperAdminAnalyticsScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 20,
-            ),
+          Icon(
+            icon,
+            color: color,
+            size: 16,
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 3),
           Text(
             value,
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -332,7 +315,7 @@ class _SuperAdminAnalyticsScreenState extends State<SuperAdminAnalyticsScreen> {
           Text(
             title,
             style: const TextStyle(
-              fontSize: 10,
+              fontSize: 8.5,
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w500,
             ),
@@ -396,6 +379,8 @@ class _SuperAdminAnalyticsScreenState extends State<SuperAdminAnalyticsScreen> {
     final totalProblems = district['total_problems'] ?? 0;
     final pendingProblems = district['pending_problems'] ?? 0;
     final completedProblems = district['completed_problems'] ?? 0;
+    final verifiedProblems = district['verified_problems'] ?? 0;
+    final totalResolved = completedProblems + verifiedProblems;
     final districtName = district['district_name'] ?? district['district'] ?? 'Unknown';
 
     return Card(
@@ -443,8 +428,8 @@ class _SuperAdminAnalyticsScreenState extends State<SuperAdminAnalyticsScreen> {
                       AppColors.pending,
                     ),
                     _buildDistrictStat(
-                      languageProvider.getText('Completed', 'पूर्ण'),
-                      completedProblems.toString(),
+                      languageProvider.getText('Resolved', 'हल किए गए'),
+                      totalResolved.toString(),
                       AppColors.success,
                     ),
                     _buildDistrictStat(
@@ -457,14 +442,14 @@ class _SuperAdminAnalyticsScreenState extends State<SuperAdminAnalyticsScreen> {
                 const SizedBox(height: 12),
                 LinearProgressIndicator(
                   value: totalProblems > 0
-                      ? completedProblems / totalProblems
+                      ? totalResolved / totalProblems
                       : 0,
                   backgroundColor: AppColors.pending.withValues(alpha: 0.2),
                   valueColor: const AlwaysStoppedAnimation<Color>(AppColors.success),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${totalProblems > 0 ? ((completedProblems / totalProblems) * 100).toStringAsFixed(1) : 0}% ${languageProvider.getText('Completion Rate', 'पूर्णता दर')}',
+                  '${totalProblems > 0 ? ((totalResolved / totalProblems) * 100).toStringAsFixed(1) : 0}% ${languageProvider.getText('Completion Rate', 'पूर्णता दर')}',
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
