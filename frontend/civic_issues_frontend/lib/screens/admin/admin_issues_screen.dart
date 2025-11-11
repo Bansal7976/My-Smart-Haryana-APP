@@ -5,6 +5,7 @@ import '../../providers/issue_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/issue_model.dart';
 import '../../utils/app_colors.dart';
+import '../client/issue_detail_screen.dart';
 
 class AdminIssuesScreen extends StatefulWidget {
   const AdminIssuesScreen({super.key});
@@ -443,8 +444,13 @@ class _AdminIssuesScreenState extends State<AdminIssuesScreen> {
                             ],
                           ),
                           onTap: () {
-                            // Navigate to issue details
-                            // You can implement this navigation
+                            // Navigate to issue details screen
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => IssueDetailScreen(issue: issue),
+                              ),
+                            );
                           },
                         ),
                       );

@@ -64,48 +64,139 @@ async def trigger_auto_assignment(db: AsyncSession):
             return
 
         # 3. Find available worker with capacity in same district and department
-        worker_query = select(models.WorkerProfile).join(models.User).where(
-            and_(
-                models.WorkerProfile.department_id == department.id,
-                models.WorkerProfile.daily_task_count < settings.MAX_DAILY_TASKS_PER_WORKER,
-                models.User.district == problem_to_assign.district,
-                models.User.is_active == True
+        # Count actual ASSIGNED tasks from database, not the daily_task_count column
+        from sqlalchemy import func as sql_func
+        
+        # Subquery to count ASSIGNED tasks for each worker
+        assigned_count_subquery = (
+            select(
+                models.Problem.assigned_worker_id,
+                sql_func.count(models.Problem.id).label('active_count')
             )
-        ).order_by(models.WorkerProfile.daily_task_count.asc()).limit(1)
+            .where(models.Problem.status == models.ProblemStatusEnum.ASSIGNED)
+            .group_by(models.Problem.assigned_worker_id)
+            .subquery()
+        )
+        
+        # Find workers with less than max capacity
+        worker_query = (
+            select(models.WorkerProfile)
+            .join(models.User)
+            .outerjoin(assigned_count_subquery, models.WorkerProfile.id == assigned_count_subquery.c.assigned_worker_id)
+            .where(
+                and_(
+                    models.WorkerProfile.department_id == department.id,
+                    models.User.district == problem_to_assign.district,
+                    models.User.is_active == True,
+                    sql_func.coalesce(assigned_count_subquery.c.active_count, 0) < settings.MAX_DAILY_TASKS_PER_WORKER
+                )
+            )
+            .order_by(sql_func.coalesce(assigned_count_subquery.c.active_count, 0).asc())
+            .limit(1)
+        )
         
         available_worker = (await db.execute(worker_query)).scalar_one_or_none()
 
         if not available_worker:
-            logger.info(
-                f"No available workers in {department.name} for {problem_to_assign.district}. "
-                f"All workers at capacity or no workers exist."
+            # Check if there are workers but they're all at capacity
+            # Count their ACTUAL assigned tasks from database
+            all_workers_query = select(models.WorkerProfile).join(models.User).where(
+                and_(
+                    models.WorkerProfile.department_id == department.id,
+                    models.User.district == problem_to_assign.district,
+                    models.User.is_active == True
+                )
             )
+            all_workers = (await db.execute(all_workers_query)).scalars().all()
+            if all_workers:
+                # Get actual counts from database
+                worker_counts = []
+                for w in all_workers:
+                    count_query = select(sql_func.count(models.Problem.id)).where(
+                        models.Problem.assigned_worker_id == w.id,
+                        models.Problem.status == models.ProblemStatusEnum.ASSIGNED
+                    )
+                    actual_count = (await db.execute(count_query)).scalar_one()
+                    worker_counts.append(f"Worker #{w.id}: {actual_count}/{settings.MAX_DAILY_TASKS_PER_WORKER}")
+                
+                logger.info(
+                    f"No available workers in {department.name} for {problem_to_assign.district}. "
+                    f"All workers at capacity: {', '.join(worker_counts)}"
+                )
+            else:
+                logger.info(
+                    f"No workers found in {department.name} for {problem_to_assign.district}."
+                )
             return
 
         # 4. Assign problem to worker
         problem_to_assign.assigned_worker_id = available_worker.id
         problem_to_assign.status = models.ProblemStatusEnum.ASSIGNED
+        
+        # Update counter for backward compatibility (actual count is from database query)
         available_worker.daily_task_count += 1
+        
+        # Get count BEFORE commit (will be current count + 1 after this assignment)
+        current_count_query = select(sql_func.count(models.Problem.id)).where(
+            models.Problem.assigned_worker_id == available_worker.id,
+            models.Problem.status == models.ProblemStatusEnum.ASSIGNED
+        )
+        current_count = (await db.execute(current_count_query)).scalar_one()
+        new_count = current_count + 1  # This assignment will add 1
         
         await db.commit()
         
         logger.info(
             f"✅ Problem #{problem_to_assign.id} assigned to worker #{available_worker.id} "
-            f"({available_worker.user.full_name}) - Priority: {problem_to_assign.priority}"
+            f"({available_worker.user.full_name}) - Priority: {problem_to_assign.priority}. "
+            f"Worker now has {new_count} active tasks."
         )
 
-        # 5. Send notifications
+        # 5. Send notifications (real-time + fallback)
         try:
-            await send_notification_to_user(
+            # Real-time WebSocket notifications
+            from ..routers.notifications import send_real_time_notification
+            
+            # Notify worker
+            await send_real_time_notification(
                 user_id=available_worker.user_id,
-                message=f"New task assigned: '{problem_to_assign.title}' in {problem_to_assign.district}"
+                notification_type="issue_assigned",
+                title="New Task Assigned",
+                message=f"New task assigned: '{problem_to_assign.title}' in {problem_to_assign.district}",
+                data={
+                    "problem_id": problem_to_assign.id,
+                    "title": problem_to_assign.title,
+                    "district": problem_to_assign.district,
+                    "priority": float(problem_to_assign.priority)
+                }
             )
-            await send_notification_to_user(
+            
+            # Notify citizen
+            await send_real_time_notification(
                 user_id=problem_to_assign.user_id,
-                message=f"Your issue '{problem_to_assign.title}' has been assigned to a worker."
+                notification_type="issue_assigned",
+                title="Issue Assigned",
+                message=f"Your issue '{problem_to_assign.title}' has been assigned to a worker.",
+                data={
+                    "problem_id": problem_to_assign.id,
+                    "title": problem_to_assign.title,
+                    "worker_name": available_worker.user.full_name
+                }
             )
         except Exception as e:
-            logger.warning(f"Notification failed: {str(e)}")
+            logger.warning(f"Real-time notification failed, using fallback: {str(e)}")
+            # Fallback to traditional notifications
+            try:
+                await send_notification_to_user(
+                    user_id=available_worker.user_id,
+                    message=f"New task assigned: '{problem_to_assign.title}' in {problem_to_assign.district}"
+                )
+                await send_notification_to_user(
+                    user_id=problem_to_assign.user_id,
+                    message=f"Your issue '{problem_to_assign.title}' has been assigned to a worker."
+                )
+            except Exception as e2:
+                logger.warning(f"Fallback notification also failed: {str(e2)}")
             
     except Exception as e:
         logger.error(f"Auto-assignment error: {str(e)}")

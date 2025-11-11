@@ -8,6 +8,7 @@ import 'client/client_dashboard_screen.dart';
 import 'worker/worker_dashboard_screen.dart';
 import 'admin/admin_dashboard_screen.dart';
 import 'super_admin/super_admin_dashboard_screen.dart';
+import '../main.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -18,13 +19,11 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   late AuthProvider _authProvider;
-  late LanguageProvider _languageProvider;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _authProvider = Provider.of<AuthProvider>(context, listen: false);
-    _languageProvider = Provider.of<LanguageProvider>(context, listen: false);
   }
 
   @override
@@ -87,10 +86,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _showAboutDialog(context);
                   break;
                 case 'logout':
-                  // Wait a frame for popup to close before logging out
-                  await Future.delayed(Duration.zero);
-                  if (mounted) {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text("Confirm Logout"),
+                      content: const Text("Are you sure you want to log out?"),
+                      actions: [
+                        TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text("Cancel")),
+                        TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text("Logout")),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
                     await _authProvider.logout();
+                    if (!mounted) return;
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => const AuthWrapper()),
+                      (route) => false,
+                    );
                   }
                   break;
               }
@@ -563,5 +580,4 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-
 }

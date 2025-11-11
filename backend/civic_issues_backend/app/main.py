@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from .database import engine, Base, get_db
-from .routers import auth, users, admin, worker, super_admin, chatbot
+from .routers import auth, users, admin, worker, super_admin, chatbot, notifications
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from . import scheduler
 from .seed_admins import seed_admins
@@ -99,6 +99,7 @@ app.include_router(worker.router)
 app.include_router(admin.router)
 app.include_router(super_admin.router)
 app.include_router(chatbot.router)
+app.include_router(notifications.router)
 
 # --- 🌐 ROOT ROUTE ---
 @app.get("/", tags=["Root"])

@@ -49,11 +49,53 @@ async def create_worker(worker_data: schemas.AdminCreateWorker, db: AsyncSession
 
 @router.delete("/workers/{worker_user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def deactivate_worker(worker_user_id: int, db: AsyncSession = Depends(database.get_db), admin_user: models.User = Depends(get_current_admin_user)):
+    """
+    Deactivate a worker and reassign their pending/assigned tasks back to PENDING status.
+    """
     user_query = select(models.User).where(models.User.id == worker_user_id, models.User.role == models.RoleEnum.WORKER, models.User.district == admin_user.district)
     worker_user = (await db.execute(user_query)).scalar_one_or_none()
     if not worker_user:
         raise HTTPException(status_code=404, detail="Worker not found in your district.")
+    
+    # Get the worker's profile to find assigned tasks
+    worker_profile_query = select(models.WorkerProfile).where(models.WorkerProfile.user_id == worker_user_id)
+    worker_profile = (await db.execute(worker_profile_query)).scalar_one_or_none()
+    
+    if worker_profile:
+        # Reassign all PENDING and ASSIGNED tasks back to PENDING status with no worker
+        assigned_tasks_query = select(models.Problem).where(
+            models.Problem.assigned_worker_id == worker_profile.id,
+            models.Problem.status.in_([models.ProblemStatusEnum.PENDING, models.ProblemStatusEnum.ASSIGNED])
+        )
+        assigned_tasks = (await db.execute(assigned_tasks_query)).scalars().all()
+        
+        for task in assigned_tasks:
+            task.assigned_worker_id = None
+            task.status = models.ProblemStatusEnum.PENDING
+        
+        # Reset worker's task count
+        worker_profile.daily_task_count = 0
+    
     worker_user.is_active = False
+    await db.commit()
+    return
+
+@router.put("/workers/{worker_user_id}/activate", status_code=status.HTTP_204_NO_CONTENT)
+async def activate_worker(worker_user_id: int, db: AsyncSession = Depends(database.get_db), admin_user: models.User = Depends(get_current_admin_user)):
+    """
+    Activate a previously deactivated worker.
+    """
+    user_query = select(models.User).where(
+        models.User.id == worker_user_id, 
+        models.User.role == models.RoleEnum.WORKER, 
+        models.User.district == admin_user.district
+    )
+    worker_user = (await db.execute(user_query)).scalar_one_or_none()
+    
+    if not worker_user:
+        raise HTTPException(status_code=404, detail="Worker not found in your district.")
+    
+    worker_user.is_active = True
     await db.commit()
     return
 

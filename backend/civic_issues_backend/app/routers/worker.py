@@ -5,7 +5,12 @@ from sqlalchemy import func, text
 from sqlalchemy.orm import selectinload
 from typing import List
 from .. import database, schemas, models, utils, storage
+from ..services import auto_assignment
+from ..config import settings
 import math
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/worker", tags=["Worker"])
 async def get_current_worker_profile(
@@ -153,7 +158,26 @@ async def complete_task(
     
     # Mark as completed
     problem.status = models.ProblemStatusEnum.COMPLETED
+    
+    # Note: We don't decrement daily_task_count here because the actual count
+    # is calculated dynamically from ASSIGNED status in the database.
+    # The auto-assignment system counts only ASSIGNED tasks, so completing a task
+    # automatically makes the worker eligible for new assignments.
+    
+    logger.info(
+        f"Worker #{current_worker.id} completed task #{problem_id}. "
+        f"Status changed to COMPLETED. Worker now eligible for new assignments."
+    )
+    
     await db.commit()
+    
+    # Trigger auto-assignment to assign pending work to this worker or other available workers
+    # Since worker now has capacity, they can immediately get a new task
+    try:
+        await auto_assignment.trigger_auto_assignment(db)
+        logger.info("Auto-assignment triggered after task completion")
+    except Exception as e:
+        logger.warning(f"Auto-assignment after task completion failed: {str(e)}")
     
     # Reload with all relationships
     final_query = select(models.Problem).where(models.Problem.id == problem_id).options(

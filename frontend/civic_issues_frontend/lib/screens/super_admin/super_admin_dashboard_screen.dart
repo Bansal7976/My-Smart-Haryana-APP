@@ -7,6 +7,7 @@ import '../../utils/app_colors.dart';
 import '../../widgets/custom_button.dart';
 import 'manage_admins_screen.dart';
 import 'super_admin_analytics_screen.dart';
+import 'super_admin_reports_screen.dart';
 
 class SuperAdminDashboardScreen extends StatefulWidget {
   const SuperAdminDashboardScreen({super.key});
@@ -241,7 +242,7 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const SuperAdminAnalyticsScreen(),
+                        builder: (context) => const SuperAdminReportsScreen(),
                       ),
                     );
                   },

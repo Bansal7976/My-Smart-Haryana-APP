@@ -59,6 +59,31 @@ async def create_issue(
     if current_user.role != models.RoleEnum.CLIENT:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only clients can create issues.")
 
+    # Check for duplicate image BEFORE saving
+    from ..services.duplicate_detection import check_duplicate_image, get_existing_problem_details
+    
+    # Read file content for duplicate check
+    file_content = await file.read()
+    file.file.seek(0)  # Reset file pointer for save_file
+    
+    # Check for duplicate images
+    is_duplicate, existing_problem_id = await check_duplicate_image(db, file_content, current_user.id)
+    
+    if is_duplicate and existing_problem_id:
+        # Get details of existing problem
+        existing_problem = await get_existing_problem_details(db, existing_problem_id)
+        
+        if existing_problem:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"This problem already exists. Issue #{existing_problem_id}: '{existing_problem.get('title', 'N/A')}' was already submitted."
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="This problem already exists. A similar image was found in the system."
+            )
+
     file_url = await storage.save_file(file)
     if not file_url:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not save file.")
@@ -127,11 +152,48 @@ async def get_issue_by_id(
 ):
     """
     Get details of a specific issue by its ID.
+    - Clients can only view their own issues
+    - Admins can view any issue in their district
+    - Super Admins can view any issue
+    - Workers can view any issue assigned to them
     """
-    query = select(models.Problem).where(
-        models.Problem.id == problem_id,
-        models.Problem.user_id == current_user.id
-    ).options(
+    # Build query based on user role
+    if current_user.role == models.RoleEnum.CLIENT:
+        # Clients can only see their own issues
+        query = select(models.Problem).where(
+            models.Problem.id == problem_id,
+            models.Problem.user_id == current_user.id
+        )
+    elif current_user.role == models.RoleEnum.ADMIN:
+        # Admins can see any issue in their district
+        query = select(models.Problem).where(
+            models.Problem.id == problem_id,
+            models.Problem.district == current_user.district
+        )
+    elif current_user.role == models.RoleEnum.SUPER_ADMIN:
+        # Super admins can see any issue
+        query = select(models.Problem).where(
+            models.Problem.id == problem_id
+        )
+    elif current_user.role == models.RoleEnum.WORKER:
+        # Workers can see issues assigned to them or in their district
+        worker_profile_query = select(models.WorkerProfile).where(
+            models.WorkerProfile.user_id == current_user.id
+        )
+        worker_profile = (await db.execute(worker_profile_query)).scalar_one_or_none()
+        
+        if worker_profile:
+            query = select(models.Problem).where(
+                models.Problem.id == problem_id,
+                models.Problem.district == current_user.district
+            )
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Worker profile not found.")
+    else:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied.")
+    
+    # Add relationships to query
+    query = query.options(
         selectinload(models.Problem.submitted_by),
         selectinload(models.Problem.media_files),
         selectinload(models.Problem.feedback),
@@ -178,6 +240,58 @@ async def create_feedback_for_issue(
     await db.commit()
     await db.refresh(new_feedback)
     return new_feedback
+
+@router.put("/feedback/{feedback_id}", response_model=schemas.Feedback)
+async def update_feedback(
+    feedback_id: int,
+    feedback_data: schemas.FeedbackCreate,
+    db: AsyncSession = Depends(database.get_db),
+    current_user: models.User = Depends(utils.get_current_user)
+):
+    """
+    Allows a client to update their feedback.
+    """
+    query = select(models.Feedback).where(
+        models.Feedback.id == feedback_id,
+        models.Feedback.user_id == current_user.id
+    )
+    feedback = (await db.execute(query)).scalar_one_or_none()
+
+    if not feedback:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Feedback not found or you don't have access.")
+
+    # Update sentiment based on new comment
+    sentiment_result = sentiment.analyze_sentiment(feedback_data.comment)
+    
+    feedback.comment = feedback_data.comment
+    feedback.rating = feedback_data.rating
+    feedback.sentiment = sentiment_result
+    
+    await db.commit()
+    await db.refresh(feedback)
+    return feedback
+
+@router.delete("/feedback/{feedback_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_feedback(
+    feedback_id: int,
+    db: AsyncSession = Depends(database.get_db),
+    current_user: models.User = Depends(utils.get_current_user)
+):
+    """
+    Allows a client to delete their feedback.
+    """
+    query = select(models.Feedback).where(
+        models.Feedback.id == feedback_id,
+        models.Feedback.user_id == current_user.id
+    )
+    feedback = (await db.execute(query)).scalar_one_or_none()
+
+    if not feedback:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Feedback not found or you don't have access.")
+
+    await db.delete(feedback)
+    await db.commit()
+    return
 
 @router.post("/issues/{problem_id}/verify", response_model=schemas.Problem)
 async def verify_issue_completion(

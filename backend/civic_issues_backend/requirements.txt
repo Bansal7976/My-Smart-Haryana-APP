@@ -12,7 +12,7 @@ GeoAlchemy2>=0.14.3,<0.15.0
 alembic>=1.13.1,<1.14.0
 
 # ===== Configuration & Settings =====
-pydantic-settings>=2.1.0,<2.5.0
+pydantic-settings>=2.10.1,<3.0.0
 pydantic[email]>=2.5.0,<2.10.0
 python-dotenv>=1.0.0,<1.1.0
 
@@ -33,11 +33,12 @@ langchain-google-genai>=2.0.0,<3.0.0
 langchain-text-splitters>=0.3.0,<0.4.0
 langchain-pinecone>=0.1.0,<1.0.0
 langgraph>=0.2.0,<0.3.0
+langchain-openai>=0.3.0,<0.4.0
 
 tavily-python>=0.3.0,<0.5.0
 
 # ===== Vector Store & Embeddings =====
-pinecone-client>=3.0.0,<4.0.0
+pinecone>=6.0.0,<7.0.0
 sentence-transformers>=2.3.0,<3.0.0
 
 # ===== NLP & ML =====
@@ -56,8 +57,10 @@ google-cloud-speech>=2.21.0,<3.0.0
 
 # ===== AI Image Detection =====
 opencv-python>=4.8.0,<5.0.0
-numpy>=1.24.0,<2.0.0
+numpy>=1.24.0,<2.3.0
 scikit-image>=0.22.0,<0.23.0
+Pillow>=10.2.0,<11.0.0
+imagehash>=4.3.1,<5.0.0
 
 # ===== Additional Production Dependencies =====
 colorama>=0.4.6

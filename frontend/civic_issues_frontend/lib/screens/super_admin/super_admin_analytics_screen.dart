@@ -58,7 +58,7 @@ class _SuperAdminAnalyticsScreenState extends State<SuperAdminAnalyticsScreen> {
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
-          languageProvider.getText('Analytics & Reports', 'विश्लेषण और रिपोर्ट'),
+          languageProvider.getText('Analytics', 'विश्लेषण'),
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,

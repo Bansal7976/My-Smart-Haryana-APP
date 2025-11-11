@@ -117,6 +117,76 @@ class _ManageAdminsScreenState extends State<ManageAdminsScreen> {
     }
   }
 
+  Future<void> _activateAdmin(int adminId, String adminName) async {
+    final languageProvider =
+        Provider.of<LanguageProvider>(context, listen: false);
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(languageProvider.getText('Confirm', 'पुष्टि करें')),
+        content: Text(
+          languageProvider.getText(
+            'Are you sure you want to activate $adminName?',
+            'क्या आप वाकई $adminName को सक्रिय करना चाहते हैं?',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(languageProvider.getText('Cancel', 'रद्द करें')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.success),
+            child:
+                Text(languageProvider.getText('Activate', 'सक्रिय करें')),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+    if (!mounted) return;
+
+    // Capture context references AFTER dialog and mounted check
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    try {
+      await ApiService.activateAdmin(authProvider.token!, adminId);
+
+      if (!mounted) return;
+
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            languageProvider.getText(
+              'Admin activated successfully',
+              'एडमिन सफलतापूर्वक सक्रिय किया गया',
+            ),
+          ),
+          backgroundColor: AppColors.success,
+        ),
+      );
+      _loadAdmins(); // Reload list
+    } catch (e) {
+      if (!mounted) return;
+
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            languageProvider.getText(
+              'Failed to activate admin: ${e.toString()}',
+              'एडमिन को सक्रिय करने में विफल: ${e.toString()}',
+            ),
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
   void _showCreateAdminDialog() {
     final languageProvider =
         Provider.of<LanguageProvider>(context, listen: false);
@@ -576,19 +646,19 @@ class _ManageAdminsScreenState extends State<ManageAdminsScreen> {
                 ),
               ],
             ),
-            if (isActive) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: CustomButton(
-                  text:
-                      languageProvider.getText('Deactivate', 'निष्क्रिय करें'),
-                  onPressed: () =>
-                      _deactivateAdmin(admin['id'], admin['full_name']),
-                  backgroundColor: AppColors.error,
-                ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: CustomButton(
+                text: isActive
+                    ? languageProvider.getText('Deactivate', 'निष्क्रिय करें')
+                    : languageProvider.getText('Activate', 'सक्रिय करें'),
+                onPressed: isActive
+                    ? () => _deactivateAdmin(admin['id'], admin['full_name'])
+                    : () => _activateAdmin(admin['id'], admin['full_name']),
+                backgroundColor: isActive ? AppColors.error : AppColors.success,
               ),
-            ],
+            ),
           ],
         ),
       ),

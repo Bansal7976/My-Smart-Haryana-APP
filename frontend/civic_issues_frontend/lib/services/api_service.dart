@@ -8,7 +8,8 @@ import 'package:http_parser/http_parser.dart' as http_parser;
 class ApiService {
   // For mobile: Replace 192.168.1.100 with YOUR computer's IP address from ipconfig
   // For web: Use http://127.0.0.1:8000
-  static const String baseUrl = 'http://192.168.5.247:8000'; // CHANGE THIS IP!
+  static const String baseUrl =
+      'http://192.168.233.247:8000'; // CHANGE THIS IP!
 
   static Map<String, String> get _headers => {
         'Content-Type': 'application/json',
@@ -50,20 +51,22 @@ class ApiService {
         throw Exception('Server error. Please try again later.');
       } else {
         final errorData = jsonDecode(response.body);
-        throw Exception(errorData['detail'] ?? 'Login failed. Please check your credentials.');
+        throw Exception(errorData['detail'] ??
+            'Login failed. Please check your credentials.');
       }
     } catch (e) {
       if (kDebugMode) {
         print('Login error: $e');
       }
       // If it's already our custom exception, re-throw it
-      if (e.toString().contains('Invalid email') || 
+      if (e.toString().contains('Invalid email') ||
           e.toString().contains('Account is inactive') ||
           e.toString().contains('Server error')) {
         rethrow;
       }
       // Network or other errors
-      throw Exception('Unable to connect. Please check your internet connection.');
+      throw Exception(
+          'Unable to connect. Please check your internet connection.');
     }
   }
 
@@ -214,13 +217,30 @@ class ApiService {
 
       if (response.statusCode == 201) {
         return jsonDecode(response.body);
+      } else if (response.statusCode == 409) {
+        // Handle duplicate issue (409 Conflict)
+        try {
+          final error = jsonDecode(response.body);
+          throw Exception(error['detail'] ?? 'This problem already exists');
+        } catch (e) {
+          // If JSON parsing fails, use the raw response or default message
+          throw Exception('This problem already exists');
+        }
       } else {
-        final error = jsonDecode(response.body);
-        throw Exception(error['detail'] ?? 'Failed to create issue');
+        try {
+          final error = jsonDecode(response.body);
+          throw Exception(error['detail'] ?? 'Failed to create issue');
+        } catch (e) {
+          throw Exception('Failed to create issue: ${response.statusCode}');
+        }
       }
     } catch (e) {
       if (kDebugMode) {
         print('Create issue error: $e');
+      }
+      // Re-throw the original error message, don't wrap it
+      if (e.toString().contains('This problem already exists')) {
+        rethrow;
       }
       throw Exception('Failed to create issue: $e');
     }
@@ -829,7 +849,7 @@ class ApiService {
         // Determine content type from file extension
         final extension = audioFile.path.split('.').last.toLowerCase();
         final contentType = _getAudioContentType(extension);
-        
+
         request.files.add(
           await http.MultipartFile.fromPath(
             'audio_file',
@@ -927,6 +947,53 @@ class ApiService {
     }
   }
 
+  /// Get department-wise statistics
+  static Future<List<Map<String, dynamic>>> getDepartmentStats(
+      String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/super-admin/reports/department-stats'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> stats = jsonDecode(response.body);
+        return stats.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception(
+            'Failed to fetch department stats: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Get department stats error: $e');
+      }
+      throw Exception('Failed to fetch department stats: $e');
+    }
+  }
+
+  /// Get top performing workers
+  static Future<List<Map<String, dynamic>>> getTopWorkers(String token,
+      {int limit = 10}) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/super-admin/reports/top-workers?limit=$limit'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> workers = jsonDecode(response.body);
+        return workers.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Failed to fetch top workers: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Get top workers error: $e');
+      }
+      throw Exception('Failed to fetch top workers: $e');
+    }
+  }
+
   /// Deactivate an admin
   static Future<void> deactivateAdmin(String token, int adminId) async {
     try {
@@ -944,6 +1011,113 @@ class ApiService {
         print('Deactivate admin error: $e');
       }
       throw Exception('Failed to deactivate admin: $e');
+    }
+  }
+
+  /// Activate an admin
+  static Future<void> activateAdmin(String token, int adminId) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/super-admin/admins/$adminId/activate'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode != 204 && response.statusCode != 200) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to activate admin');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Activate admin error: $e');
+      }
+      throw Exception('Failed to activate admin: $e');
+    }
+  }
+
+  /// Deactivate a worker
+  static Future<void> deactivateWorker(String token, int workerId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/admin/workers/$workerId'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode != 204 && response.statusCode != 200) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to deactivate worker');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Deactivate worker error: $e');
+      }
+      throw Exception('Failed to deactivate worker: $e');
+    }
+  }
+
+  /// Activate a worker
+  static Future<void> activateWorker(String token, int workerId) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/admin/workers/$workerId/activate'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode != 204 && response.statusCode != 200) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to activate worker');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Activate worker error: $e');
+      }
+      throw Exception('Failed to activate worker: $e');
+    }
+  }
+
+  /// Update feedback
+  static Future<Map<String, dynamic>> updateFeedback(
+    String token,
+    int feedbackId,
+    Map<String, dynamic> feedbackData,
+  ) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/users/feedback/$feedbackId'),
+        headers: _getAuthHeaders(token),
+        body: jsonEncode(feedbackData),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to update feedback');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Update feedback error: $e');
+      }
+      throw Exception('Failed to update feedback: $e');
+    }
+  }
+
+  /// Delete feedback
+  static Future<void> deleteFeedback(String token, int feedbackId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/users/feedback/$feedbackId'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode != 204 && response.statusCode != 200) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to delete feedback');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Delete feedback error: $e');
+      }
+      throw Exception('Failed to delete feedback: $e');
     }
   }
 

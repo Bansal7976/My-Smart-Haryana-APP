@@ -24,7 +24,7 @@ class AuthProvider with ChangeNotifier {
   Future<void> _loadUserFromStorage() async {
     _isLoading = true;
     notifyListeners();
-    
+
     try {
       final token = await _secureStorage.read(key: 'access_token');
       if (token != null) {
@@ -50,9 +50,8 @@ class AuthProvider with ChangeNotifier {
       final response = await ApiService.login(email, password);
       _token = response['access_token'];
       _user = User.fromJson(response['user']);
-      
       await _secureStorage.write(key: 'access_token', value: _token);
-      
+
       _isLoading = false;
       notifyListeners();
       return true;
@@ -72,14 +71,15 @@ class AuthProvider with ChangeNotifier {
     try {
       final response = await ApiService.register(userData);
       _user = User.fromJson(response);
-      
+
       // Auto-login after registration
-      final loginResponse = await ApiService.login(userData['email'], userData['password']);
+      final loginResponse =
+          await ApiService.login(userData['email'], userData['password']);
       _token = loginResponse['access_token'];
       _user = User.fromJson(loginResponse['user']);
-      
+
       await _secureStorage.write(key: 'access_token', value: _token);
-      
+
       _isLoading = false;
       notifyListeners();
       return true;
@@ -91,12 +91,17 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  /// ✅ Safely log out user and clear secure storage
   Future<void> logout() async {
     _user = null;
     _token = null;
     _error = null;
     await _secureStorage.delete(key: 'access_token');
-    notifyListeners();
+    // Use SchedulerBinding to defer notifyListeners until after current frame
+    // This prevents accessing deactivated widget context
+    await Future.microtask(() {
+      notifyListeners();
+    });
   }
 
   Future<void> refreshUser() async {
@@ -111,4 +116,3 @@ class AuthProvider with ChangeNotifier {
     }
   }
 }
-

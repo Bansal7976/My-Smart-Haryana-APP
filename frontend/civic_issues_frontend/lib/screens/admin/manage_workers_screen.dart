@@ -136,6 +136,112 @@ class _ManageWorkersScreenState extends State<ManageWorkersScreen> {
     }
   }
 
+  Future<void> _deactivateWorker(int workerId, String workerName) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Deactivation'),
+        content: Text(
+          'Are you sure you want to deactivate $workerName? They will no longer be able to access the system, and their assigned tasks will be set back to PENDING.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Deactivate'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+    if (!mounted) return;
+
+    // Capture context references AFTER dialog and mounted check
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    try {
+      await ApiService.deactivateWorker(authProvider.token!, workerId);
+
+      if (!mounted) return;
+
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(
+          content: Text('Worker deactivated successfully. Their tasks have been reassigned.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      _loadData(); // Reload list
+    } catch (e) {
+      if (!mounted) return;
+
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed to deactivate worker: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _activateWorker(int workerId, String workerName) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Activation'),
+        content: Text(
+          'Are you sure you want to activate $workerName? They will be able to access the system and receive task assignments.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.green),
+            child: const Text('Activate'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+    if (!mounted) return;
+
+    // Capture context references AFTER dialog and mounted check
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    try {
+      await ApiService.activateWorker(authProvider.token!, workerId);
+
+      if (!mounted) return;
+
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(
+          content: Text('Worker activated successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      _loadData(); // Reload list
+    } catch (e) {
+      if (!mounted) return;
+
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('Failed to activate worker: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   void _clearForm() {
     _fullNameController.clear();
     _emailController.clear();
@@ -407,79 +513,146 @@ class _ManageWorkersScreenState extends State<ManageWorkersScreen> {
                       itemCount: _workers.length,
                       itemBuilder: (context, index) {
                         final worker = _workers[index];
+                        final bool isActive = worker['user']['is_active'] ?? false;
                         return Card(
                           margin: const EdgeInsets.only(bottom: 12),
                           elevation: 2,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 12),
-                            leading: CircleAvatar(
-                              backgroundColor:
-                                  AppColors.primary.withValues(alpha: 0.1),
-                              child: const Icon(Icons.person,
-                                  color: AppColors.primary),
-                            ),
-                            title: Text(
-                              worker['user']['full_name'] ?? 'Unknown',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            ),
-                            subtitle: Column(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const SizedBox(height: 4),
-                                Text(
-                                  '📧 ${worker['user']['email']}',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 13,
-                                  ),
+                                Row(
+                                  children: [
+                                    CircleAvatar(
+                                      backgroundColor: isActive
+                                          ? AppColors.primary.withValues(alpha: 0.1)
+                                          : Colors.grey.withValues(alpha: 0.3),
+                                      child: Icon(
+                                        Icons.person,
+                                        color: isActive
+                                            ? AppColors.primary
+                                            : Colors.grey,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            worker['user']['full_name'] ??
+                                                'Unknown',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          Text(
+                                            worker['user']['email'] ?? 'N/A',
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: isActive
+                                            ? Colors.green.withValues(alpha: 0.1)
+                                            : Colors.red.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        isActive ? 'Active' : 'Inactive',
+                                        style: TextStyle(
+                                          color: isActive
+                                              ? Colors.green
+                                              : Colors.red,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '🏢 ${worker['department']['name']}',
-                                  style: const TextStyle(
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 13,
-                                  ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.business,
+                                        size: 16, color: AppColors.primary),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      worker['department']['name'] ?? 'N/A',
+                                      style: const TextStyle(
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    const Icon(Icons.location_city,
+                                        size: 16, color: AppColors.textSecondary),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      worker['user']['district'] ?? 'N/A',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '📍 ${worker['user']['district']}',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 12,
-                                  ),
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: isActive
+                                      ? ElevatedButton.icon(
+                                          onPressed: () => _deactivateWorker(
+                                            worker['user']['id'],
+                                            worker['user']['full_name'],
+                                          ),
+                                          icon: const Icon(Icons.block,
+                                              color: Colors.white, size: 18),
+                                          label: const Text(
+                                            'Deactivate Worker',
+                                            style: TextStyle(color: Colors.white),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: AppColors.error,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                          ),
+                                        )
+                                      : ElevatedButton.icon(
+                                          onPressed: () => _activateWorker(
+                                            worker['user']['id'],
+                                            worker['user']['full_name'],
+                                          ),
+                                          icon: const Icon(Icons.check_circle,
+                                              color: Colors.white, size: 18),
+                                          label: const Text(
+                                            'Activate Worker',
+                                            style: TextStyle(color: Colors.white),
+                                          ),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.green,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                          ),
+                                        ),
                                 ),
                               ],
-                            ),
-                            trailing: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: worker['user']['is_active']
-                                    ? Colors.green.withValues(alpha: 0.1)
-                                    : Colors.red.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                worker['user']['is_active']
-                                    ? 'Active'
-                                    : 'Inactive',
-                                style: TextStyle(
-                                  color: worker['user']['is_active']
-                                      ? Colors.green
-                                      : Colors.red,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
                             ),
                           ),
                         );

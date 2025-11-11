@@ -7,6 +7,7 @@ import '../../services/api_service.dart';
 import '../../models/issue_model.dart';
 import '../../utils/app_colors.dart';
 import '../../widgets/custom_button.dart';
+import '../../widgets/custom_text_field.dart';
 import '../../widgets/image_viewer.dart';
 
 class IssueDetailScreen extends StatefulWidget {
@@ -483,13 +484,34 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            languageProvider.getText('Your Feedback', 'आपकी प्रतिक्रिया'),
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                languageProvider.getText('Your Feedback', 'आपकी प्रतिक्रिया'),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit, size: 20),
+                    color: AppColors.primary,
+                    onPressed: () => _showEditFeedbackDialog(languageProvider, issue, feedback),
+                    tooltip: languageProvider.getText('Edit', 'संपादित करें'),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, size: 20),
+                    color: AppColors.error,
+                    onPressed: () => _deleteFeedback(languageProvider, feedback.id),
+                    tooltip: languageProvider.getText('Delete', 'हटाएं'),
+                  ),
+                ],
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           Row(
@@ -542,9 +564,318 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
               ),
             ),
           ],
+          if (feedback.sentiment != null && feedback.sentiment!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: feedback.sentiment!.toLowerCase() == 'positive'
+                    ? AppColors.success.withValues(alpha: 0.1)
+                    : feedback.sentiment!.toLowerCase() == 'negative'
+                        ? AppColors.error.withValues(alpha: 0.1)
+                        : AppColors.info.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    feedback.sentiment!.toLowerCase() == 'positive'
+                        ? Icons.sentiment_satisfied
+                        : feedback.sentiment!.toLowerCase() == 'negative'
+                            ? Icons.sentiment_dissatisfied
+                            : Icons.sentiment_neutral,
+                    size: 16,
+                    color: feedback.sentiment!.toLowerCase() == 'positive'
+                        ? AppColors.success
+                        : feedback.sentiment!.toLowerCase() == 'negative'
+                            ? AppColors.error
+                            : AppColors.info,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    languageProvider.getText(
+                      feedback.sentiment!,
+                      feedback.sentiment!,
+                    ),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: feedback.sentiment!.toLowerCase() == 'positive'
+                          ? AppColors.success
+                          : feedback.sentiment!.toLowerCase() == 'negative'
+                              ? AppColors.error
+                              : AppColors.info,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  void _showEditFeedbackDialog(LanguageProvider languageProvider, Issue issue, dynamic feedback) {
+    int rating = feedback.rating;
+    final commentController = TextEditingController(text: feedback.comment);
+    
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 500),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: StatefulBuilder(
+                builder: (context, setDialogState) => Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      languageProvider.getText('Edit Feedback', 'फीडबैक संपादित करें'),
+                      style: const TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Rating
+                    Text(
+                      languageProvider.getText('Rating', 'रेटिंग'),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: List.generate(5, (index) {
+                        return GestureDetector(
+                          onTap: () {
+                            setDialogState(() {
+                              rating = index + 1;
+                            });
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 4.0),
+                            child: Icon(
+                              index < rating ? Icons.star : Icons.star_border,
+                              color: AppColors.warning,
+                              size: 32,
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    // Comment
+                    CustomTextField(
+                      controller: commentController,
+                      label: languageProvider.getText('Comment', 'टिप्पणी'),
+                      hint: languageProvider.getText(
+                        'Share your experience...',
+                        'अपना अनुभव साझा करें...'
+                      ),
+                      maxLines: 4,
+                      prefixIcon: Icons.comment,
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Actions
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.of(dialogContext).pop(),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.textSecondary,
+                              side: const BorderSide(color: AppColors.border, width: 1.5),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              languageProvider.getText('Cancel', 'रद्द करें'),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.of(dialogContext).pop();
+                              _updateFeedback(
+                                feedback.id,
+                                rating,
+                                commentController.text,
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              languageProvider.getText('Update', 'अपडेट करें'),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _updateFeedback(int feedbackId, int rating, String comment) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+    final issueProvider = Provider.of<IssueProvider>(context, listen: false);
+
+    try {
+      if (authProvider.token == null) {
+        throw Exception('No authentication token');
+      }
+
+      await ApiService.updateFeedback(
+        authProvider.token!,
+        feedbackId,
+        {
+          'comment': comment.isEmpty ? 'Work completed satisfactorily' : comment,
+          'rating': rating,
+        },
+      );
+
+      if (!mounted) return;
+
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(languageProvider.getText(
+              'Feedback updated successfully!',
+              'फीडबैक सफलतापूर्वक अपडेट किया गया!')),
+          backgroundColor: AppColors.success,
+        ),
+      );
+
+      // Reload issues
+      await issueProvider.loadUserIssues(authProvider.token!);
+      if (mounted) {
+        Navigator.of(context).pop(); // Go back to refresh the detail screen
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(
+              '${languageProvider.getText('Failed to update feedback', 'फीडबैक अपडेट करने में विफल')}: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteFeedback(LanguageProvider languageProvider, int feedbackId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(languageProvider.getText('Confirm Delete', 'हटाने की पुष्टि करें')),
+        content: Text(
+          languageProvider.getText(
+            'Are you sure you want to delete this feedback?',
+            'क्या आप वाकई इस फीडबैक को हटाना चाहते हैं?',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(languageProvider.getText('Cancel', 'रद्द करें')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: Text(languageProvider.getText('Delete', 'हटाएं')),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+    if (!mounted) return;
+
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final issueProvider = Provider.of<IssueProvider>(context, listen: false);
+
+    try {
+      if (authProvider.token == null) {
+        throw Exception('No authentication token');
+      }
+
+      await ApiService.deleteFeedback(authProvider.token!, feedbackId);
+
+      if (!mounted) return;
+
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(languageProvider.getText(
+              'Feedback deleted successfully',
+              'फीडबैक सफलतापूर्वक हटाया गया')),
+          backgroundColor: AppColors.success,
+        ),
+      );
+
+      // Reload issues
+      await issueProvider.loadUserIssues(authProvider.token!);
+      if (mounted) {
+        Navigator.of(context).pop(); // Go back to refresh the detail screen
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(
+              '${languageProvider.getText('Failed to delete feedback', 'फीडबैक हटाने में विफल')}: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   Widget _buildActionSection(LanguageProvider languageProvider, Issue issue) {
