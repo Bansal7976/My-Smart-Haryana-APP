@@ -14,7 +14,7 @@ class LanguageSelectionScreen extends StatefulWidget {
 }
 
 class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
-  String? _selectedLanguage;
+  String _selectedLanguage = 'en';
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +60,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
 
               const SizedBox(height: 40),
 
-              // Language Options
+              // Language Options (With Non-Deprecated Widgets)
               Container(
                 decoration: BoxDecoration(
                   color: AppColors.surface,
@@ -69,64 +69,16 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
                 ),
                 child: Column(
                   children: [
-                    // English Option
-                    RadioListTile<String>(
-                      title: const Row(
-                        children: [
-                          Icon(Icons.language, color: AppColors.primary),
-                          SizedBox(width: 12),
-                          Text(
-                            'English',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      subtitle: const Text(
-                        'Continue in English',
-                        style: TextStyle(color: AppColors.textSecondary),
-                      ),
-                      value: 'en',
-                      groupValue: _selectedLanguage,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedLanguage = value;
-                        });
-                      },
-                      activeColor: AppColors.primary,
+                    _buildLanguageTile(
+                      title: "English",
+                      subtitle: "Continue in English",
+                      value: "en",
                     ),
-
                     const Divider(height: 1),
-
-                    // Hindi Option
-                    RadioListTile<String>(
-                      title: const Row(
-                        children: [
-                          Icon(Icons.language, color: AppColors.primary),
-                          SizedBox(width: 12),
-                          Text(
-                            'हिंदी',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      subtitle: const Text(
-                        'हिंदी में जारी रखें',
-                        style: TextStyle(color: AppColors.textSecondary),
-                      ),
-                      value: 'hi',
-                      groupValue: _selectedLanguage,
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedLanguage = value;
-                        });
-                      },
-                      activeColor: AppColors.primary,
+                    _buildLanguageTile(
+                      title: "हिंदी",
+                      subtitle: "हिंदी में जारी रखें",
+                      value: "hi",
                     ),
                   ],
                 ),
@@ -138,16 +90,14 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _selectedLanguage != null
-                      ? () {
-                          languageProvider.setLanguage(_selectedLanguage!);
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                              builder: (context) => const RegisterScreen(),
-                            ),
-                          );
-                        }
-                      : null,
+                  onPressed: () {
+                    languageProvider.setLanguage(_selectedLanguage);
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => const RegisterScreen(),
+                      ),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -187,5 +137,53 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
       ),
     );
   }
-}
 
+  Widget _buildLanguageTile({
+    required String title,
+    required String subtitle,
+    required String value,
+  }) {
+    return RadioMenuButton<String>(
+      value: value,
+      groupValue: _selectedLanguage,
+      onChanged: (val) {
+        if (val != null) {
+          setState(() {
+            _selectedLanguage = val;
+          });
+        }
+      },
+      style: const ButtonStyle(
+        padding: WidgetStatePropertyAll(
+          EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.language, color: AppColors.primary),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}

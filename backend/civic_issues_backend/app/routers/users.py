@@ -239,6 +239,21 @@ async def create_feedback_for_issue(
     db.add(new_feedback)
     await db.commit()
     await db.refresh(new_feedback)
+    
+    # Send push notification to worker
+    if problem.assigned_worker_id:
+        try:
+            from ..services.push_notifications import notify_feedback_received
+            await notify_feedback_received(
+                db=db,
+                worker_id=problem.assigned_to.user_id,
+                issue_id=problem.id,
+                issue_title=problem.title,
+                rating=feedback_data.rating
+            )
+        except Exception as e:
+            logger.warning(f"Push notification failed: {str(e)}")
+    
     return new_feedback
 
 @router.put("/feedback/{feedback_id}", response_model=schemas.Feedback)
@@ -319,6 +334,20 @@ async def verify_issue_completion(
     
     problem.status = models.ProblemStatusEnum.VERIFIED
     await db.commit()
+    
+    # Send push notifications to both reporter and worker
+    if problem.assigned_worker_id:
+        try:
+            from ..services.push_notifications import notify_issue_verified
+            await notify_issue_verified(
+                db=db,
+                reporter_id=problem.user_id,
+                worker_id=problem.assigned_to.user_id,
+                issue_id=problem.id,
+                issue_title=problem.title
+            )
+        except Exception as e:
+            logger.warning(f"Push notification failed: {str(e)}")
     
     # Refresh with eager loading
     query = select(models.Problem).where(models.Problem.id == problem_id).options(

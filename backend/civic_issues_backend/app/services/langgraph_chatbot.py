@@ -185,9 +185,8 @@ class LangGraphChatbot:
     
     async def _generate_node(self, state: AgentState) -> AgentState:
         """
-        Generate final response.
-        ✅ IMPROVEMENT: Enhance RAG, DB, and Web results with Gemini for
-        a consistent, high-quality conversational response.
+        Generate final response with corrective RAG approach.
+        Priority: Analytics > RAG > Web Search > Gemini
         """
         
         query = state["query"]
@@ -195,34 +194,44 @@ class LangGraphChatbot:
         agent_used = "gemini" 
         metadata = {}
 
-        if state.get("rag_result"):
-            logger.info("Using RAG result for enhancement.")
-            context_to_enhance = state["rag_result"]["response"]
-            agent_used = "rag"
-            metadata = state["rag_result"].get("metadata", {})
-            
-        elif state.get("db_result"):
-            logger.info("Using Analytics result for enhancement.")
+        # Priority 1: Analytics (Database) - Always use if available
+        if state.get("db_result") and state["db_result"].get("response"):
+            logger.info("✅ Using Analytics result (highest priority)")
             context_to_enhance = state["db_result"]["response"]
             agent_used = "analytics"
             metadata = state["db_result"].get("metadata", {})
             
-        elif state.get("web_result"):
-            logger.info("Using Web Search result for enhancement.")
-            context_to_enhance = state["web_result"]["response"]
-            agent_used = "web_search"
-            metadata = state["web_result"].get("metadata", {})
+        # Priority 2: RAG - Use if good confidence
+        elif state.get("rag_result") and state["rag_result"].get("response"):
+            rag_confidence = state["rag_result"].get("metadata", {}).get("confidence", 0)
+            if rag_confidence >= 0.6:
+                logger.info(f"✅ Using RAG result (confidence: {rag_confidence:.2f})")
+                context_to_enhance = state["rag_result"]["response"]
+                agent_used = "rag_enhanced"
+                metadata = state["rag_result"].get("metadata", {})
+            else:
+                logger.info(f"⚠️ RAG confidence too low ({rag_confidence:.2f}), trying other sources")
+                
+        # Priority 3: Web Search - Use if results found
+        if not context_to_enhance and state.get("web_result") and state["web_result"].get("response"):
+            results_count = state["web_result"].get("metadata", {}).get("results_count", 0)
+            if results_count > 0:
+                logger.info(f"✅ Using Web Search result ({results_count} results)")
+                context_to_enhance = state["web_result"]["response"]
+                agent_used = "web_search_enhanced"
+                metadata = state["web_result"].get("metadata", {})
             
+        # Generate final response
         if context_to_enhance:
-            # Enhance RAG, DB, or Web result with Gemini
-            # ✅ CORRECTION: Added 'await' for the async call
+            # Enhance with Gemini for conversational polish
             final_response = await self.gemini_agent.generate_with_context(
                 query,
                 context_to_enhance
             )
+            metadata["enhanced_by_gemini"] = True
         else:
-            # Fallback to Gemini for general conversation
-            logger.info("No specific agent context. Using pure Gemini.")
+            # Priority 4: Pure Gemini fallback
+            logger.info("🤖 No context available, using pure Gemini")
             context = {
                 "chat_history": state["chat_history"],
                 "user_district": state["user_district"]
@@ -236,8 +245,16 @@ class LangGraphChatbot:
             )
             
             final_response = gemini_result["response"]
-            agent_used = "gemini"
+            agent_used = "gemini_fallback"
             metadata = gemini_result.get("metadata", {})
+        
+        # Add routing information to metadata
+        metadata["routing_info"] = {
+            "rag_available": bool(state.get("rag_result")),
+            "db_available": bool(state.get("db_result")),
+            "web_available": bool(state.get("web_result")),
+            "final_agent": agent_used
+        }
         
         state["final_response"] = final_response
         state["agent_used"] = agent_used
@@ -246,22 +263,43 @@ class LangGraphChatbot:
         return state
     
     def _should_use_rag(self, state: AgentState) -> str:
-        """Decide if RAG result is good enough"""
-        if state.get("rag_result") and state["rag_result"].get("response"):
-            return "use_rag"
+        """Decide if RAG result is good enough with confidence scoring"""
+        rag_result = state.get("rag_result")
+        if rag_result and rag_result.get("response"):
+            # Check confidence score
+            confidence = rag_result.get("metadata", {}).get("confidence", 0)
+            avg_score = rag_result.get("metadata", {}).get("avg_score", 0)
+            docs_retrieved = rag_result.get("metadata", {}).get("docs_retrieved", 0)
+            
+            # Use RAG if we have good confidence OR good similarity scores OR multiple docs
+            if confidence >= 0.6 or avg_score >= 0.4 or docs_retrieved >= 2:
+                logger.info(f"Using RAG: confidence={confidence:.2f}, avg_score={avg_score:.2f}, docs={docs_retrieved}")
+                return "use_rag"
+            else:
+                logger.info(f"RAG low confidence: confidence={confidence:.2f}, avg_score={avg_score:.2f}, docs={docs_retrieved}")
+        
         return "try_database"
     
     def _should_use_database(self, state: AgentState) -> str:
         """Decide if database result is good enough"""
-        if state.get("db_result") and state["db_result"].get("response"):
+        db_result = state.get("db_result")
+        if db_result and db_result.get("response"):
+            # Analytics results are always high confidence
+            logger.info("Using Analytics/Database result")
             return "use_database"
         return "try_web"
     
     def _should_use_web(self, state: AgentState) -> str:
         """Decide if web search found results"""
-        if state.get("web_result") and state["web_result"].get("response"):
-            return "use_web"
-        return "use_gemini" # Fallback to pure Gemini
+        web_result = state.get("web_result")
+        if web_result and web_result.get("response"):
+            results_count = web_result.get("metadata", {}).get("results_count", 0)
+            if results_count > 0:
+                logger.info(f"Using Web Search: {results_count} results found")
+                return "use_web"
+        
+        logger.info("Falling back to pure Gemini")
+        return "use_gemini"
     
     async def process_message(
         self,

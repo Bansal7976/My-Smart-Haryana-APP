@@ -186,7 +186,7 @@ class RAGAgent(BaseAgent):
 
         try:
             # Use similarity_search_with_score to check semantic relevance
-            docs_with_scores = self.vectorstore.similarity_search_with_score(query, k=3)
+            docs_with_scores = self.vectorstore.similarity_search_with_score(query, k=5)
 
             if not docs_with_scores:
                 return {
@@ -195,28 +195,36 @@ class RAGAgent(BaseAgent):
                     "agent_type": "rag"
                 }
 
-            # Filter by semantic similarity threshold (cosine similarity: 0-1, higher is better)
-            # 0.5+ is moderately relevant, 0.7+ is highly relevant
-            SIMILARITY_THRESHOLD = 0.5
+            # Improved similarity threshold - be more lenient for better coverage
+            SIMILARITY_THRESHOLD = 0.3  # Lowered from 0.5 to 0.3
             relevant_docs = [
                 (doc, score) for doc, score in docs_with_scores 
                 if score >= SIMILARITY_THRESHOLD
             ]
 
             if not relevant_docs:
-                logger.info(f"No docs above similarity threshold {SIMILARITY_THRESHOLD}. Max score: {max([s for _, s in docs_with_scores]) if docs_with_scores else 0}")
+                # If no docs meet threshold, take the best one anyway
+                logger.info(f"No docs above threshold {SIMILARITY_THRESHOLD}. Taking best match.")
+                relevant_docs = [docs_with_scores[0]]  # Take the best match
+
+            # Combine and clean the content
+            combined_content = []
+            for doc, score in relevant_docs:
+                content = doc.page_content.strip()
+                if content and len(content) > 20:  # Filter out very short chunks
+                    combined_content.append(content)
+            
+            if not combined_content:
                 return {
                     "response": "No relevant information found in knowledge base.",
-                    "metadata": {
-                        "docs_found": 0,
-                        "max_score": max([s for _, s in docs_with_scores]) if docs_with_scores else 0
-                    },
+                    "metadata": {"docs_found": 0},
                     "agent_type": "rag"
                 }
-
-            # Return only relevant content
-            response_text = "\n\n".join([doc.page_content for doc, _ in relevant_docs])
+            
+            # Join content with clear separators
+            response_text = "\n\n".join(combined_content)
             scores = [float(score) for _, score in relevant_docs]
+            avg_score = sum(scores) / len(scores) if scores else 0
             
             return {
                 "response": response_text,
@@ -224,7 +232,8 @@ class RAGAgent(BaseAgent):
                     "docs_retrieved": len(relevant_docs),
                     "sources": list(set([doc.metadata.get("source", "unknown") for doc, _ in relevant_docs])),
                     "similarity_scores": scores,
-                    "avg_score": sum(scores) / len(scores) if scores else 0
+                    "avg_score": avg_score,
+                    "confidence": min(avg_score + 0.2, 1.0)  # Boost confidence slightly
                 },
                 "agent_type": "rag"
             }

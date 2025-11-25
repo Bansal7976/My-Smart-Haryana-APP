@@ -34,29 +34,42 @@ class WebSearchAgent(BaseAgent):
     
     async def can_handle(self, query: str, context: Dict[str, Any]) -> bool:
         """
-        Web search ONLY for: government schemes, news, events, policies, specific Haryana info.
-        Skip: greetings, language requests, general questions, conversational queries.
+        Web search for: government schemes, latest news, policies, official updates.
+        More focused on current/latest information that wouldn't be in static knowledge base.
         """
         query_lower = query.lower().strip()
         
-        # Skip greetings and very short queries
-        skip_keywords = ["hello", "hi", "hey", "namaste", "thanks", "thank you", "dhanyavaad", "bye", "ok", "okay"]
-        if query_lower in skip_keywords or len(query_lower) < 3:
+        # Skip very short queries and greetings
+        if len(query_lower) < 5:
             return False
         
-        # Skip language-related queries (Hindi, English, translate, convert)
-        language_keywords = ["hindi", "हिंदी", "हिन्दी", "english", "translate", "convert", "language", "bhasha", "भाषा"]
-        if any(keyword in query_lower for keyword in language_keywords):
+        skip_keywords = ["hello", "hi", "hey", "namaste", "thanks", "bye", "ok"]
+        if any(skip in query_lower for skip in skip_keywords):
             return False
         
-        # Only trigger for specific government/scheme/policy queries
+        # Trigger for government schemes, latest updates, and official information
         web_search_keywords = [
-            "scheme", "योजना", "policy", "नीति", "government", "सरकार", 
-            "latest", "news", "update", "notification", "apply", "eligibility",
-            "cm manohar lal", "haryana budget", "official", "portal", "website"
+            # Government schemes and policies
+            "scheme", "योजना", "policy", "नीति", "yojana", 
+            "government", "सरकार", "sarkar",
+            
+            # Latest/current information
+            "latest", "नवीनतम", "current", "new", "recent", "2024", "2025",
+            "update", "अपडेट", "news", "समाचार",
+            
+            # Application and eligibility
+            "apply", "आवेदन", "eligibility", "पात्रता", "registration", "पंजीकरण",
+            "how to apply", "कैसे आवेदन", "online apply",
+            
+            # Official sources
+            "official", "आधिकारिक", "portal", "website", "notification",
+            "cm manohar lal", "haryana budget", "chief minister",
+            
+            # Specific schemes (common ones)
+            "pradhan mantri", "प्रधानमंत्री", "ayushman", "आयुष्मान",
+            "kisan", "किसान", "pension", "पेंशन"
         ]
         
-        # Return True only if query contains web-search-worthy keywords
         return any(keyword in query_lower for keyword in web_search_keywords)
     
     async def execute(

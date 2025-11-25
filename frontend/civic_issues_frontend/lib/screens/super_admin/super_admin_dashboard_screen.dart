@@ -8,6 +8,7 @@ import '../../widgets/custom_button.dart';
 import 'manage_admins_screen.dart';
 import 'super_admin_analytics_screen.dart';
 import 'super_admin_reports_screen.dart';
+import 'super_admin_advanced_analytics_screen.dart';
 
 class SuperAdminDashboardScreen extends StatefulWidget {
   const SuperAdminDashboardScreen({super.key});
@@ -249,14 +250,16 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                 ),
                 _buildActionCard(
                   context,
-                  languageProvider.getText('System Settings', 'सिस्टम सेटिंग्स'),
-                  Icons.settings,
-                  AppColors.superAdminColor,
+                  languageProvider.getText('Advanced Analytics', 'उन्नत विश्लेषण'),
+                  Icons.insights,
+                  const Color(0xFF6A1B9A),
                   () {
-                    _showComingSoonDialog(context, languageProvider.getText(
-                      'System Settings',
-                      'सिस्टम सेटिंग्स'
-                    ));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SuperAdminAdvancedAnalyticsScreen(),
+                      ),
+                    );
                   },
                 ),
               ],
@@ -423,9 +426,11 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
-                fontSize: 14,
+                fontSize: 13,
               ),
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -512,27 +517,6 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showComingSoonDialog(BuildContext context, String feature) {
-    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(feature),
-        content: Text(languageProvider.getText(
-          'This feature will be available in the next update.',
-          'यह सुविधा अगले अपडेट में उपलब्ध होगी।'
-        )),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(languageProvider.getText('OK', 'ठीक है')),
           ),
         ],
       ),

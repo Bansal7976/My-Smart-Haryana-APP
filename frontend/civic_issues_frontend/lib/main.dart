@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/language_provider.dart';
 import 'providers/issue_provider.dart';
+import 'providers/analytics_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'utils/app_theme.dart';
@@ -21,6 +22,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
         ChangeNotifierProvider(create: (_) => IssueProvider()),
+        ChangeNotifierProvider(create: (_) => AnalyticsProvider()),
       ],
       child: Consumer2<AuthProvider, LanguageProvider>(
         builder: (context, authProvider, languageProvider, child) {

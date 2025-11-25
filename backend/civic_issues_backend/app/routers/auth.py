@@ -53,3 +53,18 @@ async def login_for_access_token(
     
     access_token = utils.create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post("/fcm-token", status_code=status.HTTP_200_OK)
+async def update_fcm_token(
+    fcm_token: str,
+    current_user: models.User = Depends(utils.get_current_user),
+    db: AsyncSession = Depends(database.get_db)
+):
+    """
+    Update the user's FCM (Firebase Cloud Messaging) token for push notifications.
+    This should be called after login when the app gets the FCM token from Firebase.
+    """
+    current_user.fcm_token = fcm_token
+    await db.commit()
+    return {"message": "FCM token updated successfully"}

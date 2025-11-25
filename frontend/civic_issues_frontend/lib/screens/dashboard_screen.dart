@@ -228,46 +228,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Divider(),
-            const SizedBox(height: 8),
-            _buildProfileRow(
-              Icons.person_outline,
-              languageProvider.getText('Full Name', 'पूरा नाम'),
-              user?.name ?? 'N/A',
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Divider(),
+                const SizedBox(height: 8),
+                _buildProfileRow(
+                  Icons.person_outline,
+                  languageProvider.getText('Full Name', 'पूरा नाम'),
+                  user?.name ?? 'N/A',
+                ),
+                _buildProfileRow(
+                  Icons.email_outlined,
+                  languageProvider.getText('Email', 'ईमेल'),
+                  user?.email ?? 'N/A',
+                ),
+                _buildProfileRow(
+                  Icons.location_city_outlined,
+                  languageProvider.getText('District', 'जिला'),
+                  user?.district ?? 'N/A',
+                ),
+                _buildProfileRow(
+                  Icons.badge_outlined,
+                  languageProvider.getText('Account Type', 'खाता प्रकार'),
+                  getRoleName(user?.role ?? 'N/A'),
+                ),
+                if (user?.pincode != null && user!.pincode!.isNotEmpty)
+                  _buildProfileRow(
+                    Icons.pin_drop_outlined,
+                    languageProvider.getText('Pincode', 'पिनकोड'),
+                    user.pincode!,
+                  ),
+                const SizedBox(height: 8),
+              ],
             ),
-            const SizedBox(height: 12),
-            _buildProfileRow(
-              Icons.email_outlined,
-              languageProvider.getText('Email', 'ईमेल'),
-              user?.email ?? 'N/A',
-            ),
-            const SizedBox(height: 12),
-            _buildProfileRow(
-              Icons.location_city_outlined,
-              languageProvider.getText('District', 'जिला'),
-              user?.district ?? 'N/A',
-            ),
-            const SizedBox(height: 12),
-            _buildProfileRow(
-              Icons.badge_outlined,
-              languageProvider.getText('Account Type', 'खाता प्रकार'),
-              getRoleName(user?.role ?? 'N/A'),
-            ),
-            if (user?.pincode != null && user!.pincode!.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              _buildProfileRow(
-                Icons.pin_drop_outlined,
-                languageProvider.getText('Pincode', 'पिनकोड'),
-                user.pincode!,
-              ),
-            ],
-            const SizedBox(height: 8),
-            const Divider(),
-          ],
+          ),
         ),
         actions: [
           TextButton.icon(
@@ -284,36 +283,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildProfileRow(IconData icon, String label, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 20, color: AppColors.primary.withValues(alpha: 0.7)),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: AppColors.textSecondary.withValues(alpha: 0.7),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
+    return Container(
+      padding: const EdgeInsets.all(12), // Reduced from 16 to 12
+      margin: const EdgeInsets.only(bottom: 8), // Reduced from 12 to 8
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(10), // Reduced from 12 to 10
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8), // Reduced from 10 to 8
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.primary.withValues(alpha: 0.1),
+                  AppColors.primary.withValues(alpha: 0.05),
+                ],
               ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+              borderRadius: BorderRadius.circular(8), // Reduced from 10 to 8
+            ),
+            child: Icon(icon, size: 18, color: AppColors.primary), // Reduced from 20 to 18
           ),
-        ),
-      ],
+          const SizedBox(width: 12), // Reduced from 16 to 12
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 11, // Reduced from 12 to 11
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2), // Reduced from 4 to 2
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 14, // Reduced from 16 to 14
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

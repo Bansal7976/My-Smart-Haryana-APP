@@ -8,7 +8,6 @@ import '../../providers/language_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/api_service.dart';
 import '../../utils/app_colors.dart';
-import '../../widgets/custom_text_field.dart';
 
 class ChatbotScreen extends StatefulWidget {
   const ChatbotScreen({super.key});
@@ -44,7 +43,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   void _addWelcomeMessage() {
     _messages.add(ChatMessage(
       text:
-          "Welcome! Please select your language.\nआपका स्वागत है! कृपया अपनी भाषा चुनें।",
+          "🙏 Welcome to Smart Haryana Assistant!\nआपका स्वागत है स्मार्ट हरियाणा सहायक में!\n\nPlease select your language:\nकृपया अपनी भाषा चुनें:",
       isUser: false,
       timestamp: DateTime.now(),
       quickReplies: ["English", "हिन्दी"],
@@ -112,20 +111,21 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       _handleLanguageSelection(reply);
       return;
     }
-    
+
     _messageController.text = reply;
     _sendMessage();
   }
-  
+
   Future<void> _handleLanguageSelection(String language) async {
     // Update app language
-    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+    final languageProvider =
+        Provider.of<LanguageProvider>(context, listen: false);
     if (language == "हिन्दी") {
       languageProvider.setLanguage('hi');
     } else {
       languageProvider.setLanguage('en');
     }
-    
+
     // Add user message
     setState(() {
       _messages.add(ChatMessage(
@@ -135,27 +135,31 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       ));
       _isLoading = true;
     });
-    
+
     _scrollToBottom();
-    
-    // Send welcome message in selected language
+
+    // Send welcome message in selected language with proper context
     final welcomeMessage = language == "हिन्दी"
-        ? "नमस्ते! मैं स्मार्ट हरियाणा सहायक हूं। मैं आपकी कैसे मदद कर सकता हूं?"
-        : "Hello! I'm Smart Haryana Assistant. How can I help you today?";
-    
+        ? "नमस्ते! मैं स्मार्ट हरियाणा सहायक हूं। मैं आपकी कैसे मदद कर सकता हूं? मैं हरियाणा की सरकारी योजनाओं, नागरिक समस्याओं और ऐप की सुविधाओं के बारे में जानकारी दे सकता हूं।"
+        : "Hello! I'm Smart Haryana Assistant. How can I help you today? I can provide information about Haryana government schemes, civic issues, and app features.";
+
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.token == null) {
         throw Exception('No authentication token');
       }
-      
-      // Send to backend
+
+      // Send a proper welcome query to backend
+      final welcomeQuery = language == "हिन्दी" 
+          ? "नमस्ते, मैं हिंदी में बात करना चाहता हूं। कृपया मुझे स्मार्ट हरियाणा ऐप के बारे में बताएं।"
+          : "Hello, I want to speak in English. Please tell me about the Smart Haryana app.";
+
       final response = await ApiService.chatWithBot(
         authProvider.token!,
-        language == "हिन्दी" ? "हिन्दी में बात करें" : "Speak in English",
+        welcomeQuery,
         sessionId: _sessionId,
       );
-      
+
       setState(() {
         _messages.add(ChatMessage(
           text: response['response'] ?? welcomeMessage,
@@ -165,9 +169,10 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         _sessionId = response['session_id'];
         _isLoading = false;
       });
-      
+
       _scrollToBottom();
     } catch (e) {
+      // Fallback to local welcome message if API fails
       setState(() {
         _messages.add(ChatMessage(
           text: welcomeMessage,
@@ -203,7 +208,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   Future<void> _startRecording() async {
     // Capture context references BEFORE any async operations
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+    final languageProvider =
+        Provider.of<LanguageProvider>(context, listen: false);
 
     try {
       final status = await Permission.microphone.request();
@@ -211,7 +217,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         if (!mounted) return;
         scaffoldMessenger.showSnackBar(
           SnackBar(
-            content: Text(languageProvider.getText('Microphone permission denied', 'माइक्रोफ़ोन अनुमति अस्वीकृत')),
+            content: Text(languageProvider.getText(
+                'Microphone permission denied', 'माइक्रोफ़ोन अनुमति अस्वीकृत')),
             backgroundColor: AppColors.error,
           ),
         );
@@ -219,7 +226,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       }
 
       final Directory tempDir = await getTemporaryDirectory();
-      final String filePath = '${tempDir.path}/chatbot_recording_${DateTime.now().millisecondsSinceEpoch}.wav';
+      final String filePath =
+          '${tempDir.path}/chatbot_recording_${DateTime.now().millisecondsSinceEpoch}.wav';
 
       await _audioRecorder.start(
         const RecordConfig(
@@ -251,7 +259,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
     try {
       final String? path = await _audioRecorder.stop();
-      
+
       if (!mounted) return;
       setState(() {
         _isRecording = false;
@@ -280,7 +288,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     // Capture context references BEFORE any async operations
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
+    final languageProvider =
+        Provider.of<LanguageProvider>(context, listen: false);
 
     try {
       if (authProvider.token == null) {
@@ -303,8 +312,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         scaffoldMessenger.showSnackBar(
           SnackBar(
             content: Text(languageProvider.getText(
-                'Voice converted to text!',
-                'आवाज टेक्स्ट में परिवर्तित हुई!')),
+                'Voice converted to text!', 'आवाज टेक्स्ट में परिवर्तित हुई!')),
             backgroundColor: AppColors.success,
             duration: const Duration(seconds: 2),
           ),
@@ -334,15 +342,58 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(
-          languageProvider.getText('Smart Assistant', 'स्मार्ट सहायक'),
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.smart_toy,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    languageProvider.getText(
+                        'Smart Assistant', 'स्मार्ट सहायक'),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  Text(
+                    languageProvider.getText(
+                        'AI-Powered Help', 'AI-संचालित सहायता'),
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         backgroundColor: AppColors.primary,
         elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: AppColors.primaryGradient,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
@@ -357,30 +408,89 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 _addWelcomeMessage();
               });
             },
+            tooltip: languageProvider.getText('New Chat', 'नई चैट'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.help_outline, color: Colors.white),
+            onPressed: () {
+              _showHelpDialog();
+            },
+            tooltip: languageProvider.getText('Help', 'सहायता'),
           ),
         ],
       ),
       body: Column(
         children: [
-          // Messages List
+          // Messages List with enhanced background
           Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16.0),
-              itemCount: _messages.length + (_isLoading ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index == _messages.length && _isLoading) {
-                  return const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                }
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppColors.primary.withValues(alpha: 0.02),
+                    AppColors.background,
+                  ],
+                ),
+              ),
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(16.0),
+                itemCount: _messages.length + (_isLoading ? 1 : 0),
+                itemBuilder: (context, index) {
+                  if (index == _messages.length && _isLoading) {
+                    return Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                        AppColors.primary),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  languageProvider.getText(
+                                      'Thinking...', 'सोच रहा हूं...'),
+                                  style: const TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 14,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
 
-                final message = _messages[index];
-                return _buildMessageBubble(message);
-              },
+                  final message = _messages[index];
+                  return _buildMessageBubble(message);
+                },
+              ),
             ),
           ),
 
@@ -388,64 +498,150 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           if (_messages.isNotEmpty && _messages.last.quickReplies != null)
             _buildQuickReplies(_messages.last.quickReplies!),
 
-          // Input Area
+          // Enhanced Input Area
           Container(
             padding: const EdgeInsets.all(16.0),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColors.surface,
               border: Border(
-                top: BorderSide(color: AppColors.border),
+                top: BorderSide(color: AppColors.border.withValues(alpha: 0.3)),
               ),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: CustomTextField(
-                    controller: _messageController,
-                    label: languageProvider.getText(
-                        'Type or speak your message...', 'अपना संदेश टाइप या बोलें...'),
-                    hint: languageProvider.getText(
-                        'Type or speak your message...', 'अपना संदेश टाइप या बोलें...'),
-                    maxLines: 3,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // Microphone Button
-                if (_isTranscribing)
-                  const SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                      ),
-                    ),
-                  )
-                else
-                  Container(
-                    decoration: BoxDecoration(
-                      color: _isRecording ? AppColors.error : AppColors.primary.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: Icon(
-                        _isRecording ? Icons.stop : Icons.mic,
-                        color: _isRecording ? Colors.white : AppColors.primary,
-                      ),
-                      onPressed: _isLoading ? null : _startStopRecording,
-                      tooltip: languageProvider.getText(
-                          _isRecording ? 'Stop Recording' : 'Voice Input',
-                          _isRecording ? 'रिकॉर्डिंग बंद करें' : 'आवाज इनपुट'),
-                    ),
-                  ),
-                const SizedBox(width: 8),
-                FloatingActionButton(
-                  onPressed: _isLoading ? null : _sendMessage,
-                  backgroundColor: AppColors.primary,
-                  child: const Icon(Icons.send, color: Colors.white),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -2),
                 ),
               ],
+            ),
+            child: SafeArea(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                            color: AppColors.border.withValues(alpha: 0.5)),
+                      ),
+                      child: TextField(
+                        controller: _messageController,
+                        maxLines: 4,
+                        minLines: 1,
+                        decoration: InputDecoration(
+                          hintText: languageProvider.getText(
+                              'Type your message...',
+                              'अपना संदेश टाइप करें...'),
+                          hintStyle: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 15,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                        ),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Voice Input Button
+                  if (_isTranscribing)
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.primary),
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: _isRecording
+                            ? const LinearGradient(
+                                colors: [AppColors.error, Color(0xFFFF6B6B)])
+                            : LinearGradient(colors: [
+                                AppColors.primary.withValues(alpha: 0.1),
+                                AppColors.primary.withValues(alpha: 0.05)
+                              ]),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _isRecording
+                              ? AppColors.error
+                              : AppColors.primary.withValues(alpha: 0.3),
+                          width: 2,
+                        ),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(24),
+                          onTap: _isLoading ? null : _startStopRecording,
+                          child: Icon(
+                            _isRecording ? Icons.stop : Icons.mic,
+                            color:
+                                _isRecording ? Colors.white : AppColors.primary,
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                    ),
+                  const SizedBox(width: 8),
+                  // Send Button
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: AppColors.primaryGradient,
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.4),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(24),
+                        onTap: _isLoading ? null : _sendMessage,
+                        child: const Icon(
+                          Icons.send_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -462,25 +658,55 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!message.isUser) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: AppColors.primaryGradient,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
               child: const Icon(
                 Icons.smart_toy,
-                color: AppColors.primary,
-                size: 16,
+                color: Colors.white,
+                size: 18,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 12),
           ],
           Flexible(
             child: Container(
-              padding: const EdgeInsets.all(12.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: message.isUser ? AppColors.primary : AppColors.surface,
-                borderRadius: BorderRadius.circular(16),
-                border:
-                    message.isUser ? null : Border.all(color: AppColors.border),
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(20),
+                  topRight: const Radius.circular(20),
+                  bottomLeft: Radius.circular(message.isUser ? 20 : 4),
+                  bottomRight: Radius.circular(message.isUser ? 4 : 20),
+                ),
+                border: message.isUser
+                    ? null
+                    : Border.all(
+                        color: AppColors.border.withValues(alpha: 0.3)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black
+                        .withValues(alpha: message.isUser ? 0.15 : 0.08),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -490,32 +716,52 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                     style: TextStyle(
                       color:
                           message.isUser ? Colors.white : AppColors.textPrimary,
-                      fontSize: 14,
+                      fontSize: 15,
+                      height: 1.4,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _formatTime(message.timestamp),
-                    style: TextStyle(
-                      color: message.isUser
-                          ? Colors.white70
-                          : AppColors.textSecondary,
-                      fontSize: 12,
-                    ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.access_time,
+                        size: 12,
+                        color: message.isUser
+                            ? Colors.white70
+                            : AppColors.textSecondary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _formatTime(message.timestamp),
+                        style: TextStyle(
+                          color: message.isUser
+                              ? Colors.white70
+                              : AppColors.textSecondary,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
           if (message.isUser) ...[
-            const SizedBox(width: 8),
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+            const SizedBox(width: 12),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(18),
+                border:
+                    Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+              ),
               child: const Icon(
                 Icons.person,
                 color: AppColors.primary,
-                size: 16,
+                size: 18,
               ),
             ),
           ],
@@ -527,35 +773,184 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   Widget _buildQuickReplies(List<String> replies) {
     return Container(
       padding: const EdgeInsets.all(16.0),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.surface,
         border: Border(
-          top: BorderSide(color: AppColors.border),
+          top: BorderSide(color: AppColors.border.withValues(alpha: 0.3)),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            Provider.of<LanguageProvider>(context, listen: false)
-                .getText('Quick Replies:', 'त्वरित उत्तर:'),
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
+          Row(
+            children: [
+              Icon(
+                Icons.touch_app,
+                size: 16,
+                color: AppColors.primary.withValues(alpha: 0.7),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                Provider.of<LanguageProvider>(context, listen: false)
+                    .getText('Quick Replies:', 'त्वरित उत्तर:'),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: replies.map((reply) {
-              return ActionChip(
-                label: Text(reply),
-                onPressed: () => _sendQuickReply(reply),
-                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                labelStyle: const TextStyle(color: AppColors.primary),
+              return Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _sendQuickReply(reply),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.primary.withValues(alpha: 0.1),
+                          AppColors.primary.withValues(alpha: 0.05),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                          color: AppColors.primary.withValues(alpha: 0.3)),
+                    ),
+                    child: Text(
+                      reply,
+                      style: const TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ),
               );
             }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showHelpDialog() {
+    final languageProvider =
+        Provider.of<LanguageProvider>(context, listen: false);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                gradient:
+                    const LinearGradient(colors: AppColors.primaryGradient),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.help, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Text(languageProvider.getText('How to Use', 'उपयोग कैसे करें')),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildHelpItem(
+                Icons.chat,
+                languageProvider.getText('Ask Questions', 'प्रश्न पूछें'),
+                languageProvider.getText(
+                    'Ask about app features, government schemes, or your issues',
+                    'ऐप सुविधाओं, सरकारी योजनाओं या अपनी समस्याओं के बारे में पूछें'),
+              ),
+              _buildHelpItem(
+                Icons.mic,
+                languageProvider.getText('Voice Input', 'आवाज इनपुट'),
+                languageProvider.getText(
+                    'Tap the microphone to speak in Hindi or English',
+                    'हिंदी या अंग्रेजी में बोलने के लिए माइक्रोफ़ोन पर टैप करें'),
+              ),
+              _buildHelpItem(
+                Icons.language,
+                languageProvider.getText(
+                    'Bilingual Support', 'द्विभाषी समर्थन'),
+                languageProvider.getText(
+                    'Switch between English and Hindi anytime',
+                    'कभी भी अंग्रेजी और हिंदी के बीच स्विच करें'),
+              ),
+              _buildHelpItem(
+                Icons.smart_toy,
+                languageProvider.getText('Smart Responses', 'स्मार्ट उत्तर'),
+                languageProvider.getText(
+                    'Get accurate answers about Haryana and civic issues',
+                    'हरियाणा और नागरिक मुद्दों के बारे में सटीक उत्तर प्राप्त करें'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(languageProvider.getText('Got it!', 'समझ गया!')),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHelpItem(IconData icon, String title, String description) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: AppColors.primary, size: 16),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -591,4 +986,3 @@ class ChatMessage {
     this.quickReplies,
   });
 }
-

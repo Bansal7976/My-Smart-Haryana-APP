@@ -8,8 +8,7 @@ import 'package:http_parser/http_parser.dart' as http_parser;
 class ApiService {
   // For mobile: Replace 192.168.1.100 with YOUR computer's IP address from ipconfig
   // For web: Use http://127.0.0.1:8000
-  static const String baseUrl =
-      'http://192.168.233.247:8000'; // CHANGE THIS IP!
+  static const String baseUrl = 'http://192.168.1.12:8000'; // CHANGE THIS IP!
 
   static Map<String, String> get _headers => {
         'Content-Type': 'application/json',
@@ -1149,6 +1148,132 @@ class ApiService {
       }
       throw Exception('Failed to fetch admin analytics: $e');
     }
+  }
+
+  static Future<Map<String, dynamic>> getDailyTrends({
+    required String token,
+    required String startDate,
+    required String endDate,
+    String? district,
+  }) async {
+    final url =
+        '$baseUrl/analytics/trends/daily?start_date=$startDate&end_date=$endDate&district=${district ?? ""}';
+
+    final response =
+        await http.get(Uri.parse(url), headers: _getAuthHeaders(token));
+
+    if (response.statusCode == 200) return jsonDecode(response.body);
+    throw Exception("Failed to fetch daily trends");
+  }
+
+  static Future<Map<String, dynamic>> getWeeklyTrends({
+    required String token,
+    required String startDate,
+    required String endDate,
+    String? district,
+  }) async {
+    final url =
+        '$baseUrl/analytics/trends/weekly?start_date=$startDate&end_date=$endDate&district=${district ?? ""}';
+
+    final response =
+        await http.get(Uri.parse(url), headers: _getAuthHeaders(token));
+
+    if (response.statusCode == 200) return jsonDecode(response.body);
+    throw Exception("Failed to fetch weekly trends");
+  }
+
+  static Future<Map<String, dynamic>> getMonthlyTrends({
+    required String token,
+    required String startDate,
+    required String endDate,
+    String? district,
+  }) async {
+    final url =
+        '$baseUrl/analytics/trends/monthly?start_date=$startDate&end_date=$endDate&district=${district ?? ""}';
+
+    final response =
+        await http.get(Uri.parse(url), headers: _getAuthHeaders(token));
+
+    if (response.statusCode == 200) return jsonDecode(response.body);
+    throw Exception("Failed to fetch monthly trends");
+  }
+
+  static Future<Map<String, dynamic>> getDepartmentPerformance({
+    required String token,
+    required String startDate,
+    required String endDate,
+    String? district,
+  }) async {
+    final url =
+        '$baseUrl/analytics/department-performance?start_date=$startDate&end_date=$endDate&district=${district ?? ""}';
+
+    final response =
+        await http.get(Uri.parse(url), headers: _getAuthHeaders(token));
+
+    if (response.statusCode == 200) return jsonDecode(response.body);
+    throw Exception("Failed to fetch department performance");
+  }
+
+  static Future<Map<String, dynamic>> getWorkerPerformance({
+    required String token,
+    required String startDate,
+    required String endDate,
+    String? district,
+  }) async {
+    final url =
+        '$baseUrl/analytics/worker-performance?start_date=$startDate&end_date=$endDate&district=${district ?? ""}';
+
+    final response =
+        await http.get(Uri.parse(url), headers: _getAuthHeaders(token));
+
+    if (response.statusCode == 200) return jsonDecode(response.body);
+    throw Exception("Failed to fetch worker performance");
+  }
+
+  static Future<Map<String, dynamic>> getIssueTypesDistribution({
+    required String token,
+    required String startDate,
+    required String endDate,
+    String? district,
+  }) async {
+    final url =
+        '$baseUrl/analytics/issue-types-distribution?start_date=$startDate&end_date=$endDate&district=${district ?? ""}';
+
+    final response =
+        await http.get(Uri.parse(url), headers: _getAuthHeaders(token));
+
+    if (response.statusCode == 200) return jsonDecode(response.body);
+    throw Exception("Failed to fetch issue distribution");
+  }
+
+  static Future<Map<String, dynamic>> getHeatMapData({
+    required String token,
+    String? district,
+  }) async {
+    final url = '$baseUrl/analytics/heat-map-data?district=${district ?? ""}';
+
+    final response =
+        await http.get(Uri.parse(url), headers: _getAuthHeaders(token));
+
+    if (response.statusCode == 200) return jsonDecode(response.body);
+    throw Exception("Failed to fetch heat map data");
+  }
+
+  static Future<Map<String, dynamic>> exportAnalyticsCSV({
+    required String token,
+    required String reportType,
+    required String startDate,
+    required String endDate,
+    String? district,
+  }) async {
+    final url =
+        '$baseUrl/analytics/export/csv?report_type=$reportType&start_date=$startDate&end_date=$endDate&district=${district ?? ""}';
+
+    final response =
+        await http.get(Uri.parse(url), headers: _getAuthHeaders(token));
+
+    if (response.statusCode == 200) return jsonDecode(response.body);
+    throw Exception("Failed to export CSV");
   }
 
   // Helper function to get audio content type from file extension

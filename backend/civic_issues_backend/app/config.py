@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     MAX_VOICE_TO_TEXT_PER_HOUR: int = 20  # Prevent abuse of speech API
     MAX_CHATBOT_MESSAGES_PER_MINUTE: int = 10
     
+    # Firebase Push Notifications (optional)
+    FIREBASE_CREDENTIALS_PATH: str = ""  # Path to Firebase service account JSON file
+    
     # Environment
     ENVIRONMENT: str = "development"
 

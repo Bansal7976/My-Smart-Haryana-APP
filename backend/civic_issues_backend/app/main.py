@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from .database import engine, Base, get_db
-from .routers import auth, users, admin, worker, super_admin, chatbot, notifications
+from .routers import auth, users, admin, worker, super_admin, chatbot, notifications, analytics
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from . import scheduler
 from .seed_admins import seed_admins
@@ -77,6 +77,13 @@ async def on_startup():
     except Exception as e:
         logger.warning(f"Seeding skipped: {str(e)}")
     
+    # Initialize Firebase for push notifications (optional)
+    try:
+        from .services.push_notifications import initialize_firebase
+        initialize_firebase()
+    except Exception as e:
+        logger.warning(f"Firebase initialization skipped: {str(e)}")
+    
     # Start scheduled jobs
     job_scheduler.add_job(scheduler.reset_daily_task_counts, "cron", hour=0, minute=0)
     job_scheduler.add_job(scheduler.run_auto_assignment_job, "interval", minutes=1)
@@ -100,6 +107,7 @@ app.include_router(admin.router)
 app.include_router(super_admin.router)
 app.include_router(chatbot.router)
 app.include_router(notifications.router)
+app.include_router(analytics.router)
 
 # --- 🌐 ROOT ROUTE ---
 @app.get("/", tags=["Root"])

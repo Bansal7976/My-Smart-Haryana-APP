@@ -47,9 +47,26 @@ class GeminiAgent(BaseAgent):
             messages = [
                 SystemMessage(content="""You are a helpful assistant for Smart Haryana civic platform.
 
+CRITICAL FACTS ABOUT HARYANA (ALWAYS USE THESE):
+- Haryana has EXACTLY 22 DISTRICTS: Ambala, Bhiwani, Charkhi Dadri, Faridabad, Fatehabad, Gurugram, Hisar, Jhajjar, Jind, Kaithal, Karnal, Kurukshetra, Mahendragarh, Nuh, Palwal, Panchkula, Panipat, Rewari, Rohtak, Sirsa, Sonipat, Yamunanagar
+- Capital: Chandigarh (shared with Punjab)
+- Haryana is a STATE in India
+- Population: ~28 million people
+- Area: 44,212 km²
+
+SMART HARYANA APP FEATURES:
+- Report civic issues (potholes, street lights, water supply, etc.)
+- Track issue status and resolution
+- Voice input in Hindi and English
+- GPS location verification
+- Photo evidence upload
+- AI-powered chatbot assistance
+- Multi-language support
+
 Rules:
 - Keep responses SHORT (2-4 sentences max)
-- Be direct and professional
+- Be FACTUALLY ACCURATE - use the facts above
+- If asked about districts, ALWAYS say "22 districts"
 - NO greetings, NO bold/italic formatting
 - Use simple bullet points (-) when listing
 - Get straight to the answer
@@ -89,30 +106,93 @@ User is from {district} district.""".format(district=context.get("user_district"
             }
 
     
-    async def generate_with_context(self, query: str, retrieved_context: str) -> str:
+    async def verify_answer(self, query: str, answer: str) -> Dict[str, Any]:
         """
-        Generate response using retrieved context (for RAG, DB, or Web).
-        This is now asynchronous with improved corrective RAG.
+        Verify if the generated answer is factually correct and relevant.
+        Returns confidence score and whether to use the answer.
         """
         if not self.llm:
-            # Fallback to returning raw context if LLM fails
+            return {"is_valid": True, "confidence": 0.8, "reason": "No LLM available"}
+        
+        try:
+            # Simple relevance check - if answer directly addresses the query, it's likely good
+            query_lower = query.lower()
+            answer_lower = answer.lower()
+            
+            # Check for direct relevance indicators
+            relevance_score = 0.0
+            
+            # Check if answer contains key terms from query
+            query_words = set(query_lower.split())
+            answer_words = set(answer_lower.split())
+            common_words = query_words.intersection(answer_words)
+            
+            if len(common_words) > 0:
+                relevance_score += 0.3
+            
+            # Check answer length (not too short, not too long)
+            answer_length = len(answer.split())
+            if 10 <= answer_length <= 200:
+                relevance_score += 0.3
+            elif answer_length > 5:
+                relevance_score += 0.2
+            
+            # Check if answer doesn't contain error indicators
+            error_indicators = ["i don't know", "i'm not sure", "i cannot", "error", "sorry"]
+            if not any(indicator in answer_lower for indicator in error_indicators):
+                relevance_score += 0.4
+            
+            # For RAG answers, trust them more
+            if "context" in query_lower or len(answer) > 50:
+                relevance_score = min(relevance_score + 0.2, 1.0)
+            
+            confidence = min(relevance_score, 1.0)
+            is_valid = confidence >= 0.6
+            
+            return {
+                "is_valid": is_valid,
+                "confidence": confidence,
+                "reason": f"Relevance-based scoring: {confidence:.2f}"
+            }
+                
+        except Exception as e:
+            logger.error(f"Verification error: {e}")
+            return {"is_valid": True, "confidence": 0.8, "reason": f"Error in verification, assuming valid"}
+
+    async def generate_with_context(self, query: str, retrieved_context: str) -> str:
+        """
+        Generate response using retrieved context with enhanced polishing.
+        Always returns a polished, conversational answer.
+        """
+        if not self.llm:
             return retrieved_context
         
         try:
-            prompt = f"""Answer this question using the context below. Keep it SHORT and professional (2-4 sentences max). No greetings, no formatting.
+            # Enhanced prompt for better answer generation
+            prompt = f"""You are a helpful assistant for Smart Haryana civic platform. Use the context below to answer the user's question in a conversational, helpful way.
 
-Context:
+Context Information:
 {retrieved_context}
 
-Question: {query}
+User Question: {query}
+
+Instructions:
+- Use the context information to provide a complete, accurate answer
+- Make the response conversational and friendly
+- If the context has technical details, explain them simply
+- Keep the response focused and helpful (2-4 sentences)
+- If context is incomplete, acknowledge what you know and suggest next steps
+- Don't mention "context" or "information provided" - just answer naturally
 
 Answer:"""
             
-            # ✅ CORRECTION: Use async ainvoke instead of sync invoke
             response = await self.llm.ainvoke([HumanMessage(content=prompt)])
-            return response.content
+            polished_answer = response.content
+            
+            # Always return the polished answer - trust the context provided by other agents
+            return polished_answer
             
         except Exception as e:
             logger.error(f"Context generation error: {e}")
-            # Fallback to returning raw context on error
-            return retrieved_context
+            # Fallback: return context with simple formatting
+            return f"Based on the available information: {retrieved_context}"

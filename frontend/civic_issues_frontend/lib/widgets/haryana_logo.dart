@@ -27,7 +27,12 @@ class HaryanaLogo extends StatelessWidget {
             borderRadius: BorderRadius.circular(size / 4),
             boxShadow: [
               BoxShadow(
-                color: (color ?? AppColors.primary).withValues(alpha: 0.3),
+                color: Color.fromRGBO(
+                  (color ?? AppColors.primary).red,
+                  (color ?? AppColors.primary).green,
+                  (color ?? AppColors.primary).blue,
+                  0.3,
+                ),
                 blurRadius: 10,
                 offset: const Offset(0, 5),
               ),

@@ -152,7 +152,7 @@ async def trigger_auto_assignment(db: AsyncSession):
             f"Worker now has {new_count} active tasks."
         )
 
-        # 5. Send notifications (real-time + fallback)
+        # 5. Send notifications (WebSocket + Push)
         try:
             # Real-time WebSocket notifications
             from ..routers.notifications import send_real_time_notification
@@ -184,19 +184,19 @@ async def trigger_auto_assignment(db: AsyncSession):
                 }
             )
         except Exception as e:
-            logger.warning(f"Real-time notification failed, using fallback: {str(e)}")
-            # Fallback to traditional notifications
-            try:
-                await send_notification_to_user(
-                    user_id=available_worker.user_id,
-                    message=f"New task assigned: '{problem_to_assign.title}' in {problem_to_assign.district}"
-                )
-                await send_notification_to_user(
-                    user_id=problem_to_assign.user_id,
-                    message=f"Your issue '{problem_to_assign.title}' has been assigned to a worker."
-                )
-            except Exception as e2:
-                logger.warning(f"Fallback notification also failed: {str(e2)}")
+            logger.warning(f"Real-time notification failed: {str(e)}")
+        
+        # Send push notifications (separate try-catch, independent of WebSocket)
+        try:
+            from .push_notifications import notify_issue_assigned
+            await notify_issue_assigned(
+                db=db,
+                worker_id=available_worker.user_id,
+                issue_id=problem_to_assign.id,
+                issue_title=problem_to_assign.title
+            )
+        except Exception as e:
+            logger.warning(f"Push notification failed: {str(e)}")
             
     except Exception as e:
         logger.error(f"Auto-assignment error: {str(e)}")

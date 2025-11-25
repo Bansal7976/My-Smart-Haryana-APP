@@ -248,11 +248,12 @@ class AnalyticsAgent(BaseAgent):
         
         # Get total districts with issues
         districts_query = select(func.count(func.distinct(models.Problem.district)))
-        districts_count = (await db.execute(districts_query)).scalar()
+        districts_with_issues = (await db.execute(districts_query)).scalar()
         
         response_text = "Smart Haryana - Overall Statistics:\n\n"
         response_text += f"Total Issues: {result.total}\n"
-        response_text += f"Districts: {districts_count}\n"
+        response_text += f"Haryana Districts: 22 (total)\n"
+        response_text += f"Districts with Issues: {districts_with_issues}\n"
         response_text += f"⏳ Pending: {result.pending}\n"
         response_text += f"✅ Completed: {result.completed}\n"
         response_text += f"✓ Verified: {result.verified}\n"

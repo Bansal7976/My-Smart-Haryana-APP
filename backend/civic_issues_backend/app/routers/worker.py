@@ -171,6 +171,18 @@ async def complete_task(
     
     await db.commit()
     
+    # Send push notification to reporter
+    try:
+        from ..services.push_notifications import notify_issue_completed
+        await notify_issue_completed(
+            db=db,
+            reporter_id=problem.user_id,
+            issue_id=problem.id,
+            issue_title=problem.title
+        )
+    except Exception as e:
+        logger.warning(f"Push notification failed: {str(e)}")
+    
     # Trigger auto-assignment to assign pending work to this worker or other available workers
     # Since worker now has capacity, they can immediately get a new task
     try:

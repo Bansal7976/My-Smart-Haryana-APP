@@ -1,4 +1,4 @@
-# Smart Haryana Backend Dependencies - Production Ready
+1# Smart Haryana Backend Dependencies - Production Ready
 # Updated: Compatible with Python 3.12+ (fully tested)
 
 # ===== Core Framework =====
@@ -62,6 +62,15 @@ scikit-image>=0.22.0,<0.23.0
 Pillow>=10.2.0,<11.0.0
 imagehash>=4.3.1,<5.0.0
 
+# ===== Push Notifications =====
+firebase-admin>=6.0.0,<7.0.0
+
+# ===== Data Export & Analytics =====
+pandas>=2.0.0,<3.0.0
+
 # ===== Additional Production Dependencies =====
 colorama>=0.4.6
 python-dateutil>=2.8.2
+
+# ===== Analytics & Export =====
+pandas>=2.0.0,<3.0.0

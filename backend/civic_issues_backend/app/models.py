@@ -39,6 +39,7 @@ class User(Base):
     pincode = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     is_active = Column(Boolean, default=True)
+    fcm_token = Column(String, nullable=True)  # Firebase Cloud Messaging token for push notifications
     
     problems_submitted = relationship("Problem", back_populates="submitted_by")
     worker_profile = relationship("WorkerProfile", uselist=False, back_populates="user")
