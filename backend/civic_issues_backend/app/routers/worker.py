@@ -84,7 +84,10 @@ async def get_my_assigned_tasks(
     )
     
     result = await db.execute(query)
-    return result.scalars().all()
+    problems = result.scalars().all()
+    
+    # Process problems to ensure location is properly formatted
+    return utils.process_problems_location(problems)
 
 @router.post("/tasks/{problem_id}/complete", response_model=schemas.Problem)
 async def complete_task(
@@ -159,6 +162,16 @@ async def complete_task(
     # Mark as completed
     problem.status = models.ProblemStatusEnum.COMPLETED
     
+    # Fetch reporter FCM token BEFORE commit
+    reporter_query = select(models.User).where(models.User.id == problem.user_id)
+    reporter_user = (await db.execute(reporter_query)).scalar_one_or_none()
+    reporter_fcm_token = reporter_user.fcm_token if reporter_user else None
+    
+    # Store data for notification
+    problem_id_stored = problem.id
+    problem_title = problem.title
+    reporter_id = problem.user_id
+    
     # Note: We don't decrement daily_task_count here because the actual count
     # is calculated dynamically from ASSIGNED status in the database.
     # The auto-assignment system counts only ASSIGNED tasks, so completing a task
@@ -171,17 +184,23 @@ async def complete_task(
     
     await db.commit()
     
-    # Send push notification to reporter
-    try:
-        from ..services.push_notifications import notify_issue_completed
-        await notify_issue_completed(
-            db=db,
-            reporter_id=problem.user_id,
-            issue_id=problem.id,
-            issue_title=problem.title
-        )
-    except Exception as e:
-        logger.warning(f"Push notification failed: {str(e)}")
+    # Send notification to reporter using FCM token (no db query needed)
+    if reporter_fcm_token:
+        try:
+            from ..services.push_notifications import send_push_to_token
+            await send_push_to_token(
+                fcm_token=reporter_fcm_token,
+                title="Issue Resolved! ✅",
+                body=f"Your reported issue '{problem_title}' has been completed by our team. Thank you for making Haryana better!",
+                notification_type="issue_completed",
+                data={
+                    "issue_id": str(problem_id_stored),
+                    "action": "view_issue"
+                }
+            )
+            logger.info(f"✅ Completion notification sent to reporter {reporter_id}")
+        except Exception as e:
+            logger.warning(f"Notification failed: {str(e)}")
     
     # Trigger auto-assignment to assign pending work to this worker or other available workers
     # Since worker now has capacity, they can immediately get a new task

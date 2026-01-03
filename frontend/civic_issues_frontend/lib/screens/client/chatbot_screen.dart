@@ -25,6 +25,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   bool _isRecording = false;
   bool _isTranscribing = false;
   final AudioRecorder _audioRecorder = AudioRecorder();
+  String _selectedLanguage = 'en'; // Default to English
 
   @override
   void initState() {
@@ -46,7 +47,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
           "🙏 Welcome to Smart Haryana Assistant!\nआपका स्वागत है स्मार्ट हरियाणा सहायक में!\n\nPlease select your language:\nकृपया अपनी भाषा चुनें:",
       isUser: false,
       timestamp: DateTime.now(),
-      quickReplies: ["English", "हिन्दी"],
+      quickReplies: ["English", "हिन्दी", "ਪੰਜਾਬੀ"],
     ));
   }
 
@@ -77,6 +78,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
         authProvider.token!,
         message,
         sessionId: _sessionId,
+        preferredLanguage: _selectedLanguage,
       );
 
       setState(() {
@@ -107,7 +109,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
   void _sendQuickReply(String reply) {
     // Check if this is language selection
-    if (reply == "English" || reply == "हिन्दी") {
+    if (reply == "English" || reply == "हिन्दी" || reply == "ਪੰਜਾਬੀ") {
       _handleLanguageSelection(reply);
       return;
     }
@@ -117,11 +119,22 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   }
 
   Future<void> _handleLanguageSelection(String language) async {
+    // Update selected language for chatbot
+    if (language == "हिन्दी") {
+      _selectedLanguage = 'hi';
+    } else if (language == "ਪੰਜਾਬੀ") {
+      _selectedLanguage = 'pa';
+    } else {
+      _selectedLanguage = 'en';
+    }
+
     // Update app language
     final languageProvider =
         Provider.of<LanguageProvider>(context, listen: false);
     if (language == "हिन्दी") {
       languageProvider.setLanguage('hi');
+    } else if (language == "ਪੰਜਾਬੀ") {
+      languageProvider.setLanguage('pa');
     } else {
       languageProvider.setLanguage('en');
     }
@@ -141,6 +154,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     // Send welcome message in selected language with proper context
     final welcomeMessage = language == "हिन्दी"
         ? "नमस्ते! मैं स्मार्ट हरियाणा सहायक हूं। मैं आपकी कैसे मदद कर सकता हूं? मैं हरियाणा की सरकारी योजनाओं, नागरिक समस्याओं और ऐप की सुविधाओं के बारे में जानकारी दे सकता हूं।"
+        : language == "ਪੰਜਾਬੀ"
+        ? "ਸਤ ਸ੍ਰੀ ਅਕਾਲ! ਮੈਂ ਸਮਾਰਟ ਹਰਿਆਣਾ ਸਹਾਇਕ ਹਾਂ। ਮੈਂ ਅੱਜ ਤੁਹਾਡੀ ਕਿਵੇਂ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ? ਮੈਂ ਹਰਿਆਣਾ ਸਰਕਾਰੀ ਯੋਜਨਾਵਾਂ, ਨਾਗਰਿਕ ਮੁੱਦਿਆਂ ਅਤੇ ਐਪ ਦੀਆਂ ਸੁਵਿਧਾਵਾਂ ਬਾਰੇ ਜਾਣਕਾਰੀ ਦੇ ਸਕਦਾ ਹਾਂ।"
         : "Hello! I'm Smart Haryana Assistant. How can I help you today? I can provide information about Haryana government schemes, civic issues, and app features.";
 
     try {
@@ -152,12 +167,15 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       // Send a proper welcome query to backend
       final welcomeQuery = language == "हिन्दी" 
           ? "नमस्ते, मैं हिंदी में बात करना चाहता हूं। कृपया मुझे स्मार्ट हरियाणा ऐप के बारे में बताएं।"
+          : language == "ਪੰਜਾਬੀ"
+          ? "ਸਤ ਸ੍ਰੀ ਅਕਾਲ, ਮੈਂ ਪੰਜਾਬੀ ਵਿੱਚ ਗੱਲ ਕਰਨਾ ਚਾਹੁੰਦਾ ਹਾਂ। ਕਿਰਪਾ ਕਰਕੇ ਮੈਨੂੰ ਸਮਾਰਟ ਹਰਿਆਣਾ ਐਪ ਬਾਰੇ ਦੱਸੋ।"
           : "Hello, I want to speak in English. Please tell me about the Smart Haryana app.";
 
       final response = await ApiService.chatWithBot(
         authProvider.token!,
         welcomeQuery,
         sessionId: _sessionId,
+        preferredLanguage: _selectedLanguage,
       );
 
       setState(() {

@@ -42,6 +42,10 @@ hry/
 .env
 .env.local
 .env.*.local
+alembic.ini
+alembic.env.py
+alembic
+
 
 # Database
 *.db
@@ -105,4 +109,4 @@ logs/
 !requirements.txt
 !.env.example
 !README.md
-
+firebase_config.json

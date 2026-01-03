@@ -301,7 +301,7 @@ class _SuperAdminAdvancedAnalyticsScreenState
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.blue.withOpacity(0.1), Colors.white],
+                colors: [Colors.blue.withValues(alpha: 0.1), Colors.white],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -365,7 +365,7 @@ class _SuperAdminAdvancedAnalyticsScreenState
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.green.withOpacity(0.1), Colors.white],
+                colors: [Colors.green.withValues(alpha: 0.1), Colors.white],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -426,7 +426,8 @@ class _SuperAdminAdvancedAnalyticsScreenState
                     borderRadius: BorderRadius.circular(12),
                     side: isTopThree
                         ? BorderSide(
-                            color: Colors.amber.withOpacity(0.5), width: 2)
+                            color: Colors.amber.withValues(alpha: 0.5),
+                            width: 2)
                         : BorderSide.none,
                   ),
                   child: Padding(
@@ -438,8 +439,9 @@ class _SuperAdminAdvancedAnalyticsScreenState
                           height: 40,
                           decoration: BoxDecoration(
                             color: isTopThree
-                                ? Colors.amber.withOpacity(0.2)
-                                : AppColors.superAdminColor.withOpacity(0.1),
+                                ? Colors.amber.withValues(alpha: 0.2)
+                                : AppColors.superAdminColor
+                                    .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Center(
@@ -499,7 +501,7 @@ class _SuperAdminAdvancedAnalyticsScreenState
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.1),
+                                color: Colors.green.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
@@ -572,7 +574,7 @@ class _SuperAdminAdvancedAnalyticsScreenState
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.purple.withOpacity(0.1), Colors.white],
+                colors: [Colors.purple.withValues(alpha: 0.1), Colors.white],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -784,15 +786,15 @@ class _SuperAdminAdvancedAnalyticsScreenState
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppColors.superAdminColor.withOpacity(0.1),
+                  AppColors.superAdminColor.withValues(alpha: 0.1),
                   Colors.white
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(12),
-              border:
-                  Border.all(color: AppColors.superAdminColor.withOpacity(0.3)),
+              border: Border.all(
+                  color: AppColors.superAdminColor.withValues(alpha: 0.3)),
             ),
             child: Column(
               children: [
@@ -875,7 +877,7 @@ class _SuperAdminAdvancedAnalyticsScreenState
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, color: color, size: 28),
@@ -1008,122 +1010,122 @@ class _SuperAdminAdvancedAnalyticsScreenState
           directory = await getApplicationDocumentsDirectory();
         }
 
-        if (directory != null) {
-          final String filePath = '${directory.path}/$filename';
-          final File file = File(filePath);
-          await file.writeAsString(csvContent);
+        if (directory == null) {
+          throw Exception('Unable to access storage directory');
+        }
 
-          if (!mounted) return;
+        final String filePath = '${directory.path}/$filename';
+        final File file = File(filePath);
+        await file.writeAsString(csvContent);
 
-          // Show success dialog with file details
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
-              title: const Row(
-                children: [
-                  Icon(Icons.check_circle, color: AppColors.success, size: 28),
-                  SizedBox(width: 12),
-                  Text('Report Saved!'),
-                ],
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Your CSV report has been saved successfully.',
-                    style: TextStyle(fontSize: 14),
+        if (!mounted) return;
+
+        // Show success dialog with file details
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Row(
+              children: [
+                Icon(Icons.check_circle, color: AppColors.success, size: 28),
+                SizedBox(width: 12),
+                Text('Report Saved!'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Your CSV report has been saved successfully.',
+                  style: TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.insert_drive_file, size: 16),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                filename,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.insert_drive_file, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              filename,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.folder, size: 16),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                Platform.isAndroid
-                                    ? 'Downloads folder'
-                                    : 'Documents folder',
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.storage, size: 16),
-                            const SizedBox(width: 8),
-                            Text(
-                              '${(csvContent.length / 1024).toStringAsFixed(1)} KB',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(Icons.folder, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              Platform.isAndroid
+                                  ? 'Downloads folder'
+                                  : 'Documents folder',
                               style: const TextStyle(fontSize: 12),
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(Icons.storage, size: 16),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${(csvContent.length / 1024).toStringAsFixed(1)} KB',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Path: $filePath',
-                    style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: filePath));
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Path copied to clipboard')),
-                    );
-                  },
-                  child: const Text('Copy Path'),
                 ),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.success,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('OK'),
+                const SizedBox(height: 12),
+                Text(
+                  'Path: $filePath',
+                  style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                 ),
               ],
             ),
-          );
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: filePath));
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Path copied to clipboard')),
+                  );
+                },
+                child: const Text('Copy Path'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.success,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
 
-          debugPrint('✅ CSV Saved Successfully: $filePath');
-        } else {
-          throw Exception('Could not access storage directory');
-        }
+        debugPrint('✅ CSV Saved Successfully: $filePath');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

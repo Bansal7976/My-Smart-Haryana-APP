@@ -5,7 +5,7 @@ import '../../providers/issue_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/issue_model.dart';
 import '../../utils/app_colors.dart';
-import '../client/issue_detail_screen.dart';
+import 'admin_issue_detail_screen.dart';
 
 class AdminIssuesScreen extends StatefulWidget {
   const AdminIssuesScreen({super.key});
@@ -362,7 +362,9 @@ class _AdminIssuesScreenState extends State<AdminIssuesScreen> {
                                   const SizedBox(width: 4),
                                   Expanded(
                                     child: Text(
-                                      issue.location ?? 'Location not available',
+                                      issue.location ?? (issue.latitude != null && issue.longitude != null 
+                                          ? '${issue.latitude!.toStringAsFixed(4)}, ${issue.longitude!.toStringAsFixed(4)}'
+                                          : 'Location not available'),
                                       style: const TextStyle(
                                         color: AppColors.textSecondary,
                                         fontSize: 12,
@@ -444,11 +446,11 @@ class _AdminIssuesScreenState extends State<AdminIssuesScreen> {
                             ],
                           ),
                           onTap: () {
-                            // Navigate to issue details screen
+                            // Navigate to admin issue details screen
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => IssueDetailScreen(issue: issue),
+                                builder: (context) => AdminIssueDetailScreen(issue: issue),
                               ),
                             );
                           },

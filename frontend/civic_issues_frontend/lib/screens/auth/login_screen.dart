@@ -36,7 +36,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final languageProvider = Provider.of<LanguageProvider>(context, listen: false);
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     try {
       final success = await authProvider.login(
@@ -45,28 +44,116 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (!mounted) return;
+      
+      setState(() => _isLoading = false);
 
       if (success) {
-        scaffoldMessenger.showSnackBar(
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(languageProvider.getText('Login successful!', 'लॉगिन सफल!')),
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(languageProvider.getText('Login successful!', 'लॉगिन सफल!')),
+                ),
+              ],
+            ),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
           ),
         );
       } else {
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text(authProvider.error ?? languageProvider.getText('Login failed', 'लॉगिन असफल')),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
+        // Show error dialog for better visibility
+        if (!mounted) return;
+        
+        final errorMessage = authProvider.error ?? languageProvider.getText(
+          'You entered wrong ID or Password',
+          'आपने गलत ID या पासवर्ड दर्ज किया'
+        );
+        
+        await showDialog(
+          context: context,
+          barrierDismissible: true,
+          builder: (dialogContext) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                const Icon(Icons.error_outline, color: AppColors.error, size: 28),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    languageProvider.getText('Login Failed', 'लॉगिन असफल'),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              errorMessage,
+              style: const TextStyle(fontSize: 15),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+                child: Text(
+                  languageProvider.getText('OK', 'ठीक है'),
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
           ),
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      
+      // Show error dialog
+      await showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              const Icon(Icons.error_outline, color: AppColors.error, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  languageProvider.getText('Login Failed', 'लॉगिन असफल'),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            languageProvider.getText(
+              'You entered wrong ID or Password',
+              'आपने गलत ID या पासवर्ड दर्ज किया'
+            ),
+            style: const TextStyle(fontSize: 15),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              child: Text(
+                languageProvider.getText('OK', 'ठीक है'),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+      );
     }
   }
 

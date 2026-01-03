@@ -12,8 +12,6 @@ import '../../providers/issue_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/app_colors.dart';
 import '../../widgets/web_compatible_image.dart';
-import '../../widgets/custom_text_field.dart';
-import '../../widgets/custom_button.dart';
 import '../../services/api_service.dart';
 
 class ReportIssueScreen extends StatefulWidget {
@@ -75,8 +73,10 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
   Future<void> _startRecording() async {
     // Capture context references BEFORE any async operations
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-    final languageProvider =
-        Provider.of<LanguageProvider>(context, listen: false);
+    final languageProvider = Provider.of<LanguageProvider>(
+      context,
+      listen: false,
+    );
 
     try {
       // Request microphone permission
@@ -110,8 +110,9 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
 
       scaffoldMessenger.showSnackBar(
         SnackBar(
-          content:
-              Text(languageProvider.getText('Recording...', 'रिकॉर्डिंग...')),
+          content: Text(
+            languageProvider.getText('Recording...', 'रिकॉर्डिंग...'),
+          ),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 1),
         ),
@@ -149,8 +150,10 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
     // Capture context references BEFORE any async operations
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final languageProvider =
-        Provider.of<LanguageProvider>(context, listen: false);
+    final languageProvider = Provider.of<LanguageProvider>(
+      context,
+      listen: false,
+    );
 
     try {
       if (authProvider.token == null) {
@@ -178,9 +181,12 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
 
         scaffoldMessenger.showSnackBar(
           SnackBar(
-            content: Text(languageProvider.getText(
+            content: Text(
+              languageProvider.getText(
                 'Voice converted to text successfully!',
-                'आवाज सफलतापूर्वक टेक्स्ट में परिवर्तित हुई!')),
+                'आवाज सफलतापूर्वक टेक्स्ट में परिवर्तित हुई!',
+              ),
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -210,7 +216,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
       if (!serviceEnabled) {
         if (mounted) {
           _showErrorDialog(
-              'Location services are disabled. Please enable location services.');
+            'Location services are disabled. Please enable location services.',
+          );
         }
         return;
       }
@@ -222,7 +229,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
         if (permission == LocationPermission.denied) {
           if (mounted) {
             _showErrorDialog(
-                'Location permissions are denied. Please allow location access.');
+              'Location permissions are denied. Please allow location access.',
+            );
           }
           return;
         }
@@ -231,7 +239,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
       if (permission == LocationPermission.deniedForever) {
         if (mounted) {
           _showErrorDialog(
-              'Location permissions are permanently denied. Please enable in settings.');
+            'Location permissions are permanently denied. Please enable in settings.',
+          );
         }
         return;
       }
@@ -308,8 +317,10 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
   Future<void> _takePhoto() async {
     // Capture context references BEFORE any async operations
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-    final languageProvider =
-        Provider.of<LanguageProvider>(context, listen: false);
+    final languageProvider = Provider.of<LanguageProvider>(
+      context,
+      listen: false,
+    );
 
     try {
       // Request camera permission
@@ -318,9 +329,12 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
         if (!mounted) return;
         scaffoldMessenger.showSnackBar(
           SnackBar(
-            content: Text(languageProvider.getText(
+            content: Text(
+              languageProvider.getText(
                 'Camera permission denied. Please allow camera access in settings.',
-                'कैमरा अनुमति अस्वीकृत। कृपया सेटिंग्स में कैमरा एक्सेस की अनुमति दें।')),
+                'कैमरा अनुमति अस्वीकृत। कृपया सेटिंग्स में कैमरा एक्सेस की अनुमति दें।',
+              ),
+            ),
             backgroundColor: AppColors.error,
             action: SnackBarAction(
               label: languageProvider.getText('Settings', 'सेटिंग्स'),
@@ -356,9 +370,12 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
 
         scaffoldMessenger.showSnackBar(
           SnackBar(
-            content: Text(languageProvider.getText(
+            content: Text(
+              languageProvider.getText(
                 'Photo captured successfully!',
-                'फोटो सफलतापूर्वक कैप्चर की गई!')),
+                'फोटो सफलतापूर्वक कैप्चर की गई!',
+              ),
+            ),
             backgroundColor: AppColors.success,
             duration: const Duration(seconds: 2),
           ),
@@ -372,8 +389,10 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
   }
 
   void _showImageSourceDialog() {
-    final languageProvider =
-        Provider.of<LanguageProvider>(context, listen: false);
+    final languageProvider = Provider.of<LanguageProvider>(
+      context,
+      listen: false,
+    );
 
     showModalBottomSheet(
       context: context,
@@ -415,7 +434,9 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                     icon: Icons.camera_alt,
                     title: languageProvider.getText('Take Photo', 'फोटो लें'),
                     subtitle: languageProvider.getText(
-                        'Use camera', 'कैमरा उपयोग करें'),
+                      'Use camera',
+                      'कैमरा उपयोग करें',
+                    ),
                     onTap: () {
                       Navigator.pop(context);
                       _takePhoto();
@@ -428,7 +449,9 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                     icon: Icons.photo_library,
                     title: languageProvider.getText('Gallery', 'गैलरी'),
                     subtitle: languageProvider.getText(
-                        'Choose from gallery', 'गैलरी से चुनें'),
+                      'Choose from gallery',
+                      'गैलरी से चुनें',
+                    ),
                     onTap: () {
                       Navigator.pop(context);
                       _pickImage();
@@ -522,16 +545,22 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
     // Capture context references BEFORE any async operations
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
-    final languageProvider =
-        Provider.of<LanguageProvider>(context, listen: false);
+    final languageProvider = Provider.of<LanguageProvider>(
+      context,
+      listen: false,
+    );
     final issueProvider = Provider.of<IssueProvider>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     if (_selectedProblemType == null) {
       scaffoldMessenger.showSnackBar(
         SnackBar(
-          content: Text(languageProvider.getText(
-              'Please select a problem type', 'कृपया समस्या का प्रकार चुनें')),
+          content: Text(
+            languageProvider.getText(
+              'Please select a problem type',
+              'कृपया समस्या का प्रकार चुनें',
+            ),
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -541,8 +570,12 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
     if (_selectedImage == null) {
       scaffoldMessenger.showSnackBar(
         SnackBar(
-          content: Text(languageProvider.getText(
-              'Please select an image', 'कृपया एक छवि चुनें')),
+          content: Text(
+            languageProvider.getText(
+              'Please select an image',
+              'कृपया एक छवि चुनें',
+            ),
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -574,12 +607,21 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
       if (!mounted) return;
 
       if (success) {
+        // Refresh user profile to get updated civic points
+        await authProvider.refreshUser();
+        
+        if (!mounted) return;
+        
         scaffoldMessenger.showSnackBar(
           SnackBar(
-            content: Text(languageProvider.getText(
-                'Issue reported successfully!',
-                'समस्या सफलतापूर्वक रिपोर्ट की गई!')),
+            content: Text(
+              languageProvider.getText(
+                'Issue reported successfully! +10 points earned',
+                'समस्या सफलतापूर्वक रिपोर्ट की गई! +10 अंक अर्जित',
+              ),
+            ),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
           ),
         );
         navigator.pop();
@@ -587,7 +629,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
         scaffoldMessenger.showSnackBar(
           SnackBar(
             content: Text(
-                '${languageProvider.getText('Failed to submit issue', 'समस्या सबमिट करने में असफल')}: ${issueProvider.error ?? 'Unknown error'}'),
+              '${languageProvider.getText('Failed to submit issue', 'समस्या सबमिट करने में असफल')}: ${issueProvider.error ?? 'Unknown error'}',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -672,7 +715,9 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                 children: [
                   Text(
                     languageProvider.getText(
-                        'Report Issue', 'समस्या रिपोर्ट करें'),
+                      'Report Issue',
+                      'समस्या रिपोर्ट करें',
+                    ),
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -680,12 +725,11 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                     ),
                   ),
                   Text(
-                    languageProvider.getText('Help improve your community',
-                        'अपने समुदाय को बेहतर बनाने में मदद करें'),
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
+                    languageProvider.getText(
+                      'Help improve your community',
+                      'अपने समुदाय को बेहतर बनाने में मदद करें',
                     ),
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                 ],
               ),
@@ -747,11 +791,15 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                              colors: AppColors.primaryGradient),
+                            colors: AppColors.primaryGradient,
+                          ),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.info_outline,
-                            color: Colors.white, size: 20),
+                        child: const Icon(
+                          Icons.info_outline,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -760,7 +808,9 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                           children: [
                             Text(
                               languageProvider.getText(
-                                  'Report Guidelines', 'रिपोर्ट दिशानिर्देश'),
+                                'Report Guidelines',
+                                'रिपोर्ट दिशानिर्देश',
+                              ),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.textPrimary,
@@ -793,7 +843,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                        color: AppColors.border.withValues(alpha: 0.3)),
+                      color: AppColors.border.withValues(alpha: 0.3),
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.05),
@@ -818,13 +869,18 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                               ),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(Icons.title,
-                                color: AppColors.primary, size: 20),
+                            child: const Icon(
+                              Icons.title,
+                              color: AppColors.primary,
+                              size: 20,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Text(
                             languageProvider.getText(
-                                'Issue Title', 'समस्या का शीर्षक'),
+                              'Issue Title',
+                              'समस्या का शीर्षक',
+                            ),
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -838,24 +894,30 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                         controller: _titleController,
                         decoration: InputDecoration(
                           hintText: languageProvider.getText(
-                              'Enter a brief, descriptive title',
-                              'एक संक्षिप्त, वर्णनात्मक शीर्षक दर्ज करें'),
-                          hintStyle:
-                              const TextStyle(color: AppColors.textSecondary),
+                            'Enter a brief, descriptive title',
+                            'एक संक्षिप्त, वर्णनात्मक शीर्षक दर्ज करें',
+                          ),
+                          hintStyle: const TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                                color: AppColors.border.withValues(alpha: 0.5)),
+                              color: AppColors.border.withValues(alpha: 0.5),
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                                color: AppColors.border.withValues(alpha: 0.5)),
+                              color: AppColors.border.withValues(alpha: 0.5),
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(
-                                color: AppColors.primary, width: 2),
+                              color: AppColors.primary,
+                              width: 2,
+                            ),
                           ),
                           filled: true,
                           fillColor: AppColors.background,
@@ -864,8 +926,9 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return languageProvider.getText(
-                                'Please enter a title',
-                                'कृपया एक शीर्षक दर्ज करें');
+                              'Please enter a title',
+                              'कृपया एक शीर्षक दर्ज करें',
+                            );
                           }
                           return null;
                         },
@@ -884,7 +947,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                        color: AppColors.border.withValues(alpha: 0.3)),
+                      color: AppColors.border.withValues(alpha: 0.3),
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.05),
@@ -909,8 +973,11 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                               ),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(Icons.description,
-                                color: AppColors.primary, size: 20),
+                            child: const Icon(
+                              Icons.description,
+                              color: AppColors.primary,
+                              size: 20,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -944,7 +1011,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                                       width: 20,
                                       height: 20,
                                       child: CircularProgressIndicator(
-                                          strokeWidth: 2),
+                                        strokeWidth: 2,
+                                      ),
                                     ),
                                   )
                                 : IconButton(
@@ -959,9 +1027,12 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                                     tooltip: _isRecording
                                         ? languageProvider.getText(
                                             'Stop Recording',
-                                            'रिकॉर्डिंग बंद करें')
+                                            'रिकॉर्डिंग बंद करें',
+                                          )
                                         : languageProvider.getText(
-                                            'Voice Input', 'आवाज इनपुट'),
+                                            'Voice Input',
+                                            'आवाज इनपुट',
+                                          ),
                                   ),
                           ),
                         ],
@@ -972,24 +1043,30 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                         maxLines: 4,
                         decoration: InputDecoration(
                           hintText: languageProvider.getText(
-                              'Describe the issue in detail - what, where, when',
-                              'समस्या का विस्तार से वर्णन करें - क्या, कहाँ, कब'),
-                          hintStyle:
-                              const TextStyle(color: AppColors.textSecondary),
+                            'Describe the issue in detail - what, where, when',
+                            'समस्या का विस्तार से वर्णन करें - क्या, कहाँ, कब',
+                          ),
+                          hintStyle: const TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                                color: AppColors.border.withValues(alpha: 0.5)),
+                              color: AppColors.border.withValues(alpha: 0.5),
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                                color: AppColors.border.withValues(alpha: 0.5)),
+                              color: AppColors.border.withValues(alpha: 0.5),
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(
-                                color: AppColors.primary, width: 2),
+                              color: AppColors.primary,
+                              width: 2,
+                            ),
                           ),
                           filled: true,
                           fillColor: AppColors.background,
@@ -998,8 +1075,9 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return languageProvider.getText(
-                                'Please enter a description',
-                                'कृपया एक विवरण दर्ज करें');
+                              'Please enter a description',
+                              'कृपया एक विवरण दर्ज करें',
+                            );
                           }
                           return null;
                         },
@@ -1013,8 +1091,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                               color: AppColors.error.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                  color:
-                                      AppColors.error.withValues(alpha: 0.3)),
+                                color: AppColors.error.withValues(alpha: 0.3),
+                              ),
                             ),
                             child: Row(
                               children: [
@@ -1029,8 +1107,9 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                                 const SizedBox(width: 8),
                                 Text(
                                   languageProvider.getText(
-                                      'Recording... Tap mic to stop',
-                                      'रिकॉर्डिंग... रोकने के लिए माइक पर टैप करें'),
+                                    'Recording... Tap mic to stop',
+                                    'रिकॉर्डिंग... रोकने के लिए माइक पर टैप करें',
+                                  ),
                                   style: const TextStyle(
                                     color: AppColors.error,
                                     fontSize: 13,
@@ -1055,7 +1134,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                        color: AppColors.border.withValues(alpha: 0.3)),
+                      color: AppColors.border.withValues(alpha: 0.3),
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.05),
@@ -1080,13 +1160,18 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                               ),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(Icons.category,
-                                color: AppColors.primary, size: 20),
+                            child: const Icon(
+                              Icons.category,
+                              color: AppColors.primary,
+                              size: 20,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Text(
                             languageProvider.getText(
-                                'Problem Type', 'समस्या का प्रकार'),
+                              'Problem Type',
+                              'समस्या का प्रकार',
+                            ),
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -1100,24 +1185,30 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                         initialValue: _selectedProblemType,
                         decoration: InputDecoration(
                           hintText: languageProvider.getText(
-                              'Select the type of problem',
-                              'समस्या का प्रकार चुनें'),
-                          hintStyle:
-                              const TextStyle(color: AppColors.textSecondary),
+                            'Select the type of problem',
+                            'समस्या का प्रकार चुनें',
+                          ),
+                          hintStyle: const TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                                color: AppColors.border.withValues(alpha: 0.5)),
+                              color: AppColors.border.withValues(alpha: 0.5),
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                                color: AppColors.border.withValues(alpha: 0.5)),
+                              color: AppColors.border.withValues(alpha: 0.5),
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(
-                                color: AppColors.primary, width: 2),
+                              color: AppColors.primary,
+                              width: 2,
+                            ),
                           ),
                           filled: true,
                           fillColor: AppColors.background,
@@ -1147,8 +1238,9 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return languageProvider.getText(
-                                'Please select a problem type',
-                                'कृपया समस्या का प्रकार चुनें');
+                              'Please select a problem type',
+                              'कृपया समस्या का प्रकार चुनें',
+                            );
                           }
                           return null;
                         },
@@ -1167,7 +1259,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                        color: AppColors.border.withValues(alpha: 0.3)),
+                      color: AppColors.border.withValues(alpha: 0.3),
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.05),
@@ -1192,8 +1285,11 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                               ),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(Icons.location_on,
-                                color: AppColors.primary, size: 20),
+                            child: const Icon(
+                              Icons.location_on,
+                              color: AppColors.primary,
+                              size: 20,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Text(
@@ -1213,24 +1309,30 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                         onTap: _getCurrentLocation,
                         decoration: InputDecoration(
                           hintText: languageProvider.getText(
-                              'Tap to get current location',
-                              'वर्तमान स्थान प्राप्त करने के लिए टैप करें'),
-                          hintStyle:
-                              const TextStyle(color: AppColors.textSecondary),
+                            'Tap to get current location',
+                            'वर्तमान स्थान प्राप्त करने के लिए टैप करें',
+                          ),
+                          hintStyle: const TextStyle(
+                            color: AppColors.textSecondary,
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                                color: AppColors.border.withValues(alpha: 0.5)),
+                              color: AppColors.border.withValues(alpha: 0.5),
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                                color: AppColors.border.withValues(alpha: 0.5)),
+                              color: AppColors.border.withValues(alpha: 0.5),
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(
-                                color: AppColors.primary, width: 2),
+                              color: AppColors.primary,
+                              width: 2,
+                            ),
                           ),
                           filled: true,
                           fillColor: AppColors.background,
@@ -1242,17 +1344,21 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                                     width: 20,
                                     height: 20,
                                     child: CircularProgressIndicator(
-                                        strokeWidth: 2),
+                                      strokeWidth: 2,
+                                    ),
                                   ),
                                 )
-                              : const Icon(Icons.gps_fixed,
-                                  color: AppColors.primary),
+                              : const Icon(
+                                  Icons.gps_fixed,
+                                  color: AppColors.primary,
+                                ),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return languageProvider.getText(
-                                'Please get your location',
-                                'कृपया अपना स्थान प्राप्त करें');
+                              'Please get your location',
+                              'कृपया अपना स्थान प्राप्त करें',
+                            );
                           }
                           return null;
                         },
@@ -1261,8 +1367,9 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed:
-                              _isGettingLocation ? null : _getCurrentLocation,
+                          onPressed: _isGettingLocation
+                              ? null
+                              : _getCurrentLocation,
                           icon: _isGettingLocation
                               ? const SizedBox(
                                   width: 16,
@@ -1270,22 +1377,28 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white),
+                                      Colors.white,
+                                    ),
                                   ),
                                 )
-                              : const Icon(Icons.my_location,
-                                  color: Colors.white),
+                              : const Icon(
+                                  Icons.my_location,
+                                  color: Colors.white,
+                                ),
                           label: Text(
                             _isGettingLocation
                                 ? languageProvider.getText(
                                     'Getting Location...',
-                                    'स्थान प्राप्त कर रहे हैं...')
+                                    'स्थान प्राप्त कर रहे हैं...',
+                                  )
                                 : languageProvider.getText(
                                     'Get Current Location',
-                                    'वर्तमान स्थान प्राप्त करें'),
+                                    'वर्तमान स्थान प्राप्त करें',
+                                  ),
                             style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600),
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
@@ -1310,7 +1423,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                        color: AppColors.border.withValues(alpha: 0.3)),
+                      color: AppColors.border.withValues(alpha: 0.3),
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.05),
@@ -1335,8 +1449,11 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                               ),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(Icons.camera_alt,
-                                color: AppColors.primary, size: 20),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              color: AppColors.primary,
+                              size: 20,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -1345,7 +1462,9 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                               children: [
                                 Text(
                                   languageProvider.getText(
-                                      'Photo Evidence', 'फोटो प्रमाण'),
+                                    'Photo Evidence',
+                                    'फोटो प्रमाण',
+                                  ),
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -1354,8 +1473,9 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                                 ),
                                 Text(
                                   languageProvider.getText(
-                                      'Required for verification',
-                                      'सत्यापन के लिए आवश्यक'),
+                                    'Required for verification',
+                                    'सत्यापन के लिए आवश्यक',
+                                  ),
                                   style: const TextStyle(
                                     fontSize: 12,
                                     color: AppColors.textSecondary,
@@ -1399,13 +1519,17 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                                     right: 8,
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        color:
-                                            Colors.black.withValues(alpha: 0.7),
+                                        color: Colors.black.withValues(
+                                          alpha: 0.7,
+                                        ),
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: IconButton(
-                                        icon: const Icon(Icons.close,
-                                            color: Colors.white, size: 20),
+                                        icon: const Icon(
+                                          Icons.close,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
                                         onPressed: () {
                                           setState(() {
                                             _selectedImage = null;
@@ -1419,21 +1543,29 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                                     left: 8,
                                     child: Container(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 4),
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: AppColors.success
-                                            .withValues(alpha: 0.9),
+                                        color: AppColors.success.withValues(
+                                          alpha: 0.9,
+                                        ),
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          const Icon(Icons.check_circle,
-                                              color: Colors.white, size: 16),
+                                          const Icon(
+                                            Icons.check_circle,
+                                            color: Colors.white,
+                                            size: 16,
+                                          ),
                                           const SizedBox(width: 4),
                                           Text(
                                             languageProvider.getText(
-                                                'Photo Added', 'फोटो जोड़ी गई'),
+                                              'Photo Added',
+                                              'फोटो जोड़ी गई',
+                                            ),
                                             style: const TextStyle(
                                               color: Colors.white,
                                               fontSize: 12,
@@ -1461,8 +1593,9 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                                         Container(
                                           padding: const EdgeInsets.all(16),
                                           decoration: BoxDecoration(
-                                            color: AppColors.primary
-                                                .withValues(alpha: 0.1),
+                                            color: AppColors.primary.withValues(
+                                              alpha: 0.1,
+                                            ),
                                             shape: BoxShape.circle,
                                           ),
                                           child: const Icon(
@@ -1474,8 +1607,9 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                                         const SizedBox(height: 12),
                                         Text(
                                           languageProvider.getText(
-                                              'Tap to add photo',
-                                              'फोटो जोड़ने के लिए टैप करें'),
+                                            'Tap to add photo',
+                                            'फोटो जोड़ने के लिए टैप करें',
+                                          ),
                                           style: const TextStyle(
                                             color: AppColors.textSecondary,
                                             fontSize: 14,
@@ -1485,8 +1619,9 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                                         const SizedBox(height: 4),
                                         Text(
                                           languageProvider.getText(
-                                              'Take photo or choose from gallery',
-                                              'फोटो लें या गैलरी से चुनें'),
+                                            'Take photo or choose from gallery',
+                                            'फोटो लें या गैलरी से चुनें',
+                                          ),
                                           style: const TextStyle(
                                             color: AppColors.textSecondary,
                                             fontSize: 12,
@@ -1506,20 +1641,27 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                             Expanded(
                               child: ElevatedButton.icon(
                                 onPressed: _takePhoto,
-                                icon: const Icon(Icons.camera_alt,
-                                    color: Colors.white, size: 18),
+                                icon: const Icon(
+                                  Icons.camera_alt,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                                 label: Text(
                                   languageProvider.getText(
-                                      'Take Photo', 'फोटो लें'),
+                                    'Take Photo',
+                                    'फोटो लें',
+                                  ),
                                   style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14),
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
                                 ),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primary,
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -1530,20 +1672,26 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                             Expanded(
                               child: OutlinedButton.icon(
                                 onPressed: _pickImage,
-                                icon: const Icon(Icons.photo_library,
-                                    color: AppColors.primary, size: 18),
+                                icon: const Icon(
+                                  Icons.photo_library,
+                                  color: AppColors.primary,
+                                  size: 18,
+                                ),
                                 label: Text(
                                   languageProvider.getText('Gallery', 'गैलरी'),
                                   style: const TextStyle(
-                                      color: AppColors.primary,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14),
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
                                 ),
                                 style: OutlinedButton.styleFrom(
                                   side: const BorderSide(
-                                      color: AppColors.primary),
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 12),
+                                    color: AppColors.primary,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -1595,20 +1743,27 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white),
+                                    Colors.white,
+                                  ),
                                 ),
                               )
                             else
-                              const Icon(Icons.send,
-                                  color: Colors.white, size: 20),
+                              const Icon(
+                                Icons.send,
+                                color: Colors.white,
+                                size: 20,
+                              ),
                             const SizedBox(width: 12),
                             Text(
                               _isLoading
                                   ? languageProvider.getText(
-                                      'Submitting...', 'सबमिट कर रहे हैं...')
+                                      'Submitting...',
+                                      'सबमिट कर रहे हैं...',
+                                    )
                                   : languageProvider.getText(
                                       'Submit Issue Report',
-                                      'समस्या रिपोर्ट सबमिट करें'),
+                                      'समस्या रिपोर्ट सबमिट करें',
+                                    ),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,

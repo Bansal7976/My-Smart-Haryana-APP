@@ -528,7 +528,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 ),
                 _buildInfoRow(
                   languageProvider.getText('Location', 'स्थान'),
-                  task.location ?? 'Location not available',
+                  task.location ?? (task.latitude != null && task.longitude != null 
+                      ? '${task.latitude!.toStringAsFixed(6)}, ${task.longitude!.toStringAsFixed(6)}'
+                      : 'Location not available'),
                 ),
                 if (task.latitude != null && task.longitude != null)
                   _buildInfoRow(

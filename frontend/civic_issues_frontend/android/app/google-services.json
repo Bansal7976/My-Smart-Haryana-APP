@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "599259224692",
+    "project_id": "smart-haryana",
+    "storage_bucket": "smart-haryana.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:599259224692:android:6150538522ed126f2dcf21",
+        "android_client_info": {
+          "package_name": "com.example.civic_issues_frontend"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvCmeUX5-jcro6COu6ptYFY_RT7IiqYlc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

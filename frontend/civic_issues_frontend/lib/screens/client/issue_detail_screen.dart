@@ -129,6 +129,254 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
     return AppColors.success;
   }
 
+  Future<void> _showEditDialog(Issue issue, LanguageProvider languageProvider) async {
+    final titleController = TextEditingController(text: issue.title);
+    final descriptionController = TextEditingController(text: issue.description);
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.edit, color: AppColors.primary, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                languageProvider.getText('Edit Issue', 'समस्या संपादित करें'),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CustomTextField(
+                controller: titleController,
+                label: languageProvider.getText('Title', 'शीर्षक'),
+                hint: languageProvider.getText('Enter issue title', 'समस्या शीर्षक दर्ज करें'),
+                prefixIcon: Icons.title,
+              ),
+              const SizedBox(height: 16),
+              CustomTextField(
+                controller: descriptionController,
+                label: languageProvider.getText('Description', 'विवरण'),
+                hint: languageProvider.getText('Enter issue description', 'समस्या विवरण दर्ज करें'),
+                prefixIcon: Icons.description,
+                maxLines: 4,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(languageProvider.getText('Cancel', 'रद्द करें')),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              _updateIssue(
+                issue.id,
+                titleController.text,
+                descriptionController.text,
+                languageProvider,
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(languageProvider.getText('Update', 'अपडेट करें')),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _updateIssue(
+    int issueId,
+    String title,
+    String description,
+    LanguageProvider languageProvider,
+  ) async {
+    if (title.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(languageProvider.getText(
+            'Title cannot be empty',
+            'शीर्षक खाली नहीं हो सकता'
+          )),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      await ApiService.updateIssue(
+        authProvider.token!,
+        issueId,
+        title,
+        description,
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(languageProvider.getText(
+            'Issue updated successfully!',
+            'समस्या सफलतापूर्वक अपडेट की गई!'
+          )),
+          backgroundColor: AppColors.success,
+        ),
+      );
+
+      await _refreshIssue();
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${languageProvider.getText('Failed to update', 'अपडेट करने में विफल')}: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _showDeleteConfirmation(Issue issue, LanguageProvider languageProvider) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.warning, color: AppColors.error, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                languageProvider.getText('Delete Issue?', 'समस्या हटाएं?'),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              languageProvider.getText(
+                'Are you sure you want to delete this issue? This action cannot be undone.',
+                'क्या आप वाकई इस समस्या को हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।'
+              ),
+              style: const TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, color: AppColors.warning, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      languageProvider.getText(
+                        '⚠️ 10 civic points will be deducted',
+                        '⚠️ 10 नागरिक अंक काटे जाएंगे'
+                      ),
+                      style: const TextStyle(
+                        color: AppColors.warning,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(languageProvider.getText('Cancel', 'रद्द करें')),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(languageProvider.getText('Delete', 'हटाएं')),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _deleteIssue(issue.id, languageProvider);
+    }
+  }
+
+  Future<void> _deleteIssue(int issueId, LanguageProvider languageProvider) async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      await ApiService.deleteIssue(authProvider.token!, issueId);
+
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading
+      Navigator.of(context).pop(); // Close detail screen
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(languageProvider.getText(
+            'Issue deleted successfully! 10 civic points deducted.',
+            'समस्या सफलतापूर्वक हटा दी गई! 10 नागरिक अंक काटे गए।'
+          )),
+          backgroundColor: AppColors.warning,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context).pop(); // Close loading
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${languageProvider.getText('Failed to delete', 'हटाने में विफल')}: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final languageProvider = Provider.of<LanguageProvider>(context);
@@ -151,6 +399,19 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
+          // Show edit and delete buttons only for PENDING or ASSIGNED status
+          if (issue.status.toLowerCase() == 'pending' || issue.status.toLowerCase() == 'assigned') ...[
+            IconButton(
+              icon: const Icon(Icons.edit, color: Colors.white),
+              onPressed: () => _showEditDialog(issue, languageProvider),
+              tooltip: languageProvider.getText('Edit Issue', 'समस्या संपादित करें'),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.white),
+              onPressed: () => _showDeleteConfirmation(issue, languageProvider),
+              tooltip: languageProvider.getText('Delete Issue', 'समस्या हटाएं'),
+            ),
+          ],
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: _refreshIssue,
@@ -309,7 +570,9 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
                             ),
                             _buildInfoRow(
                               languageProvider.getText('Location', 'स्थान'),
-                              issue.location ?? 'Location not available',
+                              issue.location ?? (issue.latitude != null && issue.longitude != null 
+                                  ? '${issue.latitude!.toStringAsFixed(6)}, ${issue.longitude!.toStringAsFixed(6)}'
+                                  : 'Location not available'),
                             ),
                             if (issue.latitude != null &&
                                 issue.longitude != null)
@@ -879,6 +1142,11 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
   }
 
   Widget _buildActionSection(LanguageProvider languageProvider, Issue issue) {
+    // Only show the button if status is 'completed' (not verified yet)
+    if (issue.status.toLowerCase() != 'completed') {
+      return const SizedBox.shrink();
+    }
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20.0),
@@ -1215,7 +1483,7 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
         throw Exception('No authentication token');
       }
 
-      // Submit feedback
+      // Step 1: Submit feedback first
       await ApiService.submitFeedback(
         authProvider.token!,
         issue.id.toString(),
@@ -1225,30 +1493,65 @@ class _IssueDetailScreenState extends State<IssueDetailScreen> {
         },
       );
 
-      // Verify issue
-      await ApiService.verifyIssueCompletion(
-        authProvider.token!,
-        issue.id.toString(),
-      );
-
-      if (!mounted) return;
-
-      scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text(languageProvider.getText(
-              'Feedback submitted and issue verified!',
-              'फीडबैक सबमिट किया गया और समस्या सत्यापित!')),
-          backgroundColor: AppColors.success,
-        ),
-      );
+      // Step 2: Try to verify issue (only if not already verified)
+      if (issue.status.toLowerCase() == 'completed') {
+        try {
+          await ApiService.verifyIssueCompletion(
+            authProvider.token!,
+            issue.id.toString(),
+          );
+          
+          if (!mounted) return;
+          
+          scaffoldMessenger.showSnackBar(
+            SnackBar(
+              content: Text(languageProvider.getText(
+                  'Feedback submitted and issue verified!',
+                  'फीडबैक सबमिट किया गया और समस्या सत्यापित!')),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        } catch (verifyError) {
+          // If verification fails (already verified), just show feedback success
+          if (!mounted) return;
+          
+          scaffoldMessenger.showSnackBar(
+            SnackBar(
+              content: Text(languageProvider.getText(
+                  'Feedback submitted successfully!',
+                  'फीडबैक सफलतापूर्वक सबमिट किया गया!')),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+      } else {
+        // Issue is already verified, just show feedback success
+        if (!mounted) return;
+        
+        scaffoldMessenger.showSnackBar(
+          SnackBar(
+            content: Text(languageProvider.getText(
+                'Feedback submitted successfully!',
+                'फीडबैक सफलतापूर्वक सबमिट किया गया!')),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+      
       await _refreshIssue();
     } catch (e) {
       if (!mounted) return;
       
+      // Extract meaningful error message
+      String errorMessage = e.toString();
+      if (errorMessage.contains('Exception:')) {
+        errorMessage = errorMessage.replaceAll('Exception:', '').trim();
+      }
+      
       scaffoldMessenger.showSnackBar(
         SnackBar(
           content: Text(
-              '${languageProvider.getText('Failed to submit feedback', 'फीडबैक सबमिट करने में विफल')}: $e'),
+              '${languageProvider.getText('Failed to submit feedback', 'फीडबैक सबमिट करने में विफल')}: $errorMessage'),
           backgroundColor: AppColors.error,
         ),
       );

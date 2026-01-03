@@ -79,7 +79,7 @@ class _AnalyticsDatePickerState extends State<AnalyticsDatePicker> {
                   firstDayOfWeek: 1, // Monday
                 ),
                 selectionColor: Colors.blue,
-                rangeSelectionColor: Colors.blue.withOpacity(0.1),
+                rangeSelectionColor: Colors.blue.withValues(alpha: 0.1),
                 startRangeSelectionColor: Colors.blue,
                 endRangeSelectionColor: Colors.blue,
                 todayHighlightColor: Colors.orange,

@@ -6,7 +6,6 @@ import os
 import re
 from pathlib import Path
 from .config import settings
-from .services.image_verification import validate_image_is_real
 import logging
 
 logger = logging.getLogger(__name__)
@@ -84,16 +83,8 @@ async def save_file(file: UploadFile) -> str:
             detail=f"File too large. Max size: {settings.MAX_FILE_SIZE_MB}MB"
         )
     
-    # ✅ SECURITY CHECK: Verify image is not AI-generated
-    try:
-        logger.info(f"Verifying image authenticity: {sanitized_original}")
-        validate_image_is_real(file.file.read(), sanitized_original)
-        file.file.seek(0)  # Reset file pointer after reading
-    except HTTPException:
-        raise  # Re-raise validation errors
-    except Exception as e:
-        logger.warning(f"Image verification skipped due to error: {str(e)}")
-        # Continue with upload if verification fails (fail-open)
+    # Note: Comprehensive fraud detection (including AI detection) is now handled
+    # in the issue creation endpoint using the consolidated fraud_detection service
     
     # Generate secure random filename
     filename = f"{uuid4()}.{ext}"

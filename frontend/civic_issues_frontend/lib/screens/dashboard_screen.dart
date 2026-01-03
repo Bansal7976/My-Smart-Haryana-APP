@@ -86,29 +86,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _showAboutDialog(context);
                   break;
                 case 'logout':
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text("Confirm Logout"),
-                      content: const Text("Are you sure you want to log out?"),
-                      actions: [
-                        TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text("Cancel")),
-                        TextButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            child: const Text("Logout")),
-                      ],
-                    ),
-                  );
-                  if (confirm == true) {
-                    await _authProvider.logout();
-                    if (!mounted) return;
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (_) => const AuthWrapper()),
-                      (route) => false,
-                    );
-                  }
+                  _handleLogout();
                   break;
               }
             },
@@ -182,6 +160,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleLogout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Confirm Logout"),
+        content: const Text("Are you sure you want to log out?"),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Cancel")),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Logout")),
+        ],
+      ),
+    );
+    
+    if (confirm == true) {
+      if (!mounted) return;
+      await _authProvider.logout();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const AuthWrapper()),
+        (route) => false,
+      );
+    }
   }
 
   void _showProfileDialog(BuildContext context) {

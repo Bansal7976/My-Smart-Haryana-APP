@@ -41,6 +41,11 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     fcm_token = Column(String, nullable=True)  # Firebase Cloud Messaging token for push notifications
     
+    # Civic Leaderboard System
+    civic_points = Column(Integer, default=0, nullable=False)  # Total points earned
+    issues_reported = Column(Integer, default=0, nullable=False)  # Count of reported issues
+    issues_verified = Column(Integer, default=0, nullable=False)  # Count of verified issues
+    
     problems_submitted = relationship("Problem", back_populates="submitted_by")
     worker_profile = relationship("WorkerProfile", uselist=False, back_populates="user")
     feedback_given = relationship("Feedback", back_populates="user")
@@ -99,6 +104,7 @@ class Feedback(Base):
     comment = Column(String, nullable=False)
     rating = Column(Integer)
     sentiment = Column(String, nullable=True)
+    sentiment_confidence = Column(Float, nullable=True)  # Confidence score 0.0-1.0
     
     problem = relationship("Problem", back_populates="feedback")
     user = relationship("User", back_populates="feedback_given")

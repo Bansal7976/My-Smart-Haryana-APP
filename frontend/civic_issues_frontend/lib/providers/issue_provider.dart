@@ -93,14 +93,33 @@ class IssueProvider with ChangeNotifier {
         imageFile,
       );
       
-      // Reload user issues
+      // Reload user issues to show the new issue
       await loadUserIssues(token);
       
       _isLoading = false;
       notifyListeners();
       return true;
     } catch (e) {
-      _error = e.toString();
+      // Parse and improve error messages for better user experience
+      String errorMessage = e.toString();
+      
+      if (errorMessage.contains('AI-generated') || errorMessage.contains('heavily edited')) {
+        _error = 'Please upload a real photo taken with your camera. Edited or AI-generated images are not allowed.';
+      } else if (errorMessage.contains('already been reported') || errorMessage.contains('already exists')) {
+        _error = 'This issue has already been reported. Please check existing reports or take a new photo if this is a different problem.';
+      } else if (errorMessage.contains('too many reports') || errorMessage.contains('Too many requests')) {
+        _error = 'You have submitted too many reports recently. Please wait a few minutes before submitting another report.';
+      } else if (errorMessage.contains('suspicious activity')) {
+        _error = 'Your report could not be submitted. Please contact support if you believe this is an error.';
+      } else if (errorMessage.contains('timeout') || errorMessage.contains('connection')) {
+        _error = 'Network error. Please check your internet connection and try again.';
+      } else if (errorMessage.contains('Failed to create issue')) {
+        _error = 'Failed to submit your report. Please try again or contact support if the problem persists.';
+      } else {
+        // For any other errors, show a generic message
+        _error = 'Unable to submit your report. Please try again later.';
+      }
+      
       _isLoading = false;
       notifyListeners();
       return false;

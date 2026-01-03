@@ -1,14 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+// Firebase imports
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
+// Providers
 import 'providers/auth_provider.dart';
 import 'providers/language_provider.dart';
 import 'providers/issue_provider.dart';
 import 'providers/analytics_provider.dart';
+
+// Screens
 import 'screens/auth/login_screen.dart';
 import 'screens/dashboard_screen.dart';
-import 'utils/app_theme.dart';
 
-void main() {
+// Utils & Widgets
+import 'utils/app_theme.dart';
+import 'widgets/notification_listener.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 🔥 FIX: Initialize Firebase before running app
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const MyApp());
 }
 
@@ -28,9 +46,9 @@ class MyApp extends StatelessWidget {
         builder: (context, authProvider, languageProvider, child) {
           return MaterialApp(
             title: 'Smart Haryana',
+            debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             home: const AuthWrapper(),
-            debugShowCheckedModeBanner: false,
           );
         },
       ),
@@ -49,19 +67,19 @@ class _AuthWrapperState extends State<AuthWrapper> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    
-    // Show loading screen while checking authentication
+
+    // Loading indicator while checking authentication
     if (authProvider.isLoading) {
       return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
-    
-    // Navigate based on authentication status
+
+    // If authenticated → wrap dashboard with real-time notifications
     if (authProvider.isAuthenticated) {
-      return const DashboardScreen();
+      return const RealtimeNotificationListener(
+        child: DashboardScreen(),
+      );
     } else {
       return const LoginScreen();
     }

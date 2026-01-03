@@ -4,11 +4,11 @@ import '../../providers/language_provider.dart';
 import '../../providers/issue_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/app_colors.dart';
-import '../../widgets/custom_button.dart';
 import 'admin_issues_screen.dart';
 import 'admin_workers_screen.dart';
 import 'admin_departments_screen.dart';
 import 'admin_analytics_screen.dart';
+import '../client/leaderboard_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -47,6 +47,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
   }
 
+  IconData _getStatusIcon(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return Icons.schedule;
+      case 'assigned':
+        return Icons.assignment_ind;
+      case 'completed':
+        return Icons.check_circle;
+      case 'verified':
+        return Icons.verified;
+      case 'rejected':
+        return Icons.cancel;
+      default:
+        return Icons.help_outline;
+    }
+  }
+
   String _getStatusText(String status, LanguageProvider languageProvider) {
     switch (status.toLowerCase()) {
       case 'pending':
@@ -69,11 +86,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final difference = now.difference(date);
 
     if (difference.inDays > 0) {
-      return '${difference.inDays} days ago';
+      return '${difference.inDays}d ago';
     } else if (difference.inHours > 0) {
-      return '${difference.inHours} hours ago';
+      return '${difference.inHours}h ago';
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} minutes ago';
+      return '${difference.inMinutes}m ago';
     } else {
       return 'Just now';
     }
@@ -89,9 +106,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       backgroundColor: AppColors.background,
       body: RefreshIndicator(
         onRefresh: () async {
-          final authProvider =
-              Provider.of<AuthProvider>(context, listen: false);
-          if (authProvider.token != null) {
+          final authProviderRefresh = Provider.of<AuthProvider>(context, listen: false);
+          if (authProviderRefresh.token != null) {
             await issueProvider.loadAllProblems(authProvider.token!);
           }
         },
@@ -111,60 +127,55 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.adminColor.withValues(alpha: 0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
                     ),
                   ],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.admin_panel_settings,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            languageProvider.getText('Welcome, Admin!', 'स्वागत है, एडमिन!'),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          child: const Icon(
-                            Icons.admin_panel_settings,
-                            color: Colors.white,
-                            size: 24,
+                          const SizedBox(height: 4),
+                          Text(
+                            languageProvider.getText(
+                              'Manage issues and oversee operations',
+                              'समस्याओं का प्रबंधन करें और संचालन की निगरानी करें',
+                            ),
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                languageProvider.getText(
-                                    'Welcome, Admin!', 'स्वागत है, एडमिन!'),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                languageProvider.getText(
-                                    'Manage issues and oversee operations',
-                                    'समस्याओं का प्रबंधन करें और संचालन की निगरानी करें'),
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -180,16 +191,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       .where((issue) => issue.status.toLowerCase() == 'pending')
                       .length;
                   final assignedIssues = issueProvider.allProblems
-                      .where(
-                          (issue) => issue.status.toLowerCase() == 'assigned')
+                      .where((issue) => issue.status.toLowerCase() == 'assigned')
                       .length;
                   final completedIssues = issueProvider.allProblems
-                      .where(
-                          (issue) => issue.status.toLowerCase() == 'completed')
-                      .length;
-                  final verifiedIssues = issueProvider.allProblems
-                      .where(
-                          (issue) => issue.status.toLowerCase() == 'verified')
+                      .where((issue) => issue.status.toLowerCase() == 'completed')
                       .length;
 
                   return Column(
@@ -198,8 +203,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         children: [
                           Expanded(
                             child: _buildStatCard(
-                              languageProvider.getText(
-                                  'Total Issues', 'कुल समस्याएं'),
+                              languageProvider.getText('Total Issues', 'कुल समस्याएं'),
                               totalIssues.toString(),
                               Icons.assignment,
                               AppColors.primary,
@@ -238,31 +242,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildStatCard(
-                              languageProvider.getText('Verified', 'सत्यापित'),
-                              verifiedIssues.toString(),
-                              Icons.verified,
-                              AppColors.success,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildStatCard(
-                              languageProvider.getText(
-                                  'Resolution Rate', 'समाधान दर'),
-                              totalIssues > 0
-                                  ? '${((completedIssues + verifiedIssues) / totalIssues * 100).toStringAsFixed(1)}%'
-                                  : '0%',
-                              Icons.trending_up,
-                              AppColors.success,
-                            ),
-                          ),
-                        ],
-                      ),
                     ],
                   );
                 },
@@ -273,10 +252,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               // Management Actions
               Text(
                 languageProvider.getText('Management', 'प्रबंधन'),
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
               ),
 
               const SizedBox(height: 16),
@@ -285,59 +265,58 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1.2,
+                crossAxisCount: 3,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.9,
                 children: [
                   _buildActionCard(
                     context,
                     languageProvider.getText('All Issues', 'सभी समस्याएं'),
                     Icons.assignment,
                     AppColors.primary,
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const AdminIssuesScreen(),
-                        ),
-                      );
-                    },
+                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminIssuesScreen())),
                   ),
                   _buildActionCard(
                     context,
                     languageProvider.getText('Workers', 'कार्यकर्ता'),
                     Icons.work,
                     AppColors.workerColor,
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const AdminWorkersScreen(),
-                        ),
-                      );
-                    },
+                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminWorkersScreen())),
                   ),
                   _buildActionCard(
                     context,
                     languageProvider.getText('Departments', 'विभाग'),
                     Icons.business,
                     AppColors.adminColor,
-                    () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const AdminDepartmentsScreen(),
-                        ),
-                      );
-                    },
+                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDepartmentsScreen())),
                   ),
                   _buildActionCard(
                     context,
                     languageProvider.getText('Analytics', 'विश्लेषण'),
                     Icons.analytics,
                     AppColors.superAdminColor,
+                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminAnalyticsScreen())),
+                  ),
+                  _buildActionCard(
+                    context,
+                    languageProvider.getText('Leaderboard', 'लीडरबोर्ड'),
+                    Icons.leaderboard,
+                    const Color(0xFFFF6B35),
+                    () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaderboardScreen())),
+                  ),
+                  _buildActionCard(
+                    context,
+                    languageProvider.getText('Reports', 'रिपोर्ट्स'),
+                    Icons.description,
+                    const Color(0xFF00897B),
                     () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const AdminAnalyticsScreen(),
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(languageProvider.getText(
+                            'Reports feature coming soon!',
+                            'रिपोर्ट सुविधा जल्द आ रही है!',
+                          )),
                         ),
                       );
                     },
@@ -352,97 +331,35 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    languageProvider.getText(
-                        'Recent Issues', 'हाल की समस्याएं'),
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
+                    languageProvider.getText('Recent Issues', 'हाल की समस्याएं'),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                   TextButton(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const AdminIssuesScreen(),
-                        ),
-                      );
-                    },
-                    child: Text(
-                      languageProvider.getText('View All', 'सभी देखें'),
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AdminIssuesScreen()),
                     ),
+                    child: Text(languageProvider.getText('View All', 'सभी देखें')),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // Issues List
               Consumer<IssueProvider>(
                 builder: (context, issueProvider, child) {
                   if (issueProvider.isLoading) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  }
-
-                  if (issueProvider.error != null) {
-                    return Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(32.0),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Column(
-                        children: [
-                          const Icon(
-                            Icons.error_outline,
-                            size: 64,
-                            color: AppColors.error,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            languageProvider.getText('Failed to load issues',
-                                'समस्याएं लोड करने में असफल'),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            issueProvider.error!,
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          CustomButton(
-                            text: languageProvider.getText(
-                                'Retry', 'पुनः प्रयास'),
-                            onPressed: () {
-                              if (authProvider.token != null) {
-                                issueProvider
-                                    .loadAllProblems(authProvider.token!);
-                              }
-                            },
-                          ),
-                        ],
-                      ),
-                    );
+                    return const Center(child: CircularProgressIndicator());
                   }
 
                   if (issueProvider.allProblems.isEmpty) {
                     return Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(32.0),
+                      padding: const EdgeInsets.all(32),
                       decoration: BoxDecoration(
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(12),
@@ -450,20 +367,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       ),
                       child: Column(
                         children: [
-                          const Icon(
-                            Icons.assignment_outlined,
-                            size: 64,
-                            color: AppColors.textSecondary,
-                          ),
-                          const SizedBox(height: 16),
+                          const Icon(Icons.assignment_outlined, size: 48, color: AppColors.textSecondary),
+                          const SizedBox(height: 12),
                           Text(
-                            languageProvider.getText(
-                                'No issues found', 'कोई समस्या नहीं मिली'),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.textSecondary,
-                            ),
+                            languageProvider.getText('No issues found', 'कोई समस्या नहीं मिली'),
+                            style: const TextStyle(color: AppColors.textSecondary),
                           ),
                         ],
                       ),
@@ -478,51 +386,62 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       final issue = issueProvider.allProblems[index];
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: const BorderSide(color: AppColors.border),
+                        ),
                         child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: _getStatusColor(issue.status)
-                                .withValues(alpha: 0.1),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const AdminIssuesScreen()),
+                          ),
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: _getStatusColor(issue.status).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                             child: Icon(
                               _getStatusIcon(issue.status),
                               color: _getStatusColor(issue.status),
+                              size: 20,
                             ),
                           ),
                           title: Text(
                             issue.title,
                             style: const TextStyle(
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
+                              fontSize: 14,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              const SizedBox(height: 4),
                               Text(
                                 issue.description,
-                                maxLines: 2,
+                                maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: AppColors.textSecondary,
-                                ),
+                                style: const TextStyle(fontSize: 12),
                               ),
                               const SizedBox(height: 4),
                               Row(
                                 children: [
                                   Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: _getStatusColor(issue.status)
-                                          .withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(12),
+                                      color: _getStatusColor(issue.status).withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
-                                      _getStatusText(
-                                          issue.status, languageProvider),
+                                      _getStatusText(issue.status, languageProvider),
                                       style: TextStyle(
                                         color: _getStatusColor(issue.status),
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ),
@@ -531,21 +450,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                     _formatDate(issue.createdAt),
                                     style: const TextStyle(
                                       color: AppColors.textSecondary,
-                                      fontSize: 12,
+                                      fontSize: 11,
                                     ),
                                   ),
                                 ],
                               ),
                             ],
                           ),
-                          onTap: () {
-                            // Navigate to issue detail or management screen
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => const AdminIssuesScreen(),
-                              ),
-                            );
-                          },
                         ),
                       );
                     },
@@ -592,11 +503,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(24),
               ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 24,
-              ),
+              child: Icon(icon, color: color, size: 24),
             ),
             const SizedBox(height: 8),
             Text(
@@ -604,7 +511,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
-                fontSize: 12,
+                fontSize: 11,
               ),
               textAlign: TextAlign.center,
               maxLines: 2,
@@ -616,8 +523,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildStatCard(
-      String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
@@ -640,11 +546,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 20,
-            ),
+            child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(height: 8),
           Text(
@@ -669,23 +571,4 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       ),
     );
   }
-
-  IconData _getStatusIcon(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return Icons.schedule;
-      case 'assigned':
-        return Icons.assignment_ind;
-      case 'completed':
-        return Icons.check_circle;
-      case 'verified':
-        return Icons.verified;
-      case 'rejected':
-        return Icons.cancel;
-      default:
-        return Icons.help;
-    }
-  }
 }
-
-

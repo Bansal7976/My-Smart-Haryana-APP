@@ -43,6 +43,9 @@ sentence-transformers>=2.3.0,<3.0.0
 
 # ===== NLP & ML =====
 textblob>=0.17.1,<0.18.0
+transformers>=4.35.0,<5.0.0
+torch>=2.0.0,<3.0.0
+googletrans==4.0.0rc1
 
 # ===== HTTP Client =====
 httpx>=0.26.0,<0.29.0

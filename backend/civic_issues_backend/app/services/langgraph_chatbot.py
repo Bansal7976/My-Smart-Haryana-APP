@@ -19,83 +19,86 @@ from .agents.gemini_agent import GeminiAgent
 logger = logging.getLogger(__name__)
 
 class AgentState(TypedDict):
-    """State for the multi-agent graph"""
+    """State shared between all agents"""
     query: str
-    chat_history: List[Dict[str, Any]]
     user_id: int
     user_district: str
-    db_session: Any
-    
-    # Agent results
+    db_session: AsyncSession
+    chat_history: List[Dict[str, str]]
+    preferred_language: str
     rag_result: Dict[str, Any]
     db_result: Dict[str, Any]
     web_result: Dict[str, Any]
-    
-    # Final response
     final_response: str
     agent_used: str
     metadata: Dict[str, Any]
 
-
 class LangGraphChatbot:
     """
-    LangGraph-based chatbot with intelligent routing:
-    Query → Check RAG → Check Database → Web Search → Gemini Generation
+    Multi-Agent Chatbot using LangGraph for orchestration.
+    
+    Agent Priority:
+    1. Analytics Agent (Database queries for stats, user data)
+    2. RAG Agent (Knowledge base search)
+    3. Web Search Agent (External information)
+    4. Gemini Agent (Fallback for general queries)
     """
     
     def __init__(self):
-        # Initialize agents
-        self.rag_agent = RAGAgent(
-            google_api_key=settings.GOOGLE_API_KEY,
-            pinecone_api_key=settings.PINECONE_API_KEY,
-            index_name=settings.PINECONE_INDEX_NAME
-        )
-        self.web_agent = WebSearchAgent(tavily_api_key=settings.TAVILY_API_KEY)
-        self.analytics_agent = AnalyticsAgent()
-        self.gemini_agent = GeminiAgent(
-            google_api_key=settings.GOOGLE_API_KEY,
-            model=settings.CHATBOT_MODEL,
-            temperature=settings.CHATBOT_TEMPERATURE
-        )
-        
-        # Build the graph
-        self.graph = self._build_graph()
-        logger.info("✅ LangGraph Chatbot initialized.")
+        # Initialize agents with error handling
+        try:
+            self.rag_agent = RAGAgent(
+                google_api_key=settings.GOOGLE_API_KEY,
+                pinecone_api_key=getattr(settings, 'PINECONE_API_KEY', '')
+            )
+        except Exception as e:
+            logger.warning(f"RAG Agent initialization failed: {e}")
+            self.rag_agent = None
+            
+        try:
+            self.web_agent = WebSearchAgent(
+                tavily_api_key=getattr(settings, 'TAVILY_API_KEY', '')
+            )
+        except Exception as e:
+            logger.warning(f"Web Search Agent initialization failed: {e}")
+            self.web_agent = None
+            
+        try:
+            self.analytics_agent = AnalyticsAgent()
+        except Exception as e:
+            logger.warning(f"Analytics Agent initialization failed: {e}")
+            self.analytics_agent = None
+            
+        try:
+            self.gemini_agent = GeminiAgent(
+                google_api_key=settings.GOOGLE_API_KEY,
+                model="gemini-2.5-flash",  # More stable model
+                temperature=0.7
+            )
+        except Exception as e:
+            logger.error(f"Gemini Agent initialization failed: {e}")
+            self.gemini_agent = None
+            
+        self.workflow = self._build_workflow()
     
-    def _build_graph(self) -> StateGraph:
+    def _build_workflow(self) -> StateGraph:
         """Build the LangGraph workflow"""
-        
-        # Define the graph
         workflow = StateGraph(AgentState)
         
         # Add nodes
-        workflow.add_node("rag_check", self._rag_node)
-        workflow.add_node("database_check", self._database_node)
+        workflow.add_node("rag_search", self._rag_node)
+        workflow.add_node("database_query", self._database_node)
         workflow.add_node("web_search", self._web_search_node)
         workflow.add_node("generate_response", self._generate_node)
         
         # Set entry point
-        workflow.set_entry_point("rag_check")
+        workflow.set_entry_point("rag_search")
         
-        # Add edges with conditional routing
-        workflow.add_conditional_edges(
-            "rag_check",
-            self._should_use_rag,
-            {
-                "use_rag": "generate_response", # Go to generate_response to enhance
-                "try_database": "database_check"
-            }
-        )
+        # Add edges
+        workflow.add_edge("rag_search", "database_query")
+        workflow.add_edge("database_query", "web_search")
         
-        workflow.add_conditional_edges(
-            "database_check",
-            self._should_use_database,
-            {
-                "use_database": "generate_response", # Go to generate_response to enhance
-                "try_web": "web_search"
-            }
-        )
-        
+        # Conditional edge from web_search
         workflow.add_conditional_edges(
             "web_search",
             self._should_use_web,
@@ -111,74 +114,98 @@ class LangGraphChatbot:
     
     async def _rag_node(self, state: AgentState) -> AgentState:
         """Check if RAG can answer the query"""
+        if not self.rag_agent:
+            state["rag_result"] = None
+            return state
+            
         context = {
             "chat_history": state["chat_history"],
             "user_district": state["user_district"]
         }
         
-        can_handle = await self.rag_agent.can_handle(state["query"], context)
-        
-        if can_handle:
-            result = await self.rag_agent.execute(
-                state["query"],
-                context,
-                state["db_session"],
-                state["user_id"]
-            )
-            # Check if docs were actually found
-            if result and result.get("metadata", {}).get("docs_retrieved", 0) > 0:
-                state["rag_result"] = result
+        try:
+            can_handle = await self.rag_agent.can_handle(state["query"], context)
+            
+            if can_handle:
+                result = await self.rag_agent.execute(
+                    state["query"],
+                    context,
+                    state["db_session"],
+                    state["user_id"]
+                )
+                # Check if docs were actually found
+                if result and result.get("metadata", {}).get("docs_retrieved", 0) > 0:
+                    state["rag_result"] = result
+                else:
+                    state["rag_result"] = None # RAG triggered but found no docs
             else:
-                state["rag_result"] = None # RAG triggered but found no docs
-        else:
+                state["rag_result"] = None
+        except Exception as e:
+            logger.warning(f"RAG node error: {e}")
             state["rag_result"] = None
         
         return state
     
     async def _database_node(self, state: AgentState) -> AgentState:
         """Check if database analytics can answer"""
+        if not self.analytics_agent:
+            state["db_result"] = None
+            return state
+            
         context = {
             "chat_history": state["chat_history"],
             "user_district": state["user_district"]
         }
         
-        can_handle = await self.analytics_agent.can_handle(state["query"], context)
-        
-        if can_handle:
-            result = await self.analytics_agent.execute(
-                state["query"],
-                context,
-                state["db_session"],
-                state["user_id"]
-            )
-            state["db_result"] = result
-        else:
+        try:
+            can_handle = await self.analytics_agent.can_handle(state["query"], context)
+            
+            if can_handle:
+                result = await self.analytics_agent.execute(
+                    state["query"],
+                    context,
+                    state["db_session"],
+                    state["user_id"]
+                )
+                state["db_result"] = result
+            else:
+                state["db_result"] = None
+        except Exception as e:
+            logger.warning(f"Database node error: {e}")
             state["db_result"] = None
         
         return state
     
     async def _web_search_node(self, state: AgentState) -> AgentState:
         """Perform web search if needed"""
+        if not self.web_agent:
+            state["web_result"] = None
+            return state
+            
         context = {
             "chat_history": state["chat_history"],
             "user_district": state["user_district"]
         }
         
-        can_handle = await self.web_agent.can_handle(state["query"], context)
-        
-        if can_handle:
-            result = await self.web_agent.execute(
-                state["query"],
-                context,
-                state["db_session"],
-                state["user_id"]
-            )
-            # Check if results were found
-            if result and result.get("metadata", {}).get("results_count", 0) > 0:
-                state["web_result"] = result
+        try:
+            can_handle = await self.web_agent.can_handle(state["query"], context)
+            
+            if can_handle:
+                result = await self.web_agent.execute(
+                    state["query"],
+                    context,
+                    state["db_session"],
+                    state["user_id"]
+                )
+                # Check if results were found
+                if result and result.get("metadata", {}).get("results_count", 0) > 0:
+                    state["web_result"] = result
+                else:
+                    state["web_result"] = None # Web search triggered but found no results
             else:
-                state["web_result"] = None # Web search triggered but found no results
-        else:
+                state["web_result"] = None
+        except Exception as e:
+            logger.warning(f"Web search node error: {e}")
             state["web_result"] = None
         
         return state
@@ -200,137 +227,92 @@ class LangGraphChatbot:
             context_to_enhance = state["db_result"]["response"]
             agent_used = "analytics"
             metadata = state["db_result"].get("metadata", {})
-            
-        # Priority 2: RAG - Use if good confidence
-        elif state.get("rag_result") and state["rag_result"].get("response"):
-            rag_confidence = state["rag_result"].get("metadata", {}).get("confidence", 0)
-            if rag_confidence >= 0.6:
-                logger.info(f"✅ Using RAG result (confidence: {rag_confidence:.2f})")
-                context_to_enhance = state["rag_result"]["response"]
-                agent_used = "rag_enhanced"
-                metadata = state["rag_result"].get("metadata", {})
-            else:
-                logger.info(f"⚠️ RAG confidence too low ({rag_confidence:.2f}), trying other sources")
-                
-        # Priority 3: Web Search - Use if results found
-        if not context_to_enhance and state.get("web_result") and state["web_result"].get("response"):
-            results_count = state["web_result"].get("metadata", {}).get("results_count", 0)
-            if results_count > 0:
-                logger.info(f"✅ Using Web Search result ({results_count} results)")
-                context_to_enhance = state["web_result"]["response"]
-                agent_used = "web_search_enhanced"
-                metadata = state["web_result"].get("metadata", {})
-            
-        # Generate final response
-        if context_to_enhance:
-            # Enhance with Gemini for conversational polish
-            final_response = await self.gemini_agent.generate_with_context(
-                query,
-                context_to_enhance
-            )
-            metadata["enhanced_by_gemini"] = True
-        else:
-            # Priority 4: Pure Gemini fallback
-            logger.info("🤖 No context available, using pure Gemini")
-            context = {
-                "chat_history": state["chat_history"],
-                "user_district": state["user_district"]
-            }
-            
-            gemini_result = await self.gemini_agent.execute(
-                query,
-                context,
-                state["db_session"],
-                state["user_id"]
-            )
-            
-            final_response = gemini_result["response"]
-            agent_used = "gemini_fallback"
-            metadata = gemini_result.get("metadata", {})
         
-        # Add routing information to metadata
-        metadata["routing_info"] = {
-            "rag_available": bool(state.get("rag_result")),
-            "db_available": bool(state.get("db_result")),
-            "web_available": bool(state.get("web_result")),
-            "final_agent": agent_used
+        # Priority 2: RAG - Use if analytics didn't provide answer
+        elif state.get("rag_result") and state["rag_result"].get("response"):
+            logger.info("✅ Using RAG result (second priority)")
+            context_to_enhance = state["rag_result"]["response"]
+            agent_used = "rag"
+            metadata = state["rag_result"].get("metadata", {})
+        
+        # Priority 3: Web Search - Use if RAG didn't provide answer
+        elif state.get("web_result") and state["web_result"].get("response"):
+            logger.info("✅ Using Web Search result (third priority)")
+            context_to_enhance = state["web_result"]["response"]
+            agent_used = "web_search"
+            metadata = state["web_result"].get("metadata", {})
+        
+        # Priority 4: Pure Gemini - Fallback
+        else:
+            logger.info("🤖 Using pure Gemini (fallback)")
+            agent_used = "gemini"
+        
+        # Generate enhanced response using Gemini
+        context = {
+            "chat_history": state["chat_history"],
+            "user_district": state["user_district"],
+            "retrieved_context": context_to_enhance,
+            "preferred_language": state["preferred_language"]
         }
         
-        state["final_response"] = final_response
-        state["agent_used"] = agent_used
-        state["metadata"] = metadata
+        if self.gemini_agent:
+            try:
+                gemini_result = await self.gemini_agent.execute(
+                    query,
+                    context,
+                    state["db_session"],
+                    state["user_id"]
+                )
+                
+                state["final_response"] = gemini_result["response"]
+                state["agent_used"] = agent_used
+                state["metadata"] = {
+                    **metadata,
+                    **gemini_result.get("metadata", {}),
+                    "primary_agent": agent_used
+                }
+            except Exception as e:
+                logger.error(f"Gemini agent error: {e}")
+                state["final_response"] = "I'm sorry, I'm having trouble processing your request right now. Please try again later."
+                state["agent_used"] = "error"
+                state["metadata"] = {"error": str(e)}
+        else:
+            state["final_response"] = "I'm sorry, the AI service is currently unavailable. Please try again later."
+            state["agent_used"] = "unavailable"
+            state["metadata"] = {"error": "Gemini agent not available"}
         
         return state
     
-    def _should_use_rag(self, state: AgentState) -> str:
-        """Decide if RAG result is good enough with confidence scoring"""
-        rag_result = state.get("rag_result")
-        if rag_result and rag_result.get("response"):
-            # Check confidence score
-            confidence = rag_result.get("metadata", {}).get("confidence", 0)
-            avg_score = rag_result.get("metadata", {}).get("avg_score", 0)
-            docs_retrieved = rag_result.get("metadata", {}).get("docs_retrieved", 0)
-            
-            # Use RAG if we have good confidence OR good similarity scores OR multiple docs
-            if confidence >= 0.6 or avg_score >= 0.4 or docs_retrieved >= 2:
-                logger.info(f"Using RAG: confidence={confidence:.2f}, avg_score={avg_score:.2f}, docs={docs_retrieved}")
-                return "use_rag"
-            else:
-                logger.info(f"RAG low confidence: confidence={confidence:.2f}, avg_score={avg_score:.2f}, docs={docs_retrieved}")
-        
-        return "try_database"
-    
-    def _should_use_database(self, state: AgentState) -> str:
-        """Decide if database result is good enough"""
-        db_result = state.get("db_result")
-        if db_result and db_result.get("response"):
-            # Analytics results are always high confidence
-            logger.info("Using Analytics/Database result")
-            return "use_database"
-        return "try_web"
-    
     def _should_use_web(self, state: AgentState) -> str:
-        """Decide if web search found results"""
-        web_result = state.get("web_result")
-        if web_result and web_result.get("response"):
-            results_count = web_result.get("metadata", {}).get("results_count", 0)
-            if results_count > 0:
-                logger.info(f"Using Web Search: {results_count} results found")
-                return "use_web"
-        
-        logger.info("Falling back to pure Gemini")
-        return "use_gemini"
+        """Decide whether to use web search results or fallback to Gemini"""
+        # Always proceed to generate_response - the logic is handled there
+        return "use_web" if state.get("web_result") else "use_gemini"
     
     async def process_message(
         self,
         db: AsyncSession,
         user: models.User,
         message: str,
-        session_id: str = None
+        session_id: str = None,
+        preferred_language: str = "en"
     ) -> Dict[str, Any]:
         """
-        Process user message through LangGraph workflow
+        Process user message through the multi-agent workflow.
         """
-        
-        # Generate session ID if not provided
         if not session_id:
             session_id = str(uuid.uuid4())
         
         # Get chat history
         chat_history = await self._get_chat_history(db, user.id, session_id)
         
-        # Save user message
-        await self._save_message(
-            db, user.id, session_id, "user", message, None, None
-        )
-        
-        # Prepare initial state
+        # Initialize state
         initial_state: AgentState = {
             "query": message,
-            "chat_history": chat_history,
             "user_id": user.id,
-            "user_district": user.district or "Unknown",
+            "user_district": user.district,
             "db_session": db,
+            "chat_history": chat_history,
+            "preferred_language": preferred_language,
             "rag_result": None,
             "db_result": None,
             "web_result": None,
@@ -340,129 +322,147 @@ class LangGraphChatbot:
         }
         
         try:
-            # Run through graph
-            final_state = await self.graph.ainvoke(initial_state)
+            # Run the workflow
+            final_state = await self.workflow.ainvoke(initial_state)
             
-            # Save assistant response
-            await self._save_message(
-                db,
-                user.id,
-                session_id,
-                "assistant",
-                final_state["final_response"],
-                final_state["agent_used"],
-                json.dumps(final_state["metadata"], default=str) # Use default=str for non-serializable items
+            # Save conversation to database
+            await self._save_conversation(
+                db, user.id, session_id, message, 
+                final_state["final_response"], final_state["agent_used"]
             )
             
             return {
-                "response": final_state["final_response"],
+                "response": final_state["final_response"],  # Changed from "message" to "response"
                 "session_id": session_id,
-                "agent_used": final_state["agent_used"],
+                "agent_used": final_state["agent_used"],    # Changed from "agent_type" to "agent_used"
                 "metadata": final_state["metadata"]
             }
+            
         except Exception as e:
-            logger.error(f"❌ Error in LangGraph processing: {e}", exc_info=True)
-            error_response = "I'm sorry, I encountered an unexpected error. Please try again."
-            # Save error response to history
-            await self._save_message(
-                db,
-                user.id,
-                session_id,
-                "assistant",
-                error_response,
-                "error",
-                json.dumps({"error": str(e)})
+            logger.error(f"LangGraph workflow error: {str(e)}")
+            
+            # Fallback to simple Gemini response
+            if self.gemini_agent:
+                try:
+                    fallback_result = await self.gemini_agent.execute(
+                        message,
+                        {"chat_history": chat_history, "user_district": user.district},
+                        db,
+                        user.id
+                    )
+                    
+                    await self._save_conversation(
+                        db, user.id, session_id, message,
+                        fallback_result["response"], "gemini_fallback"
+                    )
+                    
+                    return {
+                        "response": fallback_result["response"],  # Changed from "message" to "response"
+                        "session_id": session_id,
+                        "agent_used": "gemini_fallback",          # Changed from "agent_type" to "agent_used"
+                        "metadata": {"error": str(e)}
+                    }
+                except Exception as gemini_error:
+                    logger.error(f"Gemini fallback also failed: {gemini_error}")
+            
+            # Final fallback - simple response
+            simple_response = "I'm sorry, I'm experiencing technical difficulties. Please try again later or contact support."
+            
+            await self._save_conversation(
+                db, user.id, session_id, message,
+                simple_response, "error_fallback"
             )
+            
             return {
-                "response": error_response,
+                "response": simple_response,     # Changed from "message" to "response"
                 "session_id": session_id,
-                "agent_used": "error",
+                "agent_used": "error_fallback",  # Changed from "agent_type" to "agent_used"
                 "metadata": {"error": str(e)}
             }
-
     
     async def _get_chat_history(
-        self,
-        db: AsyncSession,
-        user_id: int,
-        session_id: str
+        self, 
+        db: AsyncSession, 
+        user_id: int, 
+        session_id: str, 
+        limit: int = 10
     ) -> List[Dict[str, str]]:
-        """Retrieve chat history"""
+        """Get recent chat history for context"""
         query = select(models.ChatHistory).where(
             models.ChatHistory.user_id == user_id,
             models.ChatHistory.session_id == session_id
-        ).order_by(
-            models.ChatHistory.created_at.asc()
-        ).limit(settings.MAX_CHAT_HISTORY * 2) # Get pairs
+        ).order_by(desc(models.ChatHistory.created_at)).limit(limit * 2)  # Get more to account for pairs
         
         result = await db.execute(query)
         history = result.scalars().all()
         
-        return [
-            {
-                "role": h.role,
-                "message": h.message,
-                "agent_type": h.agent_type,
-                "timestamp": h.created_at.isoformat()
-            }
-            for h in history
-        ]
+        # Convert to format expected by agents
+        formatted_history = []
+        for chat in reversed(history):  # Reverse to get chronological order
+            formatted_history.append({
+                "role": chat.role,
+                "message": chat.message,
+                "timestamp": chat.created_at.isoformat()
+            })
+        
+        return formatted_history[-limit:] if len(formatted_history) > limit else formatted_history
     
-    async def _save_message(
+    async def _save_conversation(
         self,
         db: AsyncSession,
         user_id: int,
         session_id: str,
-        role: str,
-        message: str,
-        agent_type: str = None,
-        metadata_json: str = None
+        user_message: str,
+        bot_response: str,
+        agent_type: str
     ):
-        """Save message to chat history"""
-        chat_message = models.ChatHistory(
+        """Save conversation to database"""
+        # Save user message
+        user_chat = models.ChatHistory(
             user_id=user_id,
             session_id=session_id,
-            role=role,
-            message=message,
-            agent_type=agent_type,
-            metadata_json=metadata_json
+            role="user",
+            message=user_message,
+            agent_type="user"
         )
-        db.add(chat_message)
+        db.add(user_chat)
+        
+        # Save bot response
+        bot_chat = models.ChatHistory(
+            user_id=user_id,
+            session_id=session_id,
+            role="assistant",
+            message=bot_response,
+            agent_type=agent_type
+        )
+        db.add(bot_chat)
+        
         await db.commit()
     
-    async def get_user_sessions(
-        self,
-        db: AsyncSession,
-        user_id: int,
-        limit: int = 10
-    ) -> List[Dict[str, Any]]:
+    async def get_user_sessions(self, db: AsyncSession, user_id: int) -> List[Dict[str, Any]]:
         """Get user's chat sessions"""
         query = select(
             models.ChatHistory.session_id,
-            func.min(models.ChatHistory.created_at).label("started_at"),
-            func.max(models.ChatHistory.created_at).label("last_message_at"),
-            func.count(models.ChatHistory.id).label("message_count")
+            func.max(models.ChatHistory.created_at).label('last_message'),
+            func.count(models.ChatHistory.id).label('message_count')
         ).where(
             models.ChatHistory.user_id == user_id
         ).group_by(
             models.ChatHistory.session_id
-        ).order_by(
-            desc("last_message_at")
-        ).limit(limit)
+        ).order_by(desc('last_message'))
         
         result = await db.execute(query)
         sessions = result.all()
         
         return [
             {
-                "session_id": s.session_id,
-                "started_at": s.started_at.isoformat(),
-                "last_message_at": s.last_message_at.isoformat(),
-                "message_count": s.message_count
+                "session_id": session.session_id,
+                "last_message_time": session.last_message.isoformat(),
+                "message_count": session.message_count,
+                "title": f"Chat {session.session_id[:8]}..."
             }
-            for s in sessions
+            for session in sessions
         ]
 
-
-# Global instance
+# Create global chatbot instance
 chatbot = LangGraphChatbot()

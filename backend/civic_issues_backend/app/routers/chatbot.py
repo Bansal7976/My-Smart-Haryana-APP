@@ -21,12 +21,14 @@ async def chat_with_bot(
     - Provide statistics about cities and issue resolution
     - Help with platform usage
     - Answer general questions
+    - Support multiple languages (English, Hindi, Punjabi)
     """
     result = await chatbot.process_message(
         db=db,
         user=current_user,
         message=chat_request.message,
-        session_id=chat_request.session_id
+        session_id=chat_request.session_id,
+        preferred_language=chat_request.preferred_language
     )
     
     return schemas.ChatResponse(**result)

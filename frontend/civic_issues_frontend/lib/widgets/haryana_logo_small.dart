@@ -17,17 +17,33 @@ class HaryanaLogoSmall extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: color ?? AppColors.primary,
         borderRadius: BorderRadius.circular(size / 4),
       ),
-      child: Icon(
-        Icons.location_city,
-        size: size * 0.6,
-        color: Colors.white,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(size / 4),
+        child: Image.asset(
+          'assets/images/haryana_logo.jpg',
+          width: size,
+          height: size,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) {
+            // Fallback to icon if image not found
+            return Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                color: color ?? AppColors.primary,
+                borderRadius: BorderRadius.circular(size / 4),
+              ),
+              child: Icon(
+                Icons.location_city,
+                size: size * 0.6,
+                color: Colors.white,
+              ),
+            );
+          },
+        ),
       ),
     );
   }
 }
-
-
-

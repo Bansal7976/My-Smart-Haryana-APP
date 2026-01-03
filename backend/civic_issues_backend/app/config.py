@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     GOOGLE_API_KEY: str = ""  # For Gemini LLM (required for AI features)
     TAVILY_API_KEY: str = ""  # For web search (optional)
     PINECONE_API_KEY: str = ""  # For Pinecone vector database (optional, but recommended for RAG)
-    CHATBOT_MODEL: str = "gemini-2.5-flash"  # Updated model (gemini-pro is deprecated)
+    CHATBOT_MODEL: str = "gemini-2.5-flash"  # Stable model
     CHATBOT_TEMPERATURE: float = 0.7
     MAX_CHAT_HISTORY: int = 10
     
@@ -47,6 +47,14 @@ class Settings(BaseSettings):
     
     # Firebase Push Notifications (optional)
     FIREBASE_CREDENTIALS_PATH: str = ""  # Path to Firebase service account JSON file
+    
+    # Email Notifications (optional)
+    SMTP_HOST: str = ""  # e.g., smtp.gmail.com
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""  # Your email
+    SMTP_PASSWORD: str = ""  # Your email password or app password
+    SMTP_FROM_EMAIL: str = ""  # From email address
+    SMTP_USE_TLS: bool = True
     
     # Environment
     ENVIRONMENT: str = "development"

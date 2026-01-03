@@ -60,6 +60,10 @@ class User(UserBase):
     id: int
     role: RoleEnum
     is_active: bool
+    civic_points: int = 0
+    issues_reported: int = 0
+    issues_verified: int = 0
+    created_at: datetime
     class Config:
         from_attributes = True
 
@@ -77,6 +81,15 @@ class SuperAdminCreateAdmin(UserBase):
 class UserChangePassword(BaseModel):
     old_password: str
     new_password: str = Field(..., min_length=8)
+
+class WorkerWithProfile(BaseModel):
+    id: int  # Worker profile ID
+    user: User
+    department: Department
+    daily_task_count: int = 0
+    
+    class Config:
+        from_attributes = True
 
 # --- Media Schemas ---
 class MediaBase(BaseModel):
@@ -111,6 +124,7 @@ class Feedback(FeedbackBase):
     problem_id: int
     user_id: int
     sentiment: Optional[str] = None
+    sentiment_confidence: Optional[float] = None
     class Config:
         from_attributes = True
 
@@ -282,6 +296,7 @@ class WorkerPerformanceStats(BaseModel):
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=2000)
     session_id: Optional[str] = Field(None, max_length=100)
+    preferred_language: Optional[str] = Field(None, description="Preferred language code (en, hi, pa)")
     
     @field_validator('message')
     @classmethod
@@ -295,6 +310,16 @@ class ChatRequest(BaseModel):
         for pattern in dangerous_patterns:
             if pattern in v_lower:
                 raise ValueError('Invalid characters in message')
+        return v
+    
+    @field_validator('preferred_language')
+    @classmethod
+    def validate_language(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        valid_languages = ['en', 'hi', 'pa']
+        if v not in valid_languages:
+            raise ValueError(f'Language must be one of: {valid_languages}')
         return v
 
 class ChatResponse(BaseModel):

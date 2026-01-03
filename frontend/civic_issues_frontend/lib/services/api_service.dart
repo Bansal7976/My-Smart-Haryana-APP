@@ -8,7 +8,7 @@ import 'package:http_parser/http_parser.dart' as http_parser;
 class ApiService {
   // For mobile: Replace 192.168.1.100 with YOUR computer's IP address from ipconfig
   // For web: Use http://127.0.0.1:8000
-  static const String baseUrl = 'http://192.168.1.12:8000'; // CHANGE THIS IP!
+  static const String baseUrl = 'http://192.168.1.3:8000'; // CHANGE THIS IP!
 
   static Map<String, String> get _headers => {
         'Content-Type': 'application/json',
@@ -295,331 +295,57 @@ class ApiService {
     }
   }
 
-  // Worker APIs
-  static Future<List<Map<String, dynamic>>> getAssignedTasks(
-      String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/worker/tasks'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> tasks = jsonDecode(response.body);
-        return tasks.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception(
-            'Failed to fetch assigned tasks: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Get assigned tasks error: $e');
-      }
-      throw Exception('Failed to fetch assigned tasks: $e');
-    }
-  }
-
-  static Future<Map<String, dynamic>> completeTask(
+  // Leaderboard APIs
+  static Future<Map<String, dynamic>> getDistrictLeaderboard(
     String token,
-    String taskId,
-    File proofImage,
-    double latitude,
-    double longitude,
-  ) async {
-    try {
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$baseUrl/worker/tasks/$taskId/complete'),
-      );
-
-      // Add headers
-      request.headers.addAll(_getAuthHeaders(token));
-
-      // Add GPS location as form fields (REQUIRED for verification)
-      request.fields['latitude'] = latitude.toString();
-      request.fields['longitude'] = longitude.toString();
-
-      // Add proof image
-      if (kIsWeb) {
-        // For web, use simplified approach
-        try {
-          final bytes = await proofImage.readAsBytes();
-          final filename = 'proof_${DateTime.now().millisecondsSinceEpoch}.jpg';
-          request.files.add(
-            http.MultipartFile.fromBytes(
-              'proof_file',
-              bytes,
-              filename: filename,
-            ),
-          );
-        } catch (e) {
-          // Fallback approach for web
-          try {
-            final filename =
-                'proof_${DateTime.now().millisecondsSinceEpoch}.jpg';
-            final bytes = await proofImage.readAsBytes();
-
-            request.files.add(
-              http.MultipartFile.fromBytes(
-                'proof_file',
-                bytes,
-                filename: filename,
-              ),
-            );
-          } catch (e2) {
-            // Last resort
-            try {
-              final filename =
-                  'proof_${DateTime.now().millisecondsSinceEpoch}.jpg';
-              final bytes = await proofImage.readAsBytes();
-
-              final multipartFile = http.MultipartFile.fromBytes(
-                'proof_file',
-                bytes,
-                filename: filename,
-              );
-              request.files.add(multipartFile);
-            } catch (e3) {
-              throw Exception(
-                  'Unable to process the proof image for web upload. Please try selecting a different image.');
-            }
-          }
-        }
-      } else {
-        // For mobile/desktop, use the file path
-        request.files.add(
-          await http.MultipartFile.fromPath('proof_file', proofImage.path),
-        );
-      }
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        final error = jsonDecode(response.body);
-        // GPS verification errors will show distance details
-        throw Exception(error['detail'] ?? 'Failed to complete task');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Complete task error: $e');
-      }
-      throw Exception('Failed to complete task: $e');
-    }
-  }
-
-  static Future<Map<String, dynamic>> getWorkerStats(String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/worker/me/stats'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception('Failed to fetch worker stats: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Get worker stats error: $e');
-      }
-      throw Exception('Failed to fetch worker stats: $e');
-    }
-  }
-
-  // Admin APIs
-  static Future<Map<String, dynamic>> getAdminStats(String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/admin/analytics/stats'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception('Failed to fetch admin stats: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Get admin stats error: $e');
-      }
-      throw Exception('Failed to fetch admin stats: $e');
-    }
-  }
-
-  static Future<List<Map<String, dynamic>>> getAllProblems(String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/admin/problems'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> problems = jsonDecode(response.body);
-        return problems.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception('Failed to fetch all problems: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Get all problems error: $e');
-      }
-      throw Exception('Failed to fetch all problems: $e');
-    }
-  }
-
-  static Future<List<Map<String, dynamic>>> getAllWorkers(String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/admin/workers'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> workers = jsonDecode(response.body);
-        return workers.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception('Failed to fetch workers: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Get workers error: $e');
-      }
-      throw Exception('Failed to fetch workers: $e');
-    }
-  }
-
-  static Future<Map<String, dynamic>> createWorker(
-    String token,
-    Map<String, dynamic> workerData,
-  ) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/admin/workers'),
-        headers: _getAuthHeaders(token),
-        body: jsonEncode(workerData),
-      );
-
-      if (response.statusCode == 201) {
-        return jsonDecode(response.body);
-      } else {
-        final error = jsonDecode(response.body);
-        throw Exception(error['detail'] ?? 'Failed to create worker');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Create worker error: $e');
-      }
-      throw Exception('Failed to create worker: $e');
-    }
-  }
-
-  static Future<List<Map<String, dynamic>>> getAllDepartments(
-      String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/admin/departments'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> departments = jsonDecode(response.body);
-        return departments.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception('Failed to fetch departments: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Get departments error: $e');
-      }
-      throw Exception('Failed to fetch departments: $e');
-    }
-  }
-
-  static Future<Map<String, dynamic>> createDepartment(
-    String token,
-    String name,
-  ) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/admin/departments'),
-        headers: _getAuthHeaders(token),
-        body: jsonEncode({'name': name}),
-      );
-
-      if (response.statusCode == 201) {
-        return jsonDecode(response.body);
-      } else {
-        final error = jsonDecode(response.body);
-        throw Exception(error['detail'] ?? 'Failed to create department');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Create department error: $e');
-      }
-      throw Exception('Failed to create department: $e');
-    }
-  }
-
-  // Super Admin APIs
-  static Future<List<Map<String, dynamic>>> getAllAdmins(String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/super-admin/admins'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> admins = jsonDecode(response.body);
-        return admins.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception('Failed to fetch admins: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Get admins error: $e');
-      }
-      throw Exception('Failed to fetch admins: $e');
-    }
-  }
-
-  /// Create a new admin user
-  static Future<Map<String, dynamic>> createAdmin(
-    String token, {
-    required String fullName,
-    required String email,
-    required String password,
-    required String district,
-    String? pincode,
+    String district, {
+    int limit = 10,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/super-admin/create-admin'),
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/leaderboard/district/$district?limit=$limit'),
         headers: _getAuthHeaders(token),
-        body: jsonEncode({
-          'full_name': fullName,
-          'email': email,
-          'password': password,
-          'district': district,
-          'pincode': pincode,
-        }),
       );
 
-      if (response.statusCode == 201) {
+      if (response.statusCode == 200) {
         return jsonDecode(response.body);
+      } else if (response.statusCode == 401) {
+        throw Exception('Authentication required');
+      } else if (response.statusCode == 404) {
+        throw Exception('District not found');
       } else {
-        final error = jsonDecode(response.body);
-        throw Exception(error['detail'] ?? 'Failed to create admin');
+        throw Exception('Failed to load district leaderboard');
       }
     } catch (e) {
-      if (kDebugMode) {
-        print('Create admin error: $e');
+      if (e is SocketException) {
+        throw Exception('Network error. Please check your connection.');
       }
-      throw Exception('Failed to create admin: $e');
+      rethrow;
+    }
+  }
+
+  static Future<Map<String, dynamic>> getStateLeaderboard(
+    String token, {
+    int limit = 50,
+  }) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/users/leaderboard/state?limit=$limit'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else if (response.statusCode == 401) {
+        throw Exception('Authentication required');
+      } else {
+        throw Exception('Failed to load state leaderboard');
+      }
+    } catch (e) {
+      if (e is SocketException) {
+        throw Exception('Network error. Please check your connection.');
+      }
+      rethrow;
     }
   }
 
@@ -646,112 +372,27 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> getClientDistrictDetails(
-      String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/users/dashboard/my-district/details'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception(
-            'Failed to fetch district details: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Get district details error: $e');
-      }
-      throw Exception('Failed to fetch district details: $e');
-    }
-  }
-
-  static Future<Map<String, dynamic>> getHaryanaStats(String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/users/dashboard/haryana-overview'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception(
-            'Failed to fetch Haryana stats: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Get Haryana stats error: $e');
-      }
-      throw Exception('Failed to fetch Haryana stats: $e');
-    }
-  }
-
-  // Issue Actions
-  static Future<Map<String, dynamic>> verifyIssueCompletion(
-      String token, String issueId) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/users/issues/$issueId/verify'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        final error = jsonDecode(response.body);
-        throw Exception(error['detail'] ?? 'Failed to verify issue completion');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Verify issue completion error: $e');
-      }
-      throw Exception('Failed to verify issue completion: $e');
-    }
-  }
-
-  static Future<Map<String, dynamic>> submitFeedback(
-    String token,
-    String issueId,
-    Map<String, dynamic> feedbackData,
-  ) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/users/issues/$issueId/feedback'),
-        headers: _getAuthHeaders(token),
-        body: jsonEncode(feedbackData),
-      );
-
-      if (response.statusCode == 201) {
-        return jsonDecode(response.body);
-      } else {
-        final error = jsonDecode(response.body);
-        throw Exception(error['detail'] ?? 'Failed to submit feedback');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Submit feedback error: $e');
-      }
-      throw Exception('Failed to submit feedback: $e');
-    }
-  }
-
   // AI Chatbot API
   static Future<Map<String, dynamic>> chatWithBot(
     String token,
     String message, {
     String? sessionId,
+    String? preferredLanguage,
   }) async {
     try {
+      final body = {
+        'message': message,
+        'session_id': sessionId,
+      };
+
+      if (preferredLanguage != null) {
+        body['preferred_language'] = preferredLanguage;
+      }
+
       final response = await http.post(
         Uri.parse('$baseUrl/chatbot/chat'),
         headers: _getAuthHeaders(token),
-        body: jsonEncode({
-          'message': message,
-          'session_id': sessionId,
-        }),
+        body: jsonEncode(body),
       );
 
       if (response.statusCode == 200) {
@@ -767,389 +408,7 @@ class ApiService {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> getChatSessions(
-      String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/chatbot/sessions'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> sessions = jsonDecode(response.body);
-        return sessions.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception(
-            'Failed to fetch chat sessions: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Get chat sessions error: $e');
-      }
-      throw Exception('Failed to fetch chat sessions: $e');
-    }
-  }
-
-  static Future<List<Map<String, dynamic>>> getChatHistory(
-    String token,
-    String sessionId,
-  ) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/chatbot/history/$sessionId'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> history = jsonDecode(response.body);
-        return history.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception('Failed to fetch chat history: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Get chat history error: $e');
-      }
-      throw Exception('Failed to fetch chat history: $e');
-    }
-  }
-
-  // Voice-to-Text APIs
-  static Future<Map<String, dynamic>> convertVoiceToText(
-    String token,
-    File audioFile, {
-    String language = 'en-IN',
-  }) async {
-    try {
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$baseUrl/users/voice-to-text'),
-      );
-
-      // Add headers
-      request.headers.addAll(_getAuthHeaders(token));
-
-      // Add language
-      request.fields['language'] = language;
-
-      // Add audio file with explicit content type
-      if (kIsWeb) {
-        final bytes = await audioFile.readAsBytes();
-        final filename = 'audio_${DateTime.now().millisecondsSinceEpoch}.webm';
-        request.files.add(
-          http.MultipartFile.fromBytes(
-            'audio_file',
-            bytes,
-            filename: filename,
-            contentType: http_parser.MediaType('audio', 'webm'),
-          ),
-        );
-      } else {
-        // Determine content type from file extension
-        final extension = audioFile.path.split('.').last.toLowerCase();
-        final contentType = _getAudioContentType(extension);
-
-        request.files.add(
-          await http.MultipartFile.fromPath(
-            'audio_file',
-            audioFile.path,
-            contentType: contentType,
-          ),
-        );
-      }
-
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        final error = jsonDecode(response.body);
-        throw Exception(error['detail'] ?? 'Failed to convert voice to text');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Voice-to-text error: $e');
-      }
-      throw Exception('Failed to convert voice to text: $e');
-    }
-  }
-
-  static Future<Map<String, dynamic>> getSupportedLanguages(
-      String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/users/voice-to-text/languages'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception(
-            'Failed to fetch supported languages: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Get supported languages error: $e');
-      }
-      throw Exception('Failed to fetch supported languages: $e');
-    }
-  }
-
-  // ========== SUPER ADMIN APIs ==========
-
-  /// Get Haryana overview (super admin analytics)
-  static Future<Map<String, dynamic>> getSuperAdminOverview(
-      String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/super-admin/analytics/overview'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception(
-            'Failed to fetch super admin overview: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Get super admin overview error: $e');
-      }
-      throw Exception('Failed to fetch super admin overview: $e');
-    }
-  }
-
-  /// Get district-wise analytics
-  static Future<List<Map<String, dynamic>>> getDistrictAnalytics(
-      String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/super-admin/analytics/districts'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> stats = jsonDecode(response.body);
-        return stats.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception(
-            'Failed to fetch district analytics: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Get district analytics error: $e');
-      }
-      throw Exception('Failed to fetch district analytics: $e');
-    }
-  }
-
-  /// Get department-wise statistics
-  static Future<List<Map<String, dynamic>>> getDepartmentStats(
-      String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/super-admin/reports/department-stats'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> stats = jsonDecode(response.body);
-        return stats.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception(
-            'Failed to fetch department stats: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Get department stats error: $e');
-      }
-      throw Exception('Failed to fetch department stats: $e');
-    }
-  }
-
-  /// Get top performing workers
-  static Future<List<Map<String, dynamic>>> getTopWorkers(String token,
-      {int limit = 10}) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/super-admin/reports/top-workers?limit=$limit'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode == 200) {
-        final List<dynamic> workers = jsonDecode(response.body);
-        return workers.cast<Map<String, dynamic>>();
-      } else {
-        throw Exception('Failed to fetch top workers: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Get top workers error: $e');
-      }
-      throw Exception('Failed to fetch top workers: $e');
-    }
-  }
-
-  /// Deactivate an admin
-  static Future<void> deactivateAdmin(String token, int adminId) async {
-    try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/super-admin/admins/$adminId'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode != 204) {
-        final error = jsonDecode(response.body);
-        throw Exception(error['detail'] ?? 'Failed to deactivate admin');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Deactivate admin error: $e');
-      }
-      throw Exception('Failed to deactivate admin: $e');
-    }
-  }
-
-  /// Activate an admin
-  static Future<void> activateAdmin(String token, int adminId) async {
-    try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/super-admin/admins/$adminId/activate'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode != 204 && response.statusCode != 200) {
-        final error = jsonDecode(response.body);
-        throw Exception(error['detail'] ?? 'Failed to activate admin');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Activate admin error: $e');
-      }
-      throw Exception('Failed to activate admin: $e');
-    }
-  }
-
-  /// Deactivate a worker
-  static Future<void> deactivateWorker(String token, int workerId) async {
-    try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/admin/workers/$workerId'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode != 204 && response.statusCode != 200) {
-        final error = jsonDecode(response.body);
-        throw Exception(error['detail'] ?? 'Failed to deactivate worker');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Deactivate worker error: $e');
-      }
-      throw Exception('Failed to deactivate worker: $e');
-    }
-  }
-
-  /// Activate a worker
-  static Future<void> activateWorker(String token, int workerId) async {
-    try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/admin/workers/$workerId/activate'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode != 204 && response.statusCode != 200) {
-        final error = jsonDecode(response.body);
-        throw Exception(error['detail'] ?? 'Failed to activate worker');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Activate worker error: $e');
-      }
-      throw Exception('Failed to activate worker: $e');
-    }
-  }
-
-  /// Update feedback
-  static Future<Map<String, dynamic>> updateFeedback(
-    String token,
-    int feedbackId,
-    Map<String, dynamic> feedbackData,
-  ) async {
-    try {
-      final response = await http.put(
-        Uri.parse('$baseUrl/users/feedback/$feedbackId'),
-        headers: _getAuthHeaders(token),
-        body: jsonEncode(feedbackData),
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        final error = jsonDecode(response.body);
-        throw Exception(error['detail'] ?? 'Failed to update feedback');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Update feedback error: $e');
-      }
-      throw Exception('Failed to update feedback: $e');
-    }
-  }
-
-  /// Delete feedback
-  static Future<void> deleteFeedback(String token, int feedbackId) async {
-    try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/users/feedback/$feedbackId'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode != 204 && response.statusCode != 200) {
-        final error = jsonDecode(response.body);
-        throw Exception(error['detail'] ?? 'Failed to delete feedback');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Delete feedback error: $e');
-      }
-      throw Exception('Failed to delete feedback: $e');
-    }
-  }
-
-  // ========== ADMIN APIs ==========
-
-  /// Get admin analytics/dashboard stats
-  static Future<Map<String, dynamic>> getAdminAnalytics(String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/admin/analytics/stats'),
-        headers: _getAuthHeaders(token),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        // Add district info from user profile
-        final user = await getUserProfile(token);
-        return {
-          ...data,
-          'district': user['district'],
-        };
-      } else {
-        throw Exception(
-            'Failed to fetch admin analytics: ${response.statusCode}');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print('Get admin analytics error: $e');
-      }
-      throw Exception('Failed to fetch admin analytics: $e');
-    }
-  }
-
+  // Analytics APIs
   static Future<Map<String, dynamic>> getDailyTrends({
     required String token,
     required String startDate,
@@ -1204,14 +463,32 @@ class ApiService {
     required String endDate,
     String? district,
   }) async {
-    final url =
-        '$baseUrl/analytics/department-performance?start_date=$startDate&end_date=$endDate&district=${district ?? ""}';
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/admin/analytics/department-activity'),
+        headers: _getAuthHeaders(token),
+      );
 
-    final response =
-        await http.get(Uri.parse(url), headers: _getAuthHeaders(token));
+      if (kDebugMode) {
+        debugPrint(
+            'Department performance response status: ${response.statusCode}');
+        debugPrint('Department performance response body: ${response.body}');
+      }
 
-    if (response.statusCode == 200) return jsonDecode(response.body);
-    throw Exception("Failed to fetch department performance");
+      if (response.statusCode == 200) {
+        final List<dynamic> departments = jsonDecode(response.body);
+        return {'departments': departments};
+      } else if (response.statusCode == 403) {
+        throw Exception("Access denied. Admin role required.");
+      }
+      throw Exception(
+          "Failed to fetch department performance: ${response.statusCode}");
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Get department performance error: $e');
+      }
+      return {'departments': []};
+    }
   }
 
   static Future<Map<String, dynamic>> getWorkerPerformance({
@@ -1220,14 +497,38 @@ class ApiService {
     required String endDate,
     String? district,
   }) async {
-    final url =
-        '$baseUrl/analytics/worker-performance?start_date=$startDate&end_date=$endDate&district=${district ?? ""}';
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/super-admin/reports/top-workers?limit=50'),
+        headers: _getAuthHeaders(token),
+      );
 
-    final response =
-        await http.get(Uri.parse(url), headers: _getAuthHeaders(token));
-
-    if (response.statusCode == 200) return jsonDecode(response.body);
-    throw Exception("Failed to fetch worker performance");
+      if (response.statusCode == 200) {
+        final List<dynamic> workers = jsonDecode(response.body);
+        // Transform to match expected format
+        return {
+          'workers': workers
+              .map((worker) => {
+                    'worker_id': worker['worker_id'],
+                    'full_name': worker['worker_name'],
+                    'district': worker['district'],
+                    'department': worker['department'],
+                    'total_assigned': worker['total_tasks'],
+                    'completed': worker['completed_tasks'],
+                    'avg_rating': worker['average_rating'],
+                    'completion_rate': worker['completion_rate'],
+                  })
+              .toList(),
+        };
+      } else {
+        throw Exception('Failed to fetch worker performance');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Get worker performance error: $e');
+      }
+      throw Exception('Failed to fetch worker performance: $e');
+    }
   }
 
   static Future<Map<String, dynamic>> getIssueTypesDistribution({
@@ -1298,6 +599,777 @@ class ApiService {
       default:
         // Default to m4a for unknown extensions (common on mobile)
         return http_parser.MediaType('audio', 'm4a');
+    }
+  }
+
+  // Worker APIs
+  static Future<List<Map<String, dynamic>>> getAssignedTasks(
+      String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/worker/tasks'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> tasks = jsonDecode(response.body);
+        return tasks.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception(
+            'Failed to fetch assigned tasks: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Get assigned tasks error: $e');
+      }
+      throw Exception('Failed to fetch assigned tasks: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> completeTask(
+    String token,
+    String taskId,
+    File proofImage,
+    double latitude,
+    double longitude,
+  ) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/worker/tasks/$taskId/complete'),
+      );
+
+      // Add headers
+      request.headers.addAll(_getAuthHeaders(token));
+
+      // Add GPS location as form fields (REQUIRED for verification)
+      request.fields['latitude'] = latitude.toString();
+      request.fields['longitude'] = longitude.toString();
+
+      // Add proof image
+      if (kIsWeb) {
+        final bytes = await proofImage.readAsBytes();
+        final filename = 'proof_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'proof_file',
+            bytes,
+            filename: filename,
+          ),
+        );
+      } else {
+        request.files.add(
+          await http.MultipartFile.fromPath('proof_file', proofImage.path),
+        );
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to complete task');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Complete task error: $e');
+      }
+      throw Exception('Failed to complete task: $e');
+    }
+  }
+
+  // Admin APIs
+  static Future<List<Map<String, dynamic>>> getAllProblems(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/admin/problems'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> problems = jsonDecode(response.body);
+        return problems.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Failed to fetch all problems: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Get all problems error: $e');
+      }
+      throw Exception('Failed to fetch all problems: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getAdminAnalytics(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/admin/analytics/stats'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // Add district info from user profile
+        final user = await getUserProfile(token);
+        return {
+          ...data,
+          'district': user['district'],
+        };
+      } else {
+        throw Exception(
+            'Failed to fetch admin analytics: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Get admin analytics error: $e');
+      }
+      throw Exception('Failed to fetch admin analytics: $e');
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getAllDepartments(
+      String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/admin/departments'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> departments = jsonDecode(response.body);
+        return departments.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Failed to fetch departments: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Get departments error: $e');
+      }
+      throw Exception('Failed to fetch departments: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> createDepartment(
+    String token,
+    String name,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/admin/departments'),
+        headers: _getAuthHeaders(token),
+        body: jsonEncode({'name': name}),
+      );
+
+      if (response.statusCode == 201) {
+        return jsonDecode(response.body);
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to create department');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Create department error: $e');
+      }
+      throw Exception('Failed to create department: $e');
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getAllWorkers(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/admin/workers'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> workers = jsonDecode(response.body);
+        return workers.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Failed to fetch workers: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Get workers error: $e');
+      }
+      throw Exception('Failed to fetch workers: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> createWorker(
+    String token,
+    Map<String, dynamic> workerData,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/admin/workers'),
+        headers: _getAuthHeaders(token),
+        body: jsonEncode(workerData),
+      );
+
+      if (response.statusCode == 201) {
+        return jsonDecode(response.body);
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to create worker');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Create worker error: $e');
+      }
+      throw Exception('Failed to create worker: $e');
+    }
+  }
+
+  static Future<void> deactivateWorker(String token, int workerId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/admin/workers/$workerId'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode != 204 && response.statusCode != 200) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to deactivate worker');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Deactivate worker error: $e');
+      }
+      throw Exception('Failed to deactivate worker: $e');
+    }
+  }
+
+  static Future<void> activateWorker(String token, int workerId) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/admin/workers/$workerId/activate'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode != 204 && response.statusCode != 200) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to activate worker');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Activate worker error: $e');
+      }
+      throw Exception('Failed to activate worker: $e');
+    }
+  }
+
+  // Super Admin APIs
+  static Future<List<Map<String, dynamic>>> getAllAdmins(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/super-admin/admins'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> admins = jsonDecode(response.body);
+        return admins.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Failed to fetch admins: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Get admins error: $e');
+      }
+      throw Exception('Failed to fetch admins: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> createAdmin(
+    String token, {
+    required String fullName,
+    required String email,
+    required String password,
+    required String district,
+    String? pincode,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/super-admin/create-admin'),
+        headers: _getAuthHeaders(token),
+        body: jsonEncode({
+          'full_name': fullName,
+          'email': email,
+          'password': password,
+          'district': district,
+          'pincode': pincode,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        return jsonDecode(response.body);
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to create admin');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Create admin error: $e');
+      }
+      throw Exception('Failed to create admin: $e');
+    }
+  }
+
+  static Future<void> deactivateAdmin(String token, int adminId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/super-admin/admins/$adminId'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode != 204) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to deactivate admin');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Deactivate admin error: $e');
+      }
+      throw Exception('Failed to deactivate admin: $e');
+    }
+  }
+
+  static Future<void> activateAdmin(String token, int adminId) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/super-admin/admins/$adminId/activate'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode != 204 && response.statusCode != 200) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to activate admin');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Activate admin error: $e');
+      }
+      throw Exception('Failed to activate admin: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getSuperAdminOverview(
+      String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/super-admin/analytics/overview'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        // Calculate total users (clients + workers + admins)
+        final totalClients = data['total_clients'] ?? 0;
+        final totalWorkers = data['total_workers'] ?? 0;
+        final totalAdmins = data['total_admins'] ?? 0;
+        final totalUsers = totalClients + totalWorkers + totalAdmins;
+
+        // Return both original backend fields AND mapped fields for compatibility
+        return {
+          // Original backend field names (for analytics screen)
+          'total_problems': data['total_problems'] ?? 0,
+          'total_admins': totalAdmins,
+          'total_workers': totalWorkers,
+          'total_clients': totalClients,
+          'pending_problems': data['pending_problems'] ?? 0,
+          'assigned_problems': data['assigned_problems'] ?? 0,
+          'completed_problems': data['completed_problems'] ?? 0,
+          'verified_problems': data['verified_problems'] ?? 0,
+          'rejected_problems': data['rejected_problems'] ?? 0,
+          'active_districts': data['active_districts'] ?? 0,
+          'resolution_rate': data['resolution_rate'] ?? 0.0,
+
+          // Mapped field names (for dashboard screen)
+          'total_issues': data['total_problems'] ?? 0,
+          'total_users': totalUsers,
+        };
+      } else {
+        throw Exception(
+            'Failed to fetch super admin overview: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Get super admin overview error: $e');
+      }
+      throw Exception('Failed to fetch super admin overview: $e');
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getDistrictAnalytics(
+      String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/super-admin/analytics/districts'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> stats = jsonDecode(response.body);
+        return stats.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception(
+            'Failed to fetch district analytics: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Get district analytics error: $e');
+      }
+      throw Exception('Failed to fetch district analytics: $e');
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getDepartmentStats(
+      String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/super-admin/reports/department-stats'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> stats = jsonDecode(response.body);
+        return stats.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception(
+            'Failed to fetch department stats: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Get department stats error: $e');
+      }
+      throw Exception('Failed to fetch department stats: $e');
+    }
+  }
+
+  static Future<List<Map<String, dynamic>>> getTopWorkers(String token,
+      {int limit = 10}) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/super-admin/reports/top-workers?limit=$limit'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> workers = jsonDecode(response.body);
+        return workers.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Failed to fetch top workers: ${response.statusCode}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Get top workers error: $e');
+      }
+      throw Exception('Failed to fetch top workers: $e');
+    }
+  }
+
+  // Issue Actions
+  static Future<Map<String, dynamic>> verifyIssueCompletion(
+      String token, String issueId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/issues/$issueId/verify'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to verify issue completion');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Verify issue completion error: $e');
+      }
+      throw Exception('Failed to verify issue completion: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> submitFeedback(
+    String token,
+    String issueId,
+    Map<String, dynamic> feedbackData,
+  ) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/issues/$issueId/feedback'),
+        headers: _getAuthHeaders(token),
+        body: jsonEncode(feedbackData),
+      );
+
+      if (response.statusCode == 201) {
+        return jsonDecode(response.body);
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to submit feedback');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Submit feedback error: $e');
+      }
+      throw Exception('Failed to submit feedback: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateFeedback(
+    String token,
+    int feedbackId,
+    Map<String, dynamic> feedbackData,
+  ) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/users/feedback/$feedbackId'),
+        headers: _getAuthHeaders(token),
+        body: jsonEncode(feedbackData),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to update feedback');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Update feedback error: $e');
+      }
+      throw Exception('Failed to update feedback: $e');
+    }
+  }
+
+  static Future<void> deleteFeedback(String token, int feedbackId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/users/feedback/$feedbackId'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode != 204 && response.statusCode != 200) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to delete feedback');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Delete feedback error: $e');
+      }
+      throw Exception('Failed to delete feedback: $e');
+    }
+  }
+
+  // Voice-to-Text APIs
+  static Future<Map<String, dynamic>> convertVoiceToText(
+    String token,
+    File audioFile, {
+    String language = 'en-IN',
+  }) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/users/voice-to-text'),
+      );
+
+      request.headers.addAll(_getAuthHeaders(token));
+      request.fields['language'] = language;
+
+      if (kIsWeb) {
+        final bytes = await audioFile.readAsBytes();
+        final filename = 'audio_${DateTime.now().millisecondsSinceEpoch}.webm';
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'audio_file',
+            bytes,
+            filename: filename,
+            contentType: http_parser.MediaType('audio', 'webm'),
+          ),
+        );
+      } else {
+        final extension = audioFile.path.split('.').last.toLowerCase();
+        final contentType = _getAudioContentType(extension);
+
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            'audio_file',
+            audioFile.path,
+            contentType: contentType,
+          ),
+        );
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to convert voice to text');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Voice-to-text error: $e');
+      }
+      throw Exception('Failed to convert voice to text: $e');
+    }
+  }
+
+  // Admin - Get Workers List
+  static Future<List<Map<String, dynamic>>> getWorkersList(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/admin/workers'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> workers = jsonDecode(response.body);
+        return workers.cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Failed to fetch workers list');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Get workers list error: $e');
+      }
+      throw Exception('Failed to fetch workers list: $e');
+    }
+  }
+
+  // Admin - Reassign Issue
+  static Future<Map<String, dynamic>> reassignIssue(
+    String token,
+    int issueId,
+    int newWorkerId,
+  ) async {
+    try {
+      final response = await http.put(
+        Uri.parse(
+            '$baseUrl/admin/issues/$issueId/reassign?new_worker_id=$newWorkerId'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to reassign issue');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Reassign issue error: $e');
+      }
+      throw Exception('Failed to reassign issue: $e');
+    }
+  }
+
+  // Client - Update Issue (only title and description for pending/assigned issues)
+  static Future<Map<String, dynamic>> updateIssue(
+    String token,
+    int issueId,
+    String title,
+    String description,
+  ) async {
+    try {
+      // Send as form data (multipart/form-data) to match backend expectations
+      final request = http.MultipartRequest(
+        'PUT',
+        Uri.parse('$baseUrl/users/issues/$issueId'),
+      );
+
+      request.headers['Authorization'] = 'Bearer $token';
+      request.fields['title'] = title;
+      request.fields['description'] = description;
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to update issue');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Update issue error: $e');
+      }
+      throw Exception('Failed to update issue: $e');
+    }
+  }
+
+  // Client - Delete Issue (only for pending/assigned issues)
+  static Future<void> deleteIssue(String token, int issueId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/users/issues/$issueId'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to delete issue');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Delete issue error: $e');
+      }
+      throw Exception('Failed to delete issue: $e');
+    }
+  }
+
+  // Update FCM Token for Push Notifications
+  static Future<void> updateFCMToken(String token, String fcmToken) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/fcm-token?fcm_token=$fcmToken'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to update FCM token');
+      }
+
+      if (kDebugMode) {
+        debugPrint('✅ FCM token updated on server');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ Failed to update FCM token: $e');
+      }
+    }
+  }
+
+  // Admin - Delete Fake/Inappropriate Issue
+  static Future<Map<String, dynamic>> deleteFakeIssue(
+    String token,
+    int issueId,
+    String reason,
+  ) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/admin/issues/$issueId?reason=${Uri.encodeComponent(reason)}'),
+        headers: _getAuthHeaders(token),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['detail'] ?? 'Failed to delete issue');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Delete issue error: $e');
+      }
+      throw Exception('Failed to delete issue: $e');
     }
   }
 }

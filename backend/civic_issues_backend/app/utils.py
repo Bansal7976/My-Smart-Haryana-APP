@@ -71,6 +71,17 @@ def create_access_token(data: dict):
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
+def decode_access_token(token: str) -> dict:
+    """
+    Decode and verify JWT token.
+    Returns payload if valid, raises JWTError if invalid.
+    """
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        return payload
+    except JWTError as e:
+        raise JWTError(f"Invalid token: {str(e)}")
+
 async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -91,3 +102,68 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
     if user is None or not user.is_active:
         raise credentials_exception
     return user
+
+# --- Location Processing Helpers ---
+from typing import List
+from . import schemas
+import logging
+
+logger = logging.getLogger(__name__)
+
+def process_problems_location(problems: List[models.Problem]) -> List[schemas.Problem]:
+    """
+    Helper function to process a list of problems and ensure location is properly formatted.
+    Converts PostGIS geometry to coordinate string format.
+    """
+    processed_problems = []
+    for problem in problems:
+        if problem.location and hasattr(problem.location, 'data'):
+            try:
+                from geoalchemy2.shape import to_shape
+                point = to_shape(problem.location)
+                # Create a temporary dict to pass to Pydantic
+                problem_dict = {
+                    **{c.name: getattr(problem, c.name) for c in problem.__table__.columns},
+                    'location': f"{point.y:.6f}, {point.x:.6f}",
+                    'latitude': point.y,
+                    'longitude': point.x,
+                    'submitted_by': problem.submitted_by,
+                    'media_files': problem.media_files,
+                    'feedback': problem.feedback,
+                    'assigned_to': problem.assigned_to
+                }
+                processed_problems.append(schemas.Problem(**problem_dict))
+            except Exception as e:
+                logger.warning(f"Failed to extract coordinates from geometry for problem {problem.id}: {e}")
+                processed_problems.append(problem)
+        else:
+            processed_problems.append(problem)
+    
+    return processed_problems
+
+def process_single_problem_location(problem: models.Problem) -> schemas.Problem:
+    """
+    Helper function to process a single problem and ensure location is properly formatted.
+    Converts PostGIS geometry to coordinate string format.
+    """
+    if problem.location and hasattr(problem.location, 'data'):
+        try:
+            from geoalchemy2.shape import to_shape
+            point = to_shape(problem.location)
+            # Create a temporary dict to pass to Pydantic
+            problem_dict = {
+                **{c.name: getattr(problem, c.name) for c in problem.__table__.columns},
+                'location': f"{point.y:.6f}, {point.x:.6f}",
+                'latitude': point.y,
+                'longitude': point.x,
+                'submitted_by': problem.submitted_by,
+                'media_files': problem.media_files,
+                'feedback': problem.feedback,
+                'assigned_to': problem.assigned_to
+            }
+            return schemas.Problem(**problem_dict)
+        except Exception as e:
+            logger.warning(f"Failed to extract coordinates from geometry for problem {problem.id}: {e}")
+            return problem
+    else:
+        return problem

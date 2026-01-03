@@ -7,6 +7,9 @@ class User {
   final String? pincode;
   final bool isActive;
   final DateTime createdAt;
+  final int civicPoints;
+  final int issuesReported;
+  final int issuesVerified;
 
   User({
     required this.id,
@@ -17,6 +20,9 @@ class User {
     this.pincode,
     required this.isActive,
     required this.createdAt,
+    this.civicPoints = 0,
+    this.issuesReported = 0,
+    this.issuesVerified = 0,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -31,6 +37,9 @@ class User {
       createdAt: json['created_at'] != null 
           ? DateTime.parse(json['created_at']) 
           : DateTime.now(),
+      civicPoints: json['civic_points'] ?? 0,
+      issuesReported: json['issues_reported'] ?? 0,
+      issuesVerified: json['issues_verified'] ?? 0,
     );
   }
 
@@ -44,6 +53,9 @@ class User {
       'pincode': pincode,
       'is_active': isActive,
       'created_at': createdAt.toIso8601String(),
+      'civic_points': civicPoints,
+      'issues_reported': issuesReported,
+      'issues_verified': issuesVerified,
     };
   }
 
@@ -116,16 +128,19 @@ class Department {
 }
 
 class WorkerInProblemResponse {
+  final int? id; // Worker profile ID (optional for backward compatibility)
   final UserInProblemResponse user;
   final Department department;
 
   WorkerInProblemResponse({
+    this.id,
     required this.user,
     required this.department,
   });
 
   factory WorkerInProblemResponse.fromJson(Map<String, dynamic> json) {
     return WorkerInProblemResponse(
+      id: json['id'], // Worker profile ID from backend
       user: UserInProblemResponse.fromJson(json['user']),
       department: Department.fromJson(json['department']),
     );
@@ -133,6 +148,7 @@ class WorkerInProblemResponse {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'user': user.toJson(),
       'department': department.toJson(),
     };
@@ -178,6 +194,7 @@ class Feedback {
   final String comment;
   final int rating;
   final String? sentiment;
+  final double? sentimentConfidence;
 
   Feedback({
     required this.id,
@@ -186,6 +203,7 @@ class Feedback {
     required this.comment,
     required this.rating,
     this.sentiment,
+    this.sentimentConfidence,
   });
 
   factory Feedback.fromJson(Map<String, dynamic> json) {
@@ -196,6 +214,7 @@ class Feedback {
       comment: json['comment'],
       rating: json['rating'],
       sentiment: json['sentiment'],
+      sentimentConfidence: json['sentiment_confidence']?.toDouble(),
     );
   }
 
@@ -269,7 +288,7 @@ class Issue {
       assignedTo: json['assigned_to'] != null 
           ? WorkerInProblemResponse.fromJson(json['assigned_to']) 
           : null,
-      location: json['location'] ?? 'Location not available',
+      location: json['location'],
       latitude: json['latitude']?.toDouble(),
       longitude: json['longitude']?.toDouble(),
     );

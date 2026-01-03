@@ -43,9 +43,10 @@ class GeminiAgent(BaseAgent):
         
         try:
             chat_history = context.get("chat_history", [])
+            retrieved_context = context.get("retrieved_context", "")
             
-            messages = [
-                SystemMessage(content="""You are a helpful assistant for Smart Haryana civic platform.
+            # Build system message
+            system_content = """You are a helpful assistant for Smart Haryana civic platform.
 
 CRITICAL FACTS ABOUT HARYANA (ALWAYS USE THESE):
 - Haryana has EXACTLY 22 DISTRICTS: Ambala, Bhiwani, Charkhi Dadri, Faridabad, Fatehabad, Gurugram, Hisar, Jhajjar, Jind, Kaithal, Karnal, Kurukshetra, Mahendragarh, Nuh, Palwal, Panchkula, Panipat, Rewari, Rohtak, Sirsa, Sonipat, Yamunanagar
@@ -61,7 +62,6 @@ SMART HARYANA APP FEATURES:
 - GPS location verification
 - Photo evidence upload
 - AI-powered chatbot assistance
-- Multi-language support
 
 Rules:
 - Keep responses SHORT (2-4 sentences max)
@@ -71,38 +71,41 @@ Rules:
 - Use simple bullet points (-) when listing
 - Get straight to the answer
 
-User is from {district} district.""".format(district=context.get("user_district", "Unknown")))
-            ]
+User is from {district} district.""".format(district=context.get("user_district", "Unknown"))
+            
+            # If we have retrieved context from other agents, use it
+            if retrieved_context:
+                system_content += f"\n\nRelevant Information:\n{retrieved_context}\n\nUse this information to provide a helpful answer."
+            
+            messages = [SystemMessage(content=system_content)]
             
             # Add chat history
-            for msg in chat_history[-10:]: # Get last 10 messages
+            for msg in chat_history[-10:]:  # Get last 10 messages
                 if msg["role"] == "user":
                     messages.append(HumanMessage(content=msg["message"]))
                 elif msg["role"] == "assistant":
                     messages.append(AIMessage(content=msg["message"]))
             
-            # Add current user query
+            # Add current query
             messages.append(HumanMessage(content=query))
             
-            # ✅ Async call
-            response = await self.llm.ainvoke(messages)
-            answer = response.content
+            # Get response from Gemini
+            response = self.llm.invoke(messages)
+            final_response = response.content
             
             return {
-                "response": answer,
+                "response": final_response,
                 "metadata": {
-                    "model": self.llm.model_name if hasattr(self.llm, 'model_name') else "gemini-pro",
-                    "tokens": len(answer.split()) # Approximate token count
-                },
-                "agent_type": "gemini"
+                    "agent_type": "gemini",
+                    "has_context": bool(retrieved_context)
+                }
             }
             
         except Exception as e:
-            logger.error(f"❌ Gemini agent error: {str(e)}", exc_info=True)
+            logger.error(f"Gemini agent error: {e}")
             return {
-                "response": "I encountered an error while processing your request. Could you please rephrase your question?",
-                "metadata": {"error": str(e)},
-                "agent_type": "gemini"
+                "response": "I'm sorry, I encountered an error while processing your request. Please try again.",
+                "metadata": {"error": str(e), "agent_type": "gemini"}
             }
 
     

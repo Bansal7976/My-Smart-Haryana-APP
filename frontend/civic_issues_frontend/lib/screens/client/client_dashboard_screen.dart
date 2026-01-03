@@ -8,6 +8,7 @@ import 'report_issue_screen.dart';
 import 'my_issues_screen.dart';
 import 'issue_detail_screen.dart';
 import 'chatbot_screen.dart';
+import 'leaderboard_screen.dart';
 
 class ClientDashboardScreen extends StatefulWidget {
   const ClientDashboardScreen({super.key});
@@ -23,6 +24,9 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       if (authProvider.token != null) {
+        // Refresh user profile to get updated points
+        authProvider.refreshUser();
+        
         Provider.of<IssueProvider>(context, listen: false)
             .loadUserIssues(authProvider.token!)
             .catchError((error) {
@@ -44,6 +48,8 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
       body: RefreshIndicator(
         onRefresh: () async {
           if (authProvider.token != null) {
+            // Refresh both user profile and issues
+            await authProvider.refreshUser();
             await issueProvider.loadUserIssues(authProvider.token!);
           }
         },
@@ -156,9 +162,45 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        // Quick stats
+                        // Quick stats with points
                         Row(
                           children: [
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(Icons.star, color: Colors.amber, size: 16),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${authProvider.user?.civicPoints ?? 0}',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Text(
+                                      languageProvider.getText('Points', 'अंक'),
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
                             Expanded(
                               child: Container(
                                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -172,7 +214,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                                       '${issueProvider.userIssues.length}',
                                       style: const TextStyle(
                                         color: Colors.white,
-                                        fontSize: 20,
+                                        fontSize: 18,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -187,7 +229,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 8),
                             Expanded(
                               child: Container(
                                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -201,7 +243,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                                       authProvider.user?.district ?? 'N/A',
                                       style: const TextStyle(
                                         color: Colors.white,
-                                        fontSize: 14,
+                                        fontSize: 13,
                                         fontWeight: FontWeight.bold,
                                       ),
                                       maxLines: 1,
@@ -278,13 +320,13 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                   _buildActionCard(
                     context,
                     languageProvider.getText(
-                        'Track Progress', 'प्रगति ट्रैक करें'),
-                    Icons.track_changes,
+                        'Leaderboard', 'लीडरबोर्ड'),
+                    Icons.leaderboard,
                     AppColors.adminColor,
                     () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (context) => const MyIssuesScreen(),
+                          builder: (context) => const LeaderboardScreen(),
                         ),
                       );
                     },

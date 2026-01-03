@@ -31,6 +31,10 @@ async def register_client_user(user: schemas.UserCreate, db: AsyncSession = Depe
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
+    
+    # Welcome notification will be sent when FCM token is registered (after login)
+    # This ensures the user can actually receive the push notification
+    
     return new_user
 
 @router.post("/login", response_model=schemas.Token)
@@ -65,6 +69,26 @@ async def update_fcm_token(
     Update the user's FCM (Firebase Cloud Messaging) token for push notifications.
     This should be called after login when the app gets the FCM token from Firebase.
     """
+    # Check if this is a new user (just registered)
+    is_new_user = current_user.fcm_token is None and current_user.civic_points == 0
+    
     current_user.fcm_token = fcm_token
     await db.commit()
+    
+    # If new CLIENT user, send welcome notification now that FCM token is registered
+    if is_new_user and current_user.role == models.RoleEnum.CLIENT:
+        try:
+            from ..services.notifications import send_notification_to_user
+            await send_notification_to_user(
+                user_id=current_user.id,
+                message=f"Welcome to Smart Haryana, {current_user.full_name}! Start reporting civic issues in your area.",
+                db=db,
+                title="Welcome to Smart Haryana! 🎉",
+                notification_type="account_created",
+                data={"user_id": str(current_user.id)}
+            )
+        except Exception as e:
+            import logging
+            logging.error(f"Failed to send welcome notification: {str(e)}")
+    
     return {"message": "FCM token updated successfully"}

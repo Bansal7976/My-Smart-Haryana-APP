@@ -131,7 +131,7 @@ class LineChartWidget extends StatelessWidget {
                       barWidth: 3,
                       belowBarData: BarAreaData(
                         show: true,
-                        color: lineColor.withOpacity(0.1),
+                        color: lineColor.withValues(alpha: 0.1),
                       ),
                       dotData: const FlDotData(show: true),
                     ),

@@ -85,11 +85,17 @@ async def on_startup():
         logger.warning(f"Firebase initialization skipped: {str(e)}")
     
     # Start scheduled jobs
-    job_scheduler.add_job(scheduler.reset_daily_task_counts, "cron", hour=0, minute=0)
-    job_scheduler.add_job(scheduler.run_auto_assignment_job, "interval", minutes=1)
+    logger.info("🔄 Starting scheduled jobs...")
+    job_scheduler.add_job(scheduler.reset_daily_task_counts, "cron", hour=0, minute=0, id="daily_reset")
+    job_scheduler.add_job(scheduler.run_auto_assignment_job, "interval", minutes=1, id="auto_assignment")
     job_scheduler.start()
     
     logger.info("🚀 Smart Haryana API started successfully!")
+    logger.info("📅 Scheduled jobs started: daily reset (midnight) and auto-assignment (every minute)")
+    
+    # Log scheduler status
+    jobs = job_scheduler.get_jobs()
+    logger.info(f"📋 Active jobs: {[job.id for job in jobs]}")
 
 # --- ⚙️ SHUTDOWN EVENTS ---
 @app.on_event("shutdown")
